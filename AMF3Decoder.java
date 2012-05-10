@@ -18,12 +18,19 @@ public class AMF3Decoder
 
 	/** Lists of references and class definitions seen so far */
 	private List<String> stringReferences = new ArrayList<String>();
-	private List<Date> dateReferences = new ArrayList<Date>();
-	private List<Object[]> arrayReferences = new ArrayList<Object[]>();
 	private List<Object> objectReferences = new ArrayList<Object>();
 	private List<ClassDefinition> classDefinitions = new ArrayList<ClassDefinition>();
-	private List<byte[]> byteArrayReferences = new ArrayList<byte[]>();
 
+	/**
+	 * Resets all the reference lists
+	 */
+	public void reset()
+	{
+		stringReferences = new ArrayList<String>();
+		objectReferences = new ArrayList<Object>();
+		classDefinitions = new ArrayList<ClassDefinition>();
+	}
+	
 	/**
 	 * Removes headers from a packet
 	 * 
@@ -73,8 +80,8 @@ public class AMF3Decoder
 		result.put("???", decodeAMF0());
 		result.put("body", decodeAMF0());
 		
-		//if (dataPos != dataBuffer.length)
-		//	throw new EncodingException("Did not consume entire buffer: " + dataPos + " of " + dataBuffer.length);
+		if (dataPos != dataBuffer.length)
+			throw new EncodingException("Did not consume entire buffer: " + dataPos + " of " + dataBuffer.length);
 
 		return result;
 	}
@@ -103,8 +110,8 @@ public class AMF3Decoder
 		result.put("???", decodeAMF0());
 		result.put("body", decodeAMF0());
 
-		//if (dataPos != dataBuffer.length)
-		//	throw new EncodingException("Did not consume entire buffer: " + dataPos + " of " + dataBuffer.length);
+		if (dataPos != dataBuffer.length)
+			throw new EncodingException("Did not consume entire buffer: " + dataPos + " of " + dataBuffer.length);
 
 		return result;
 	}
@@ -124,8 +131,9 @@ public class AMF3Decoder
 
 		Object result = decode();
 		
-		//if (dataPos != dataBuffer.length)
-		//	throw new EncodingException("Did not consume entire buffer: " + dataPos + " of " + dataBuffer.length);
+		System.out.println(dataPos + " of " + dataBuffer.length);
+		if (dataPos != dataBuffer.length)
+			throw new EncodingException("Did not consume entire buffer: " + dataPos + " of " + dataBuffer.length);
 
 		return result;
 	}
@@ -353,13 +361,13 @@ public class AMF3Decoder
 			long ms = (long)readDouble();
 			Date d = new Date(ms);
 
-			dateReferences.add(d);
+			objectReferences.add(d);
 
 			return d;
 		}
 		else
 		{
-			return dateReferences.get(handle);
+			return (Date)objectReferences.get(handle);
 		}
 	}
 
@@ -386,13 +394,13 @@ public class AMF3Decoder
 			for (int i = 0; i < handle; i++)
 				ret[i] = decode();
 
-			arrayReferences.add(ret);
+			objectReferences.add(ret);
 
 			return ret;
 		}
 		else
 		{
-			return arrayReferences.get(handle);
+			return (Object[])objectReferences.get(handle);
 		}
 	}
 
@@ -448,6 +456,10 @@ public class AMF3Decoder
 			}
 
 			TypedObject ret = new TypedObject(cd.type);
+			
+			// Need to add reference here due to circular references
+			objectReferences.add(ret);
+			
 			if (cd.externalizable)
 			{
 				if (cd.type.equals("DSK"))
@@ -477,8 +489,6 @@ public class AMF3Decoder
 					}
 				}
 			}
-
-			objectReferences.add(ret);
 
 			return ret;
 		}
@@ -513,12 +523,12 @@ public class AMF3Decoder
 		if (inline)
 		{
 			byte[] ret = readBytes(handle);
-			byteArrayReferences.add(ret);
+			objectReferences.add(ret);
 			return ret;
 		}
 		else
 		{
-			return byteArrayReferences.get(handle);
+			return (byte[])objectReferences.get(handle);
 		}
 	}
 
@@ -526,7 +536,6 @@ public class AMF3Decoder
 	 * Decodes a DSK
 	 * 
 	 * @return The decoded DSK
-	 * @author FluorineFX
 	 * @throws NotImplementedException
 	 * @throws EncodingException
 	 */
@@ -534,15 +543,8 @@ public class AMF3Decoder
 	{
 		TypedObject ret = new TypedObject("DSK");
 
-		// Read flags
-		List<Integer> flags = new ArrayList<Integer>();
 		int flag;
-		do
-		{
-			flag = readByteAsInt();
-			flags.add(flag);
-		} while ((flag & 0x80) != 0);
-
+		List<Integer> flags = readFlags();
 		for (int i = 0; i < flags.size(); i++)
 		{
 			flag = flags.get(i);
@@ -570,28 +572,96 @@ public class AMF3Decoder
 				if ((flag & 0x01) != 0)
 				{
 					readByte();
-					ret.put("clientId", byteArrayToID(readByteArray()));
+					byte[] temp = readByteArray();
+					ret.put("clientIdBytes", temp);
+					ret.put("clientId", byteArrayToID(temp));
 				}
 				if ((flag & 0x02) != 0)
 				{
 					readByte();
-					ret.put("messageId", byteArrayToID(readByteArray()));
+					byte[] temp = readByteArray();
+					ret.put("messageIdBytes", temp);
+					ret.put("messageId", byteArrayToID(temp));
 				}
 				bits = 2;
 			}
 
-			// Read remaining objects
+            // For forwards compatibility, read in any other flagged objects to
+            // preserve the integrity of the input stream...
 			if ((flag >> bits) != 0)
 			{
 				for (int o = bits; o < 6; o++)
 				{
-					if ((flag >> o & 1) != 0)
+					if (((flag >> o) & 1) != 0)
+						decode();
+				}
+			}
+		}
+
+		flags = readFlags();
+		for (int i = 0; i < flags.size(); i++)
+		{
+			flag = flags.get(i);
+			int bits = 0;
+
+		    if (i == 0)
+		    {
+		    	if ((flag & 0x01) != 0)
+		    		ret.put("correlationId", decode());
+		    	if ((flag & 0x02) != 0)
+		    	{
+					readByte();
+					byte[] temp = readByteArray();
+					ret.put("correlationIdBytes", temp);
+					ret.put("correlationId", byteArrayToID(temp));
+		    	}
+		    	bits = 2;
+			}
+
+            // For forwards compatibility, read in any other flagged objects to
+            // preserve the integrity of the input stream...
+			if ((flag >> bits) != 0)
+			{
+				for (int o = bits; o < 6; o++)
+				{
+					if (((flag >> o) & 1) != 0)
+						decode();
+				}
+			}
+		}
+	
+		flags = readFlags();
+		for (int i = 0; i < flags.size(); i++)
+		{
+			flag = flags.get(i);
+			int bits = 0;
+
+            // For forwards compatibility, read in any other flagged objects to
+            // preserve the integrity of the input stream...
+			if ((flag >> bits) != 0)
+			{
+				for (int o = bits; o < 6; o++)
+				{
+					if (((flag >> o) & 1) != 0)
 						decode();
 				}
 			}
 		}
 
 		return ret;
+	}
+	
+	private List<Integer> readFlags()
+	{
+		List<Integer> flags = new ArrayList<Integer>();
+		int flag;
+		do
+		{
+			flag = readByteAsInt();
+			flags.add(flag);
+		} while ((flag & 0x80) != 0);
+		
+		return flags;
 	}
 
 	/**

@@ -31,9 +31,8 @@ public class LoLRTMPSClient extends RTMPSClient
 
 	/** Connection information */
 	private String authToken;
-	private int accountID;
 	private String sessionToken;
-	private int invokeID = 2;
+	private int accountID;
 
 	/**
 	 * A basic test for LoLRTMPSClient
@@ -42,18 +41,20 @@ public class LoLRTMPSClient extends RTMPSClient
 	 */
 	public static void main(String[] args)
 	{
-		String user = "foo";
-		String pass = "bar";
+		String user = "qweasn";
+		String pass = "123qwe";
 		
 		String summoner = "Jabe";
 		
+		LoLRTMPSClient client = new LoLRTMPSClient("NA", "1.59.FOOBAR", user, pass);
+
 		try
 		{
-			LoLRTMPSClient client = new LoLRTMPSClient("NA", "1.59.12_04_30_20_33", user, pass);
+			int id;
 			client.connectAndLogin();
 			
 			// Synchronous invoke
-			int id = client.writeInvoke("summonerService", "getSummonerByName", new Object[] { summoner });
+			id = client.writeInvoke("summonerService", "getSummonerByName", new Object[] { summoner });
 			System.out.println(client.getResult(id));
 			
 			// Asynchronous invoke
@@ -66,12 +67,13 @@ public class LoLRTMPSClient extends RTMPSClient
 						}
 					});
 			
-			Thread.sleep(3000); // Sleep for the callback to finish
+			client.join(); // Wait for all current requests to finish
 			
 			client.close();
 		}
 		catch (Exception e)
 		{
+			System.out.println(client.lastDecode);
 			e.printStackTrace();
 		}
 	}
@@ -87,30 +89,30 @@ public class LoLRTMPSClient extends RTMPSClient
 	/**
 	 * Sets up a RTMPSClient for this client to use
 	 * 
-	 * @param server The region to connect to (NA/EUW/EUN)
+	 * @param region The region to connect to (NA/EUW/EUN)
 	 * @param clientVersion The current client version for LoL (top left of client)
 	 * @param user The user to login as
 	 * @param pass The user's password
 	 */
-	public LoLRTMPSClient(String server, String clientVersion, String user, String pass)
+	public LoLRTMPSClient(String region, String clientVersion, String user, String pass)
 	{
 		this.clientVersion = clientVersion;
 		this.user = user;
 		this.pass = pass;
 
-		if (server.equals("NA"))
+		if (region.equals("NA"))
 		{
 			this.server = "prod.na1.lol.riotgames.com";
 			this.loginQueue = "https://lq.na1.lol.riotgames.com/";
 			this.locale = "en_US";
 		}
-		else if (server.equals("EUW"))
+		else if (region.equals("EUW"))
 		{
 			this.server = "prod.eu.lol.riotgames.com";
 			this.loginQueue = "https://lq.eu.lol.riotgames.com/";
 			this.locale = "en_GB";
 		}
-		else if (server.equals("EUN"))
+		else if (region.equals("EUN"))
 		{
 			this.server = "prod.eun1.lol.riotgames.com";
 			this.loginQueue = "https://lq.eun1.lol.riotgames.com/";
@@ -118,22 +120,12 @@ public class LoLRTMPSClient extends RTMPSClient
 		}
 		else
 		{
-			System.out.println("Invalid server: " + server);
+			System.out.println("Invalid server: " + region);
 			System.out.println("Valid servers are: NA, EUW, EUN");
 			System.exit(0);
 		}
 
 		setConnectionInfo(this.server, port, "", "app:/mod_ser.dat", null);
-	}
-
-	/**
-	 * Returns the next invoke ID to use
-	 * 
-	 * @return The next invoke ID
-	 */
-	private int nextInvokeID()
-	{
-		return invokeID++;
 	}
 
 	/**
@@ -193,91 +185,6 @@ public class LoLRTMPSClient extends RTMPSClient
 		
 		// Read result (and discard)
 		result = getResult(id);
-	}
-
-	/**
-	 * Invokes something
-	 * 
-	 * @param destination The destination
-	 * @param operation The operation
-	 * @param body The arguments
-	 * @return The invoke ID to use with getResult() and peekResult()
-	 * @throws EncodingException
-	 * @throws NotImplementedException
-	 * @throws IOException
-	 */
-	public int writeInvoke(String destination, Object operation, Object body) throws EncodingException, NotImplementedException, IOException
-	{
-		int id = nextInvokeID();
-		TypedObject wrapped = wrapBody(body, destination, operation);
-		byte[] data = aec.encodeInvoke(id, wrapped);
-		out.write(data, 0, data.length);
-		out.flush();
-		
-		return id;
-	}
-	
-	/**
-	 * Invokes something asynchronously
-	 * 
-	 * @param destination The destination
-	 * @param operation The operation
-	 * @param body The arguments
-	 * @param cb The callback that will receive the result
-	 * @throws EncodingException
-	 * @throws NotImplementedException
-	 * @throws IOException
-	 */
-	public void writeInvokeWithCallback(String destination, Object operation, Object body, final Callback cb) throws EncodingException, NotImplementedException, IOException
-	{
-		final int id = writeInvoke(destination, operation, body);
-		
-		Thread cbt = new Thread()
-		{
-			private final int myid = id;
-			public void run()
-			{
-				TypedObject result = null;
-				while (pr.running && (result = pr.peekPacket(myid)) == null)
-				{
-					try
-					{
-						Thread.sleep(10);
-					}
-					catch (InterruptedException e) { }
-				}
-				cb.callback(result);
-			}
-		};
-		cbt.start();
-	}
-
-	/**
-	 * Sets up a body in a full RemotingMessage with headers, etc.
-	 * @param body The body to wrap
-	 * @param destination The destination
-	 * @param operation The operation
-	 * @return
-	 */
-	private TypedObject wrapBody(Object body, String destination, Object operation)
-	{
-		TypedObject headers = new TypedObject(null);
-		headers.put("DSRequestTimeout", 60);
-		headers.put("DSId", DSId);
-		headers.put("DSEndpoint", "my-rtmps");
-
-		TypedObject ret = new TypedObject("flex.messaging.messages.RemotingMessage");
-		ret.put("destination", destination);
-		ret.put("operation", operation);
-		ret.put("source", null);
-		ret.put("timestamp", 0);
-		ret.put("messageId", AMF3Encoder.randomUID());
-		ret.put("timeToLive", 0);
-		ret.put("clientId", null);
-		ret.put("headers", headers);
-		ret.put("body", body);
-
-		return ret;
 	}
 
 	/**
