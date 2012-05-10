@@ -6,9 +6,12 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 import javax.net.ssl.SSLSocketFactory;
 
@@ -37,12 +40,22 @@ public class RTMPSClient
 
 	/** State information */
 	protected boolean connected = false;
+	protected int invokeID = 2;
 
 	/** Used for generating handshake */
 	protected Random rand = new Random();
 
 	/** Encoder */
 	protected AMF3Encoder aec = new AMF3Encoder();
+	
+	/** For error tracking */
+	public TypedObject lastDecode = null;
+	
+	/** Pending invokes */
+	protected Set<Integer> pendingInvokes = Collections.synchronizedSet(new HashSet<Integer>());
+	
+	/** Callback list */
+	protected Map<Integer, Callback> callbacks = new HashMap<Integer, Callback>();
 	
 	/**
 	 * A simple test for doing the basic RTMPS connection to Riot
@@ -239,6 +252,86 @@ public class RTMPSClient
 	}
 	
 	/**
+	 * Invokes something
+	 * 
+	 * @param destination The destination
+	 * @param operation The operation
+	 * @param body The arguments
+	 * @return The invoke ID to use with getResult(), peekResult(), and join()
+	 * @throws EncodingException
+	 * @throws NotImplementedException
+	 * @throws IOException
+	 */
+	public int writeInvoke(String destination, Object operation, Object body) throws EncodingException, NotImplementedException, IOException
+	{
+		int id = nextInvokeID();
+		pendingInvokes.add(id);
+		TypedObject wrapped = wrapBody(body, destination, operation);
+		byte[] data = aec.encodeInvoke(id, wrapped);
+		out.write(data, 0, data.length);
+		out.flush();
+		
+		return id;
+	}
+	
+	/**
+	 * Invokes something asynchronously
+	 * 
+	 * @param destination The destination
+	 * @param operation The operation
+	 * @param body The arguments
+	 * @param cb The callback that will receive the result
+	 * @return The invoke ID to use with getResult(), peekResult(), and join()
+	 * @throws EncodingException
+	 * @throws NotImplementedException
+	 * @throws IOException
+	 */
+	public int writeInvokeWithCallback(String destination, Object operation, Object body, Callback cb) throws EncodingException, NotImplementedException, IOException
+	{
+		int id = writeInvoke(destination, operation, body);
+		callbacks.put(id, cb);
+		return id;
+	}
+
+	/**
+	 * Sets up a body in a full RemotingMessage with headers, etc.
+	 * @param body The body to wrap
+	 * @param destination The destination
+	 * @param operation The operation
+	 * @return
+	 */
+	protected TypedObject wrapBody(Object body, String destination, Object operation)
+	{
+		TypedObject headers = new TypedObject(null);
+		headers.put("DSRequestTimeout", 60);
+		headers.put("DSId", DSId);
+		headers.put("DSEndpoint", "my-rtmps");
+
+		TypedObject ret = new TypedObject("flex.messaging.messages.RemotingMessage");
+		ret.put("destination", destination);
+		ret.put("operation", operation);
+		ret.put("source", null);
+		ret.put("timestamp", 0);
+		ret.put("messageId", AMF3Encoder.randomUID());
+		ret.put("timeToLive", 0);
+		ret.put("clientId", null);
+		ret.put("headers", headers);
+		ret.put("body", body);
+
+		return ret;
+	}
+
+	/**
+	 * Returns the next invoke ID to use
+	 * 
+	 * @return The next invoke ID
+	 */
+	protected int nextInvokeID()
+	{
+		return invokeID++;
+	}
+
+	/**
 	 * Returns the connection status
 	 * 
 	 * @return True if connected
@@ -270,6 +363,36 @@ public class RTMPSClient
 	{
 		return pr.getPacket(id);
 	}
+	
+	/**
+	 * Waits until all results have been returned
+	 */
+	public void join()
+	{
+		while (!pendingInvokes.isEmpty())
+		{
+			try
+			{
+				Thread.sleep(10);
+			}
+			catch (InterruptedException e) { }
+		}
+	}
+
+	/**
+	 * Waits until the specified result returns
+	 */
+	public void join(int id)
+	{
+		while (pendingInvokes.contains(id))
+		{
+			try
+			{
+				Thread.sleep(10);
+			}
+			catch (InterruptedException e) { }
+		}
+	}
 
 	/**
 	 * Reads RTMP packets from a stream
@@ -291,6 +414,9 @@ public class RTMPSClient
 
 		/** Map of decoded packets */
 		private Map<Integer, TypedObject> results = Collections.synchronizedMap(new HashMap<Integer, TypedObject>());
+		
+		/** List of received packets (invoke ID = 0) */
+		private List<TypedObject> receives = Collections.synchronizedList(new LinkedList<TypedObject>());
 		
 		/** The AMF3 decoder */
 		private AMF3Decoder adc = new AMF3Decoder();
@@ -326,8 +452,8 @@ public class RTMPSClient
 		{
 			if (results.containsKey(id))
 			{
-				TypedObject ret = results.get(id);
-				results.remove(id);
+				TypedObject ret = results.remove(id);
+				lastDecode = ret;
 				return ret;
 			}
 			return null;
@@ -355,7 +481,9 @@ public class RTMPSClient
 			if (!running)
 				return null;
 
-			return results.remove(id);
+			TypedObject ret = results.remove(id);
+			lastDecode = ret;
+			return ret;
 		}
 
 		/**
@@ -394,6 +522,14 @@ public class RTMPSClient
 							pos++;
 						}
 
+						// Skip most messages
+						if (messageType != 0x14 && messageType != 0x11)
+						{
+							dataSize = -1;
+							dataBuffer = new ArrayList<Byte>();
+							continue;
+						}
+
 						// Switch to byte array for decoding
 						byte[] temp = new byte[dataBuffer.size()];
 						for (int i = 0; i < temp.length; i++)
@@ -401,25 +537,33 @@ public class RTMPSClient
 
 						dataSize = -1;
 						dataBuffer = new ArrayList<Byte>();
-
-						// Decode if necessary
+						
 						TypedObject result = null;
+						adc.reset();
 						if (messageType == 0x14) // Connect
 							result = adc.decodeConnect(temp);
 						else if (messageType == 0x11) // Invoke
 							result = adc.decodeInvoke(temp);
-						else // Discard rest
-							continue;
 
-						results.put((Integer)result.get("invokeId"), result);
+						int id = (Integer)result.get("invokeId");
+						if (id == 0)
+							receives.add(result);
+						else if (callbacks.containsKey(id))
+							callbacks.remove(id).callback(result);
+						else
+							results.put(id, result);
+						pendingInvokes.remove(id);
 					}
 				}
 			}
+			catch (IOException e)
+			{
+				//Assume the stream was closed
+			}
 			catch (Exception e)
 			{
-				// Assume the stream was closed by design or that the error was already handled
-				//System.out.println("Error while reading from stream");
-				//e.printStackTrace();
+				System.out.println("Error while reading from stream");
+				e.printStackTrace();
 			}
 
 			running = false;
