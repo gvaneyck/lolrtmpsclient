@@ -266,6 +266,7 @@ public class RTMPSClient
 	{
 		int id = nextInvokeID();
 		pendingInvokes.add(id);
+		
 		TypedObject wrapped = wrapBody(body, destination, operation);
 		byte[] data = aec.encodeInvoke(id, wrapped);
 		out.write(data, 0, data.length);
@@ -288,8 +289,15 @@ public class RTMPSClient
 	 */
 	public int writeInvokeWithCallback(String destination, Object operation, Object body, Callback cb) throws EncodingException, NotImplementedException, IOException
 	{
-		int id = writeInvoke(destination, operation, body);
+		int id = nextInvokeID();
 		callbacks.put(id, cb);
+		pendingInvokes.add(id);
+
+		TypedObject wrapped = wrapBody(body, destination, operation);
+		byte[] data = aec.encodeInvoke(id, wrapped);
+		out.write(data, 0, data.length);
+		out.flush();
+
 		return id;
 	}
 
