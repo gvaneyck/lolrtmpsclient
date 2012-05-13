@@ -136,12 +136,9 @@ public class LoLRTMPSClient extends RTMPSClient
 	/**
 	 * Connects and logs in using the information previously provided
 	 * 
-	 * @throws ConnectionException
 	 * @throws IOException
-	 * @throws EncodingException
-	 * @throws NotImplementedException
 	 */
-	public void connectAndLogin() throws ConnectionException, IOException, EncodingException, NotImplementedException
+	public void connectAndLogin() throws IOException
 	{
 		getIPAddress();
 		getAuthToken();
@@ -166,15 +163,13 @@ public class LoLRTMPSClient extends RTMPSClient
 		
 		// Read relevant data
 		result = getResult(id);
-		body = (TypedObject)result.get("body");
-		body = (TypedObject)body.get("body");
+		body = result.getTO("body").getTO("body");
         sessionToken = (String)body.get("token");
-        body = (TypedObject)body.get("accountSummary");
-        accountID = ((Double)body.get("accountId")).intValue();
+        accountID = ((Double)body.getTO("accountSummary").get("accountId")).intValue();
 
 		// Login 2
         byte[] encbuff = null;
-		try { encbuff = (user.toLowerCase() + ":" + sessionToken).getBytes("UTF-8"); } catch (UnsupportedEncodingException e) { }
+		encbuff = (user.toLowerCase() + ":" + sessionToken).getBytes("UTF-8");
 
         body = wrapBody(Base64.encodeBytes(encbuff), "auth", 8);
         body.type = "flex.messaging.messages.CommandMessage";
@@ -193,25 +188,21 @@ public class LoLRTMPSClient extends RTMPSClient
 
 	/**
 	 * Calls Riot's IP address informer
+	 * 
+	 * throws IOException
 	 */
-	private void getIPAddress()
+	private void getIPAddress() throws IOException
 	{
-		try
-		{
-			String response = readURL("http://ll.leagueoflegends.com/services/connection_info");
-			ipAddress = response.substring(response.indexOf(":") + 2, response.length() - 2);
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-			System.exit(0);
-		}
+		String response = readURL("http://ll.leagueoflegends.com/services/connection_info");
+		ipAddress = response.substring(response.indexOf(":") + 2, response.length() - 2);
 	}
 
 	/**
 	 * Gets an authentication token for logging into Riot's servers
+	 * 
+	 * @throws IOException
 	 */
-	private void getAuthToken()
+	private void getAuthToken() throws IOException
 	{
 		// login-queue/rest/queue/authenticate
 		// {"rate":60,"token":"d9a18f08-8159-4c27-9f3a-7927462b5150","reason":"login_rate","status":"LOGIN","delay":10000,"user":"USERHERE"}
@@ -237,85 +228,76 @@ public class LoLRTMPSClient extends RTMPSClient
 		// Then optionally
 		// login-queue/rest/queue/cancelQueue/USERHERE
 
-		try
+		// Initial authToken request
+		String payload = "user=" + user + ",password=" + pass;
+		String query = "payload=" + URLEncoder.encode(payload, "ISO-8859-1");
+
+		URL url = new URL("https://lq.na1.lol.riotgames.com/login-queue/rest/queue/authenticate");
+		HttpsURLConnection connection = (HttpsURLConnection)url.openConnection();
+
+		connection.setDoOutput(true);
+		connection.setRequestMethod("POST");
+
+		// Open up the output stream of the connection
+		DataOutputStream output = new DataOutputStream(connection.getOutputStream());
+
+		// Write the POST data
+		output.writeBytes(query);
+		output.close();
+
+		// Read the response
+		String response = readAll(connection.getInputStream());
+
+		// Handle login queue
+		int idx;
+		if (!response.contains("token"))
 		{
-			// Initial authToken request
-			String payload = "user=" + user + ",password=" + pass;
-			String query = "payload=" + URLEncoder.encode(payload, "ISO-8859-1");
+			// node is our login queue
+			idx = response.indexOf("node");
+			String node = response.substring(idx + 6, response.indexOf(",", idx + 6));
 
-			URL url = new URL("https://lq.na1.lol.riotgames.com/login-queue/rest/queue/authenticate");
-			HttpsURLConnection connection = (HttpsURLConnection)url.openConnection();
+			// champ is the name of our login queue
+			idx = response.lastIndexOf("champ");
+			String champ = response.substring(idx + 8, response.indexOf("\"", idx + 8));
 
-			connection.setDoOutput(true);
-			connection.setRequestMethod("POST");
+			// id is our ticket in line
+			idx = response.lastIndexOf("node\":" + node);
+			idx = response.substring(0, idx).lastIndexOf("id");
+			int id = Integer.parseInt(response.substring(idx + 4, response.indexOf(",", idx + 4)));
 
-			// Open up the output stream of the connection
-			DataOutputStream output = new DataOutputStream(connection.getOutputStream());
+			// cur is the current ticket being processed
+			idx = response.indexOf("current", idx);
+			int cur = Integer.parseInt(response.substring(idx + 9, response.indexOf("}", idx + 9)));
 
-			// Write the POST data
-			output.writeBytes(query);
-			output.close();
+			// delay is how often the queue status updates
+			idx = response.indexOf("delay");
+			int sleeptime = Integer.parseInt(response.substring(idx + 7, response.indexOf(",", idx + 7)));
 
-			// Read the response
-			String response = readAll(connection.getInputStream());
+			// rate is how many people are processed every queue update (I think?)
+			idx = response.indexOf("rate");
+			int rate = Integer.parseInt(response.substring(idx + 6, response.indexOf(",", idx + 6)));
 
-			// Handle login queue
-			int idx;
-			if (!response.contains("token"))
+			// Request the queue status until there's only 'rate' left to go
+			while (cur + rate < id)
 			{
-				// node is our login queue
-				idx = response.indexOf("node");
-				String node = response.substring(idx + 6, response.indexOf(",", idx + 6));
-
-				// champ is the name of our login queue
-				idx = response.lastIndexOf("champ");
-				String champ = response.substring(idx + 8, response.indexOf("\"", idx + 8));
-
-				// id is our ticket in line
-				idx = response.lastIndexOf("node\":" + node);
-				idx = response.substring(0, idx).lastIndexOf("id");
-				int id = Integer.parseInt(response.substring(idx + 4, response.indexOf(",", idx + 4)));
-
-				// cur is the current ticket being processed
-				idx = response.indexOf("current", idx);
-				int cur = Integer.parseInt(response.substring(idx + 9, response.indexOf("}", idx + 9)));
-
-				// delay is how often the queue status updates
-				idx = response.indexOf("delay");
-				int sleeptime = Integer.parseInt(response.substring(idx + 7, response.indexOf(",", idx + 7)));
-
-				// rate is how many people are processed every queue update (I think?)
-				idx = response.indexOf("rate");
-				int rate = Integer.parseInt(response.substring(idx + 6, response.indexOf(",", idx + 6)));
-
-				// Request the queue status until there's only 'rate' left to go
-				while (cur + rate < id)
-				{
-					Thread.sleep(sleeptime); // Sleep until the queue updates
-					response = readURL(loginQueue + "login-queue/rest/queue/ticker/" + champ);
-					idx = response.indexOf(node) + 3 + node.length();
-					cur = hexToInt(response.substring(idx, response.indexOf("\"", idx)));
-				}
-
-				// Then try getting our token repeatedly
-				response = readURL(loginQueue + "login-queue/rest/queue/authToken/" + user);
-				while (!response.contains("token"))
-				{
-					Thread.sleep(sleeptime / 10);
-					response = readURL(loginQueue + "login-queue/rest/queue/authToken/" + user);
-				}
+				try { Thread.sleep(sleeptime); } catch (InterruptedException e) { } // Sleep until the queue updates
+				response = readURL(loginQueue + "login-queue/rest/queue/ticker/" + champ);
+				idx = response.indexOf(node) + 3 + node.length();
+				cur = hexToInt(response.substring(idx, response.indexOf("\"", idx)));
 			}
 
-			// Read the auth token
-			idx = response.indexOf("token") + 8;
-			authToken = response.substring(idx, idx + 36);
+			// Then try getting our token repeatedly
+			response = readURL(loginQueue + "login-queue/rest/queue/authToken/" + user);
+			while (!response.contains("token"))
+			{
+				try { Thread.sleep(sleeptime / 10); } catch (InterruptedException e) { }
+				response = readURL(loginQueue + "login-queue/rest/queue/authToken/" + user);
+			}
 		}
-		catch (Exception e)
-		{
-			System.out.println("Failed to get auth token");
-			e.printStackTrace();
-			System.exit(0);
-		}
+
+		// Read the auth token
+		idx = response.indexOf("token") + 8;
+		authToken = response.substring(idx, idx + 36);
 	}
 
 	/**
@@ -324,11 +306,19 @@ public class LoLRTMPSClient extends RTMPSClient
 	 * @param url The URL to read
 	 * @return All data present at the given URL
 	 * @throws IOException
-	 * @throws MalformedURLException
 	 */
-	private String readURL(String url) throws IOException, MalformedURLException
+	private String readURL(String url) throws IOException
 	{
-		return readAll(new URL(url).openStream());
+		try
+		{
+			return readAll(new URL(url).openStream());
+		}
+		catch (MalformedURLException e)
+		{
+			// Shouldn't happen
+			e.printStackTrace();
+			return null;
+		}
 	}
 
 	/**
@@ -337,9 +327,8 @@ public class LoLRTMPSClient extends RTMPSClient
 	 * @param in The InputStream to read from
 	 * @return All data from the given InputStream
 	 * @throws IOException
-	 * @throws MalformedURLException
 	 */
-	private String readAll(InputStream in) throws IOException, MalformedURLException
+	private String readAll(InputStream in) throws IOException
 	{
 		StringBuilder ret = new StringBuilder();
 
