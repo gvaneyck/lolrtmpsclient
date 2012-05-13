@@ -55,7 +55,10 @@ public class RTMPSClient
 	protected Set<Integer> pendingInvokes = Collections.synchronizedSet(new HashSet<Integer>());
 	
 	/** Callback list */
-	protected Map<Integer, Callback> callbacks = new HashMap<Integer, Callback>();
+	protected Map<Integer, Callback> callbacks = Collections.synchronizedMap(new HashMap<Integer, Callback>());
+	
+	/** Receive handler */
+	protected ReceiveThread receiveThread = null;
 	
 	/**
 	 * A simple test for doing the basic RTMPS connection to Riot
@@ -70,6 +73,8 @@ public class RTMPSClient
 			client.connect();
 			if (client.isConnected())
 				System.out.println("Success");
+			else
+				System.out.println("Failure");
 			client.close();
 		}
 		catch (Exception e)
@@ -262,7 +267,7 @@ public class RTMPSClient
 	 * @throws NotImplementedException
 	 * @throws IOException
 	 */
-	public int writeInvoke(String destination, Object operation, Object body) throws EncodingException, NotImplementedException, IOException
+	public synchronized int writeInvoke(String destination, Object operation, Object body) throws EncodingException, NotImplementedException, IOException
 	{
 		int id = nextInvokeID();
 		pendingInvokes.add(id);
@@ -287,7 +292,7 @@ public class RTMPSClient
 	 * @throws NotImplementedException
 	 * @throws IOException
 	 */
-	public int writeInvokeWithCallback(String destination, Object operation, Object body, Callback cb) throws EncodingException, NotImplementedException, IOException
+	public synchronized int writeInvokeWithCallback(String destination, Object operation, Object body, Callback cb) throws EncodingException, NotImplementedException, IOException
 	{
 		int id = nextInvokeID();
 		callbacks.put(id, cb);
@@ -403,9 +408,84 @@ public class RTMPSClient
 	}
 
 	/**
-	 * Reads RTMP packets from a stream
+	 * Cancels an invoke and related callback if any
 	 * 
-	 * @author Gabriel Van Eyck
+	 * @param id The invoke ID to cancel
+	 */
+	public void cancel(int id)
+	{
+		// Remove from pending invokes (only affects join())
+		pendingInvokes.remove(id);
+		
+		// Check if we've already received the result
+		if (peekResult(id) != null)
+			return;
+		// Signify a cancelled invoke by giving it a null callback
+		else
+		{
+			callbacks.put(id, null);
+			
+			// Check for race condition
+			if (peekResult(id) != null)
+				callbacks.remove(id);
+		}
+	}
+
+	/**
+	 * Sets the handler for receive packets (things like champ select)
+	 * Kills the old handler if there is one
+	 * 
+	 * @param cb The handler to use
+	 */
+	public void setReceiveHandler(Callback cb)
+	{		
+		if (receiveThread != null)
+			receiveThread.die();
+		
+		receiveThread = new ReceiveThread(cb);
+	}
+	
+	/**
+	 * Handles the receives
+	 */
+	class ReceiveThread extends Thread
+	{
+		private boolean running;
+		private Callback receiveHandler;
+		
+		public ReceiveThread(Callback cb)
+		{
+			receiveHandler = cb;
+			this.start();
+		}
+		
+		public void die()
+		{
+			running = false;
+		}
+		
+		public void run()
+		{
+			running = true;
+			while (running)
+			{
+				while (!pr.receives.isEmpty() && running)
+				{
+					TypedObject result = pr.receives.remove(0);
+					receiveHandler.callback(result);
+				}
+				
+				try
+				{
+					Thread.sleep(10);
+				}
+				catch(Exception e) { }
+			}
+		}
+	}
+
+	/**
+	 * Reads RTMP packets from a stream
 	 */
 	class RTMPPacketReader extends Thread
 	{
@@ -557,7 +637,11 @@ public class RTMPSClient
 						if (id == 0)
 							receives.add(result);
 						else if (callbacks.containsKey(id))
-							callbacks.remove(id).callback(result);
+						{
+							Callback cb = callbacks.remove(id);
+							if (cb != null)
+								cb.callback(result);
+						}
 						else
 							results.put(id, result);
 						pendingInvokes.remove(id);

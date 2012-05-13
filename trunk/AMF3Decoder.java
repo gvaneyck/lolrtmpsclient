@@ -5,8 +5,6 @@ import java.util.List;
 
 /**
  * Decodes AMF3 data and packets from RTMP
- * - Note: DSK parsing may be leaving extra data?  Commented out check for 
- *         complete buffer consumption
  *    
  * @author Gabriel Van Eyck
  */
@@ -98,7 +96,7 @@ public class AMF3Decoder
 	{
 		dataBuffer = removeHeaders(data);
 		dataPos = 0;
-
+		
 		TypedObject result = new TypedObject("Invoke");
 		if (dataBuffer[0] == 0x00)
 		{
@@ -131,7 +129,6 @@ public class AMF3Decoder
 
 		Object result = decode();
 		
-		System.out.println(dataPos + " of " + dataBuffer.length);
 		if (dataPos != dataBuffer.length)
 			throw new EncodingException("Did not consume entire buffer: " + dataPos + " of " + dataBuffer.length);
 
@@ -428,22 +425,10 @@ public class AMF3Decoder
 				cd = new ClassDefinition();
 				cd.type = readString();
 
-				boolean externalizable = ((handle & 1) != 0);
+				cd.externalizable = ((handle & 1) != 0);
 				handle = handle >> 1;
-				boolean dynamic = ((handle & 1) != 0);
+				cd.dynamic = ((handle & 1) != 0);
 				handle = handle >> 1;
-
-				if (externalizable)
-				{
-					cd.externalizable = true;
-					if (!cd.type.equals("DSK") && !cd.type.equals("flex.messaging.io.ArrayCollection"))
-						throw new NotImplementedException("Externalizable not handled for " + cd.type);
-				}
-
-				if (dynamic)
-				{
-					cd.dynamic = true;
-				}
 
 				for (int i = 0; i < handle; i++)
 					cd.members.add(readString());
@@ -464,11 +449,23 @@ public class AMF3Decoder
 			{
 				if (cd.type.equals("DSK"))
 					ret = readDSK();
-				if (cd.type.equals("flex.messaging.io.ArrayCollection"))
+				else if (cd.type.equals("flex.messaging.io.ArrayCollection"))
 				{
 					Object obj = decode();
 					ret = TypedObject.makeArrayCollection((Object[])obj);
 				}
+				else if (cd.type.equals("com.riotgames.platform.systemstate.ClientSystemStatesNotification")
+					  || cd.type.equals("com.riotgames.platform.broadcast.BroadcastNotification"))
+				{
+					int size = 0;
+					for (int i = 0; i < 4; i++)
+						size = size * 256 + readByteAsInt();
+					
+					String json = new String(readBytes(size));
+					ret.put("json", json);
+				}
+				else
+					throw new NotImplementedException("Externalizable not handled for " + cd.type);
 			}
 			else
 			{
