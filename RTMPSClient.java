@@ -142,17 +142,16 @@ public class RTMPSClient
 		catch (IOException e)
 		{
 			// Do nothing
-			e.printStackTrace();
+			//e.printStackTrace();
 		}
 	}
 
 	/**
 	 * Attempts to connect given the previous connection information
 	 * 
-	 * @throws ConnectionException
 	 * @throws IOException
 	 */
-	public void connect() throws ConnectionException, IOException
+	public void connect() throws IOException
 	{
 		sslsocket = SSLSocketFactory.getDefault().createSocket(server, 2099);
 		in = new BufferedInputStream(sslsocket.getInputStream());
@@ -180,32 +179,24 @@ public class RTMPSClient
 		params.put("pageUrl", pageUrl);
 		params.put("objectEncoding", 3);
 
-		try
-		{
-			byte[] connect = aec.encodeConnect(params);
-			
-			out.write(connect, 0, connect.length);
-			out.flush();
-	
-			TypedObject result = pr.getPacket(1);
-			TypedObject body = (TypedObject)result.get("body");
-			DSId = (String)body.get("id");
-			
-			connected = true;
-		}
-		catch (Exception e)
-		{
-			throw new ConnectionException("Error encoding or decoding", e);
-		}
+		byte[] connect = aec.encodeConnect(params);
+		
+		out.write(connect, 0, connect.length);
+		out.flush();
+
+		TypedObject result = pr.getPacket(1);
+		TypedObject body = (TypedObject)result.get("body");
+		DSId = (String)body.get("id");
+		
+		connected = true;
 	}
 
 	/**
 	 * Executes a full RTMP handshake
 	 * 
-	 * @throws ConnectionException
 	 * @throws IOException
 	 */
-	private void doHandshake() throws ConnectionException, IOException
+	private void doHandshake() throws IOException
 	{
 		// C0
 		byte C0 = 0x03;
@@ -224,7 +215,7 @@ public class RTMPSClient
 		// S0
 		byte S0 = (byte)in.read();
 		if (S0 != 0x03)
-			throw new ConnectionException("Server returned incorrect version in handshake: " + S0);
+			throw new IOException("Server returned incorrect version in handshake: " + S0);
 
 		// S1
 		byte[] S1 = new byte[1536];
@@ -253,7 +244,7 @@ public class RTMPSClient
 		}
 
 		if (!valid)
-			throw new ConnectionException("Handshake was not valid");
+			throw new IOException("Server returned invalid handshake");
 	}
 	
 	/**
@@ -263,11 +254,9 @@ public class RTMPSClient
 	 * @param operation The operation
 	 * @param body The arguments
 	 * @return The invoke ID to use with getResult(), peekResult(), and join()
-	 * @throws EncodingException
-	 * @throws NotImplementedException
 	 * @throws IOException
 	 */
-	public synchronized int writeInvoke(String destination, Object operation, Object body) throws EncodingException, NotImplementedException, IOException
+	public synchronized int writeInvoke(String destination, Object operation, Object body) throws IOException
 	{
 		int id = nextInvokeID();
 		pendingInvokes.add(id);
@@ -288,11 +277,9 @@ public class RTMPSClient
 	 * @param body The arguments
 	 * @param cb The callback that will receive the result
 	 * @return The invoke ID to use with getResult(), peekResult(), and join()
-	 * @throws EncodingException
-	 * @throws NotImplementedException
 	 * @throws IOException
 	 */
-	public synchronized int writeInvokeWithCallback(String destination, Object operation, Object body, Callback cb) throws EncodingException, NotImplementedException, IOException
+	public synchronized int writeInvokeWithCallback(String destination, Object operation, Object body, Callback cb) throws IOException
 	{
 		int id = nextInvokeID();
 		callbacks.put(id, cb);
@@ -561,9 +548,7 @@ public class RTMPSClient
 				{
 					Thread.sleep(10);
 				}
-				catch (Exception e)
-				{
-				}
+				catch (Exception e) { }
 			}
 
 			if (!running)
@@ -649,10 +634,6 @@ public class RTMPSClient
 				}
 			}
 			catch (IOException e)
-			{
-				//Assume the stream was closed
-			}
-			catch (Exception e)
 			{
 				System.out.println("Error while reading from stream");
 				e.printStackTrace();
