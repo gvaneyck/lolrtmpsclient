@@ -33,6 +33,16 @@ public class TypedObject extends HashMap<String, Object>
 		ret.put("array", data);
 		return ret;
 	}
+	
+	/**
+	 * Convenience for going through object hierarchy
+	 * @param key The key of the TypedObject
+	 * @return The TypedObject
+	 */
+	public TypedObject getTO(String key)
+	{
+		return (TypedObject)get(key);
+	}
 
 	public String toString()
 	{

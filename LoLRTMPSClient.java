@@ -5,6 +5,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -33,7 +35,10 @@ public class LoLRTMPSClient extends RTMPSClient
 	private String authToken;
 	private String sessionToken;
 	private int accountID;
-
+	
+	/** Heartbeat */
+	private HeartbeatThread hb;
+	
 	/**
 	 * A basic test for LoLRTMPSClient
 	 * 
@@ -141,7 +146,7 @@ public class LoLRTMPSClient extends RTMPSClient
 		getIPAddress();
 		getAuthToken();
 
-		super.connect();
+		connect(); // Will throw the connection exception
 
 		TypedObject result, body;
 		
@@ -171,10 +176,6 @@ public class LoLRTMPSClient extends RTMPSClient
         byte[] encbuff = null;
 		try { encbuff = (user.toLowerCase() + ":" + sessionToken).getBytes("UTF-8"); } catch (UnsupportedEncodingException e) { }
 
-        TypedObject headers = new TypedObject(null);
-        headers.put("DSId", DSId);
-        headers.put("DSEndpoint", "my-rtmps");
-
         body = wrapBody(Base64.encodeBytes(encbuff), "auth", 8);
         body.type = "flex.messaging.messages.CommandMessage";
 
@@ -185,6 +186,9 @@ public class LoLRTMPSClient extends RTMPSClient
 		
 		// Read result (and discard)
 		result = getResult(id);
+		
+		// Start the heartbeat
+		hb = new HeartbeatThread();
 	}
 
 	/**
@@ -365,5 +369,44 @@ public class LoLRTMPSClient extends RTMPSClient
 		}
 
 		return total;
+	}
+	
+	/**
+	 * Executes a LCDSHeartBeat every 2 minutes 
+	 */
+	class HeartbeatThread extends Thread
+	{
+		private boolean running;
+		private int heartbeat;
+		private SimpleDateFormat sdf = new SimpleDateFormat("ddd MMM d yyyy HH:mm:ss 'GMTZ'");
+		
+		public HeartbeatThread()
+		{
+			this.heartbeat = 1;
+			this.start();
+		}
+		
+		public void die()
+		{
+			running = false;
+		}
+		
+		public void run()
+		{
+			running = true;
+			while (running)
+			{
+				try
+				{
+					writeInvoke("loginService", "performLCDSHeartBeat",
+							new Object[] { accountID, sessionToken, heartbeat, sdf.format(new Date()) });
+
+					heartbeat++;
+					
+					Thread.sleep(120000);
+				}
+				catch (Exception e) { } // Ignored for now
+			}
+		}
 	}
 }
