@@ -1,7 +1,6 @@
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -163,7 +162,7 @@ public class LoLRTMPSClient extends RTMPSClient
 		
 		// Read relevant data
 		result = getResult(id);
-		body = result.getTO("body").getTO("body");
+		body = result.getTO("data").getTO("body");
         sessionToken = (String)body.get("token");
         accountID = ((Double)body.getTO("accountSummary").get("accountId")).intValue();
 

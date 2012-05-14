@@ -185,8 +185,7 @@ public class RTMPSClient
 		out.flush();
 
 		TypedObject result = pr.getPacket(1);
-		TypedObject body = (TypedObject)result.get("body");
-		DSId = (String)body.get("id");
+		DSId = (String)result.getTO("data").get("id");
 		
 		connected = true;
 	}
