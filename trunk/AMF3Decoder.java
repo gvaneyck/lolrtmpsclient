@@ -75,8 +75,8 @@ public class AMF3Decoder
 		TypedObject result = new TypedObject("Invoke");
 		result.put("result", decodeAMF0());
 		result.put("invokeId", decodeAMF0());
-		result.put("???", decodeAMF0());
-		result.put("body", decodeAMF0());
+		result.put("serviceCall", decodeAMF0());
+		result.put("data", decodeAMF0());
 		
 		if (dataPos != dataBuffer.length)
 			throw new EncodingException("Did not consume entire buffer: " + dataPos + " of " + dataBuffer.length);
@@ -105,8 +105,8 @@ public class AMF3Decoder
 		}
 		result.put("result", decodeAMF0());
 		result.put("invokeId", decodeAMF0());
-		result.put("???", decodeAMF0());
-		result.put("body", decodeAMF0());
+		result.put("serviceCall", decodeAMF0());
+		result.put("data", decodeAMF0());
 
 		if (dataPos != dataBuffer.length)
 			throw new EncodingException("Did not consume entire buffer: " + dataPos + " of " + dataBuffer.length);

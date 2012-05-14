@@ -7,6 +7,8 @@ import java.util.HashMap;
  */
 public class TypedObject extends HashMap<String, Object>
 {
+	private static final long serialVersionUID = 1244827787088018807L;
+	
 	public String type;
 
 	/**
