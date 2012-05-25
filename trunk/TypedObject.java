@@ -8,12 +8,12 @@ import java.util.HashMap;
 public class TypedObject extends HashMap<String, Object>
 {
 	private static final long serialVersionUID = 1244827787088018807L;
-	
+
 	public String type;
 
 	/**
-	 * Initializes the type of the object
-	 * null type implies a dynamic class (used for headers)
+	 * Initializes the type of the object null type implies a dynamic class
+	 * (used for headers)
 	 * 
 	 * @param type The type of the object
 	 */
@@ -23,8 +23,8 @@ public class TypedObject extends HashMap<String, Object>
 	}
 
 	/**
-	 * Creates a flex.messaging.io.ArrayCollection in the structure that
-	 * the encoder expects
+	 * Creates a flex.messaging.io.ArrayCollection in the structure that the
+	 * encoder expects
 	 * 
 	 * @param data The data for the ArrayCollection
 	 * @return
@@ -35,9 +35,10 @@ public class TypedObject extends HashMap<String, Object>
 		ret.put("array", data);
 		return ret;
 	}
-	
+
 	/**
 	 * Convenience for going through object hierarchy
+	 * 
 	 * @param key The key of the TypedObject
 	 * @return The TypedObject
 	 */
@@ -64,7 +65,7 @@ public class TypedObject extends HashMap<String, Object>
 			sb.append(']');
 			return sb.toString();
 		}
-		else 
+		else
 			return type + ":" + super.toString();
 	}
 }
