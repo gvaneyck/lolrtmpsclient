@@ -48,6 +48,23 @@ public class TypedObject extends HashMap<String, Object>
 
 	public String toString()
 	{
-		return type + ":" + super.toString();
+		if (type == null)
+			return super.toString();
+		else if (type.equals("flex.messaging.io.ArrayCollection"))
+		{
+			StringBuilder sb = new StringBuilder();
+			Object[] data = (Object[])get("array");
+			sb.append("ArrayCollection:[");
+			for (int i = 0; i < data.length; i++)
+			{
+				sb.append(data[i]);
+				if (i < data.length - 1)
+					sb.append(", ");
+			}
+			sb.append(']');
+			return sb.toString();
+		}
+		else 
+			return type + ":" + super.toString();
 	}
 }
