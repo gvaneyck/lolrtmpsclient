@@ -5,7 +5,7 @@ import java.util.List;
 
 /**
  * Decodes AMF3 data and packets from RTMP
- *    
+ * 
  * @author Gabriel Van Eyck
  */
 public class AMF3Decoder
@@ -28,7 +28,7 @@ public class AMF3Decoder
 		objectReferences = new ArrayList<Object>();
 		classDefinitions = new ArrayList<ClassDefinition>();
 	}
-	
+
 	/**
 	 * Removes headers from a packet
 	 * 
@@ -77,7 +77,7 @@ public class AMF3Decoder
 		result.put("invokeId", decodeAMF0());
 		result.put("serviceCall", decodeAMF0());
 		result.put("data", decodeAMF0());
-		
+
 		if (dataPos != dataBuffer.length)
 			throw new EncodingException("Did not consume entire buffer: " + dataPos + " of " + dataBuffer.length);
 
@@ -96,7 +96,7 @@ public class AMF3Decoder
 	{
 		dataBuffer = removeHeaders(data);
 		dataPos = 0;
-		
+
 		TypedObject result = new TypedObject("Invoke");
 		if (dataBuffer[0] == 0x00)
 		{
@@ -128,7 +128,7 @@ public class AMF3Decoder
 		dataPos = 0;
 
 		Object result = decode();
-		
+
 		if (dataPos != dataBuffer.length)
 			throw new EncodingException("Did not consume entire buffer: " + dataPos + " of " + dataBuffer.length);
 
@@ -441,10 +441,10 @@ public class AMF3Decoder
 			}
 
 			TypedObject ret = new TypedObject(cd.type);
-			
+
 			// Need to add reference here due to circular references
 			objectReferences.add(ret);
-			
+
 			if (cd.externalizable)
 			{
 				if (cd.type.equals("DSK"))
@@ -454,13 +454,12 @@ public class AMF3Decoder
 					Object obj = decode();
 					ret = TypedObject.makeArrayCollection((Object[])obj);
 				}
-				else if (cd.type.equals("com.riotgames.platform.systemstate.ClientSystemStatesNotification")
-					  || cd.type.equals("com.riotgames.platform.broadcast.BroadcastNotification"))
+				else if (cd.type.equals("com.riotgames.platform.systemstate.ClientSystemStatesNotification") || cd.type.equals("com.riotgames.platform.broadcast.BroadcastNotification"))
 				{
 					int size = 0;
 					for (int i = 0; i < 4; i++)
 						size = size * 256 + readByteAsInt();
-					
+
 					String json = new String(readBytes(size));
 					ret.put("json", json);
 				}
@@ -583,8 +582,8 @@ public class AMF3Decoder
 				bits = 2;
 			}
 
-            // For forwards compatibility, read in any other flagged objects to
-            // preserve the integrity of the input stream...
+			// For forwards compatibility, read in any other flagged objects to
+			// preserve the integrity of the input stream...
 			if ((flag >> bits) != 0)
 			{
 				for (int o = bits; o < 6; o++)
@@ -601,22 +600,22 @@ public class AMF3Decoder
 			flag = flags.get(i);
 			int bits = 0;
 
-		    if (i == 0)
-		    {
-		    	if ((flag & 0x01) != 0)
-		    		ret.put("correlationId", decode());
-		    	if ((flag & 0x02) != 0)
-		    	{
+			if (i == 0)
+			{
+				if ((flag & 0x01) != 0)
+					ret.put("correlationId", decode());
+				if ((flag & 0x02) != 0)
+				{
 					readByte();
 					byte[] temp = readByteArray();
 					ret.put("correlationIdBytes", temp);
 					ret.put("correlationId", byteArrayToID(temp));
-		    	}
-		    	bits = 2;
+				}
+				bits = 2;
 			}
 
-            // For forwards compatibility, read in any other flagged objects to
-            // preserve the integrity of the input stream...
+			// For forwards compatibility, read in any other flagged objects to
+			// preserve the integrity of the input stream...
 			if ((flag >> bits) != 0)
 			{
 				for (int o = bits; o < 6; o++)
@@ -626,15 +625,15 @@ public class AMF3Decoder
 				}
 			}
 		}
-	
+
 		flags = readFlags();
 		for (int i = 0; i < flags.size(); i++)
 		{
 			flag = flags.get(i);
 			int bits = 0;
 
-            // For forwards compatibility, read in any other flagged objects to
-            // preserve the integrity of the input stream...
+			// For forwards compatibility, read in any other flagged objects to
+			// preserve the integrity of the input stream...
 			if ((flag >> bits) != 0)
 			{
 				for (int o = bits; o < 6; o++)
@@ -647,7 +646,7 @@ public class AMF3Decoder
 
 		return ret;
 	}
-	
+
 	private List<Integer> readFlags()
 	{
 		List<Integer> flags = new ArrayList<Integer>();
@@ -657,7 +656,7 @@ public class AMF3Decoder
 			flag = readByteAsInt();
 			flags.add(flag);
 		} while ((flag & 0x80) != 0);
-		
+
 		return flags;
 	}
 

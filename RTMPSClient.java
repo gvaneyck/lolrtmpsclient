@@ -47,19 +47,19 @@ public class RTMPSClient
 
 	/** Encoder */
 	protected AMF3Encoder aec = new AMF3Encoder();
-	
+
 	/** For error tracking */
 	public TypedObject lastDecode = null;
-	
+
 	/** Pending invokes */
 	protected Set<Integer> pendingInvokes = Collections.synchronizedSet(new HashSet<Integer>());
-	
+
 	/** Callback list */
 	protected Map<Integer, Callback> callbacks = Collections.synchronizedMap(new HashMap<Integer, Callback>());
-	
+
 	/** Receive handler */
 	protected ReceiveThread receiveThread = null;
-	
+
 	/**
 	 * A simple test for doing the basic RTMPS connection to Riot
 	 * 
@@ -89,7 +89,7 @@ public class RTMPSClient
 	protected RTMPSClient()
 	{
 	}
-	
+
 	/**
 	 * Sets up the client with the given parameters
 	 * 
@@ -108,7 +108,7 @@ public class RTMPSClient
 		this.swfUrl = swfUrl;
 		this.pageUrl = pageUrl;
 	}
-	
+
 	/**
 	 * Sets up the client with the given parameters
 	 * 
@@ -134,7 +134,7 @@ public class RTMPSClient
 	public void close()
 	{
 		pr.die();
-		
+
 		try
 		{
 			sslsocket.close();
@@ -142,7 +142,7 @@ public class RTMPSClient
 		catch (IOException e)
 		{
 			// Do nothing
-			//e.printStackTrace();
+			// e.printStackTrace();
 		}
 	}
 
@@ -180,13 +180,13 @@ public class RTMPSClient
 		params.put("objectEncoding", 3);
 
 		byte[] connect = aec.encodeConnect(params);
-		
+
 		out.write(connect, 0, connect.length);
 		out.flush();
 
 		TypedObject result = pr.getPacket(1);
 		DSId = (String)result.getTO("data").get("id");
-		
+
 		connected = true;
 	}
 
@@ -245,7 +245,7 @@ public class RTMPSClient
 		if (!valid)
 			throw new IOException("Server returned invalid handshake");
 	}
-	
+
 	/**
 	 * Invokes something
 	 * 
@@ -259,15 +259,15 @@ public class RTMPSClient
 	{
 		int id = nextInvokeID();
 		pendingInvokes.add(id);
-		
+
 		TypedObject wrapped = wrapBody(body, destination, operation);
 		byte[] data = aec.encodeInvoke(id, wrapped);
 		out.write(data, 0, data.length);
 		out.flush();
-		
+
 		return id;
 	}
-	
+
 	/**
 	 * Invokes something asynchronously
 	 * 
@@ -294,6 +294,7 @@ public class RTMPSClient
 
 	/**
 	 * Sets up a body in a full RemotingMessage with headers, etc.
+	 * 
 	 * @param body The body to wrap
 	 * @param destination The destination
 	 * @param operation The operation
@@ -339,10 +340,10 @@ public class RTMPSClient
 	{
 		return (connected && pr.running);
 	}
-	
+
 	/**
-	 * Removes and returns a result for a given invoke ID if it's ready
-	 * Returns null otherwise
+	 * Removes and returns a result for a given invoke ID if it's ready Returns
+	 * null otherwise
 	 * 
 	 * @param id The invoke ID
 	 * @return The invoke's result or null
@@ -353,7 +354,8 @@ public class RTMPSClient
 	}
 
 	/**
-	 * Blocks and waits for the invoke's result to be ready, then removes and returns it
+	 * Blocks and waits for the invoke's result to be ready, then removes and
+	 * returns it
 	 * 
 	 * @param id The invoke ID
 	 * @return The invoke's result
@@ -362,7 +364,7 @@ public class RTMPSClient
 	{
 		return pr.getPacket(id);
 	}
-	
+
 	/**
 	 * Waits until all results have been returned
 	 */
@@ -374,7 +376,9 @@ public class RTMPSClient
 			{
 				Thread.sleep(10);
 			}
-			catch (InterruptedException e) { }
+			catch (InterruptedException e)
+			{
+			}
 		}
 	}
 
@@ -389,7 +393,9 @@ public class RTMPSClient
 			{
 				Thread.sleep(10);
 			}
-			catch (InterruptedException e) { }
+			catch (InterruptedException e)
+			{
+			}
 		}
 	}
 
@@ -402,7 +408,7 @@ public class RTMPSClient
 	{
 		// Remove from pending invokes (only affects join())
 		pendingInvokes.remove(id);
-		
+
 		// Check if we've already received the result
 		if (peekResult(id) != null)
 			return;
@@ -410,7 +416,7 @@ public class RTMPSClient
 		else
 		{
 			callbacks.put(id, null);
-			
+
 			// Check for race condition
 			if (peekResult(id) != null)
 				callbacks.remove(id);
@@ -418,19 +424,19 @@ public class RTMPSClient
 	}
 
 	/**
-	 * Sets the handler for receive packets (things like champ select)
-	 * Kills the old handler if there is one
+	 * Sets the handler for receive packets (things like champ select) Kills the
+	 * old handler if there is one
 	 * 
 	 * @param cb The handler to use
 	 */
 	public void setReceiveHandler(Callback cb)
-	{		
+	{
 		if (receiveThread != null)
 			receiveThread.die();
-		
+
 		receiveThread = new ReceiveThread(cb);
 	}
-	
+
 	/**
 	 * Handles the receives
 	 */
@@ -438,18 +444,18 @@ public class RTMPSClient
 	{
 		private boolean running;
 		private Callback receiveHandler;
-		
+
 		public ReceiveThread(Callback cb)
 		{
 			receiveHandler = cb;
 			this.start();
 		}
-		
+
 		public void die()
 		{
 			running = false;
 		}
-		
+
 		public void run()
 		{
 			running = true;
@@ -460,12 +466,14 @@ public class RTMPSClient
 					TypedObject result = pr.receives.remove(0);
 					receiveHandler.callback(result);
 				}
-				
+
 				try
 				{
 					Thread.sleep(10);
 				}
-				catch(Exception e) { }
+				catch (Exception e)
+				{
+				}
 			}
 		}
 	}
@@ -488,10 +496,10 @@ public class RTMPSClient
 
 		/** Map of decoded packets */
 		private Map<Integer, TypedObject> results = Collections.synchronizedMap(new HashMap<Integer, TypedObject>());
-		
+
 		/** List of received packets (invoke ID = 0) */
 		private List<TypedObject> receives = Collections.synchronizedList(new LinkedList<TypedObject>());
-		
+
 		/** The AMF3 decoder */
 		private AMF3Decoder adc = new AMF3Decoder();
 
@@ -506,7 +514,7 @@ public class RTMPSClient
 			this.running = true;
 			this.start();
 		}
-		
+
 		/**
 		 * Stops the packet reader
 		 */
@@ -514,7 +522,7 @@ public class RTMPSClient
 		{
 			running = false;
 		}
-		
+
 		/**
 		 * Removes and returns a result for a given invoke ID if it's ready
 		 * Returns null otherwise
@@ -534,7 +542,8 @@ public class RTMPSClient
 		}
 
 		/**
-		 * Blocks and waits for the invoke's result to be ready, then removes and returns it
+		 * Blocks and waits for the invoke's result to be ready, then removes
+		 * and returns it
 		 * 
 		 * @param id The invoke ID
 		 * @return The invoke's result
@@ -547,7 +556,9 @@ public class RTMPSClient
 				{
 					Thread.sleep(10);
 				}
-				catch (Exception e) { }
+				catch (Exception e)
+				{
+				}
 			}
 
 			if (!running)
@@ -570,7 +581,8 @@ public class RTMPSClient
 				{
 					if (dataSize == -1)
 					{
-						// Read header to find out how much more we need to read before decoding
+						// Read header to find out how much more we need to read
+						// before decoding
 						byte[] header = new byte[12];
 						in.read(header, 0, 12);
 						messageType = header[7];
@@ -589,7 +601,8 @@ public class RTMPSClient
 						while (pos < dataSize)
 						{
 							dataBuffer.add((byte)in.read());
-							if (pos != 0 && pos % 128 == 0) // Read extra byte for chunking
+							if (pos != 0 && pos % 128 == 0) // Read extra byte
+															// for chunking
 								dataBuffer.add((byte)in.read());
 							pos++;
 						}
@@ -609,7 +622,7 @@ public class RTMPSClient
 
 						dataSize = -1;
 						dataBuffer = new ArrayList<Byte>();
-						
+
 						TypedObject result = null;
 						adc.reset();
 						if (messageType == 0x14) // Connect

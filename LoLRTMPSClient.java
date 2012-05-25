@@ -34,10 +34,10 @@ public class LoLRTMPSClient extends RTMPSClient
 	private String authToken;
 	private String sessionToken;
 	private int accountID;
-	
+
 	/** Heartbeat */
 	private HeartbeatThread hb;
-	
+
 	/**
 	 * A basic test for LoLRTMPSClient
 	 * 
@@ -47,20 +47,20 @@ public class LoLRTMPSClient extends RTMPSClient
 	{
 		String user = "qweasn";
 		String pass = "123qwe";
-		
+
 		String summoner = "Jabe";
-		
-		LoLRTMPSClient client = new LoLRTMPSClient("NA", "1.59.FOOBAR", user, pass);
+
+		LoLRTMPSClient client = new LoLRTMPSClient("NA", "1.60.FOOBAR", user, pass);
 
 		try
 		{
 			int id;
 			client.connectAndLogin();
-			
+
 			// Synchronous invoke
 			id = client.writeInvoke("summonerService", "getSummonerByName", new Object[] { summoner });
 			System.out.println(client.getResult(id));
-			
+
 			// Asynchronous invoke
 			client.writeInvokeWithCallback("summonerService", "getSummonerByName", new Object[] { summoner },
 					new Callback()
@@ -70,9 +70,9 @@ public class LoLRTMPSClient extends RTMPSClient
 							System.out.println(result);
 						}
 					});
-			
+
 			client.join(); // Wait for all current requests to finish
-			
+
 			client.close();
 		}
 		catch (Exception e)
@@ -94,7 +94,8 @@ public class LoLRTMPSClient extends RTMPSClient
 	 * Sets up a RTMPSClient for this client to use
 	 * 
 	 * @param region The region to connect to (NA/EUW/EUN)
-	 * @param clientVersion The current client version for LoL (top left of client)
+	 * @param clientVersion The current client version for LoL (top left of
+	 *            client)
 	 * @param user The user to login as
 	 * @param pass The user's password
 	 */
@@ -124,8 +125,8 @@ public class LoLRTMPSClient extends RTMPSClient
 		}
 		else
 		{
-			System.out.println("Invalid server: " + region);
-			System.out.println("Valid servers are: NA, EUW, EUN");
+			System.out.println("Invalid region: " + region);
+			System.out.println("Valid region are: NA, EUW, EUN");
 			System.exit(0);
 		}
 
@@ -145,7 +146,7 @@ public class LoLRTMPSClient extends RTMPSClient
 		connect(); // Will throw the connection exception
 
 		TypedObject result, body;
-		
+
 		// Login 1
 		body = new TypedObject("com.riotgames.platform.login.AuthenticationCredentials");
 		body.put("password", pass);
@@ -159,66 +160,49 @@ public class LoLRTMPSClient extends RTMPSClient
 		body.put("username", user);
 		body.put("authToken", authToken);
 		int id = writeInvoke("loginService", "login", new Object[] { body });
-		
+
 		// Read relevant data
 		result = getResult(id);
 		body = result.getTO("data").getTO("body");
-        sessionToken = (String)body.get("token");
-        accountID = ((Double)body.getTO("accountSummary").get("accountId")).intValue();
+		sessionToken = (String)body.get("token");
+		accountID = ((Double)body.getTO("accountSummary").get("accountId")).intValue();
 
 		// Login 2
-        byte[] encbuff = null;
+		byte[] encbuff = null;
 		encbuff = (user.toLowerCase() + ":" + sessionToken).getBytes("UTF-8");
 
-        body = wrapBody(Base64.encodeBytes(encbuff), "auth", 8);
-        body.type = "flex.messaging.messages.CommandMessage";
+		body = wrapBody(Base64.encodeBytes(encbuff), "auth", 8);
+		body.type = "flex.messaging.messages.CommandMessage";
 
 		id = nextInvokeID();
 		byte[] data = aec.encodeInvoke(id, body);
 		out.write(data, 0, data.length);
 		out.flush();
-		
+
 		// Read result (and discard)
 		result = getResult(id);
-		
+
 		// Start the heartbeat
 		hb = new HeartbeatThread();
-		
+
 		// TODO:Subscribe
 		/*
-	      "ServiceCall": {
-	        "$type": "FluorineFx.Messaging.Rtmp.Service.PendingCall, FluorineFx",
-	        "Result": null,
-	        "IsSuccess": false,
-	        "ServiceMethodName": null,
-	        "ServiceName": null,
-	        "Arguments": {
-	          "$type": "System.Object[], mscorlib",
-	          "$values": [
-	            {
-	              "$type": "FluorineFx.Messaging.Messages.CommandMessage, FluorineFx",
-	              "operation": 0,
-	              "correlationId": "",
-	              "timestamp": 0,
-	              "timeToLive": 0,
-	              "messageId": "F9C975CA-3255-66CE-3E24-B4EDB21426F9",
-	              "destination": "messagingDestination",
-	              "body": {
-	                "$type": "FluorineFx.ASObject, FluorineFx",
-	                "TypeName": null
-	              },
-	              "headers": {
-	                "$type": "FluorineFx.ASObject, FluorineFx",
-	                "DSRemoteCredentialsCharset": null,
-	                "DSEndpoint": "my-rtmps",
-	                "DSId": "ADB86BAF-441D-4B4C-0F69-62B6A800AD00",
-	                "DSRemoteCredentials": "",
-	                "DSSubtopic": "bc" cn-41222 gn-41222
-	              },
-	              "clientId": "bc-41222" cn-41222 gn-41222
-	            }
-	          ]
-	        },*/		
+		 * "ServiceCall": { "$type":
+		 * "FluorineFx.Messaging.Rtmp.Service.PendingCall, FluorineFx",
+		 * "Result": null, "IsSuccess": false, "ServiceMethodName": null,
+		 * "ServiceName": null, "Arguments": { "$type":
+		 * "System.Object[], mscorlib", "$values": [ { "$type":
+		 * "FluorineFx.Messaging.Messages.CommandMessage, FluorineFx",
+		 * "operation": 0, "correlationId": "", "timestamp": 0, "timeToLive": 0,
+		 * "messageId": "F9C975CA-3255-66CE-3E24-B4EDB21426F9", "destination":
+		 * "messagingDestination", "body": { "$type":
+		 * "FluorineFx.ASObject, FluorineFx", "TypeName": null }, "headers": {
+		 * "$type": "FluorineFx.ASObject, FluorineFx",
+		 * "DSRemoteCredentialsCharset": null, "DSEndpoint": "my-rtmps", "DSId":
+		 * "ADB86BAF-441D-4B4C-0F69-62B6A800AD00", "DSRemoteCredentials": "",
+		 * "DSSubtopic": "bc" cn-41222 gn-41222 }, "clientId": "bc-41222"
+		 * cn-41222 gn-41222 } ] },
+		 */
 	}
 
 	/**
@@ -244,7 +228,8 @@ public class LoLRTMPSClient extends RTMPSClient
 		// --- OR ---
 		// {"node":388,"vcap":20000,"rate":30,
 		// "tickers":[
-		// {"id":267284,"node":388,"champ":"Soraka","current":248118}, CHAMP MATTERS
+		// {"id":267284,"node":388,"champ":"Soraka","current":248118}, CHAMP
+		// MATTERS
 		// {"id":266782,"node":389,"champ":"Soraka","current":247595},
 		// {"id":269287,"node":390,"champ":"Soraka","current":249444},
 		// {"id":270005,"node":387,"champ":"Soraka","current":249735},
@@ -308,14 +293,21 @@ public class LoLRTMPSClient extends RTMPSClient
 			idx = response.indexOf("delay");
 			int sleeptime = Integer.parseInt(response.substring(idx + 7, response.indexOf(",", idx + 7)));
 
-			// rate is how many people are processed every queue update (I think?)
+			// rate is how many people are processed every queue update (I
+			// think?)
 			idx = response.indexOf("rate");
 			int rate = Integer.parseInt(response.substring(idx + 6, response.indexOf(",", idx + 6)));
 
 			// Request the queue status until there's only 'rate' left to go
 			while (cur + rate < id)
 			{
-				try { Thread.sleep(sleeptime); } catch (InterruptedException e) { } // Sleep until the queue updates
+				try
+				{
+					Thread.sleep(sleeptime);
+				}
+				catch (InterruptedException e)
+				{
+				} // Sleep until the queue updates
 				response = readURL(loginQueue + "login-queue/rest/queue/ticker/" + champ);
 				idx = response.indexOf(node) + 3 + node.length();
 				cur = hexToInt(response.substring(idx, response.indexOf("\"", idx)));
@@ -325,7 +317,13 @@ public class LoLRTMPSClient extends RTMPSClient
 			response = readURL(loginQueue + "login-queue/rest/queue/authToken/" + user);
 			while (!response.contains("token"))
 			{
-				try { Thread.sleep(sleeptime / 10); } catch (InterruptedException e) { }
+				try
+				{
+					Thread.sleep(sleeptime / 10);
+				}
+				catch (InterruptedException e)
+				{
+				}
 				response = readURL(loginQueue + "login-queue/rest/queue/authToken/" + user);
 			}
 		}
@@ -377,6 +375,7 @@ public class LoLRTMPSClient extends RTMPSClient
 
 	/**
 	 * Converts a hex string to an integer
+	 * 
 	 * @param hex The hex string
 	 * @return The equivalent integer
 	 */
@@ -394,27 +393,27 @@ public class LoLRTMPSClient extends RTMPSClient
 
 		return total;
 	}
-	
+
 	/**
-	 * Executes a LCDSHeartBeat every 2 minutes 
+	 * Executes a LCDSHeartBeat every 2 minutes
 	 */
 	class HeartbeatThread extends Thread
 	{
 		private boolean running;
 		private int heartbeat;
 		private SimpleDateFormat sdf = new SimpleDateFormat("ddd MMM d yyyy HH:mm:ss 'GMTZ'");
-		
+
 		public HeartbeatThread()
 		{
 			this.heartbeat = 1;
 			this.start();
 		}
-		
+
 		public void die()
 		{
 			running = false;
 		}
-		
+
 		public void run()
 		{
 			running = true;
@@ -422,17 +421,18 @@ public class LoLRTMPSClient extends RTMPSClient
 			{
 				try
 				{
-					int id = writeInvoke("loginService", "performLCDSHeartBeat",
-							new Object[] { accountID, sessionToken, heartbeat, sdf.format(new Date()) });
-					
+					int id = writeInvoke("loginService", "performLCDSHeartBeat", new Object[] { accountID, sessionToken, heartbeat, sdf.format(new Date()) });
+
 					TypedObject result = getResult(id);
 					// Ignore result for now
 
 					heartbeat++;
-					
+
 					Thread.sleep(120000);
 				}
-				catch (Exception e) { } // Ignored for now
+				catch (Exception e)
+				{
+				} // Ignored for now
 			}
 		}
 	}
