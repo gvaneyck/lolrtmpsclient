@@ -183,6 +183,42 @@ public class LoLRTMPSClient extends RTMPSClient
 		
 		// Start the heartbeat
 		hb = new HeartbeatThread();
+		
+		// TODO:Subscribe
+		/*
+	      "ServiceCall": {
+	        "$type": "FluorineFx.Messaging.Rtmp.Service.PendingCall, FluorineFx",
+	        "Result": null,
+	        "IsSuccess": false,
+	        "ServiceMethodName": null,
+	        "ServiceName": null,
+	        "Arguments": {
+	          "$type": "System.Object[], mscorlib",
+	          "$values": [
+	            {
+	              "$type": "FluorineFx.Messaging.Messages.CommandMessage, FluorineFx",
+	              "operation": 0,
+	              "correlationId": "",
+	              "timestamp": 0,
+	              "timeToLive": 0,
+	              "messageId": "F9C975CA-3255-66CE-3E24-B4EDB21426F9",
+	              "destination": "messagingDestination",
+	              "body": {
+	                "$type": "FluorineFx.ASObject, FluorineFx",
+	                "TypeName": null
+	              },
+	              "headers": {
+	                "$type": "FluorineFx.ASObject, FluorineFx",
+	                "DSRemoteCredentialsCharset": null,
+	                "DSEndpoint": "my-rtmps",
+	                "DSId": "ADB86BAF-441D-4B4C-0F69-62B6A800AD00",
+	                "DSRemoteCredentials": "",
+	                "DSSubtopic": "bc" cn-41222 gn-41222
+	              },
+	              "clientId": "bc-41222" cn-41222 gn-41222
+	            }
+	          ]
+	        },*/		
 	}
 
 	/**
@@ -386,8 +422,11 @@ public class LoLRTMPSClient extends RTMPSClient
 			{
 				try
 				{
-					writeInvoke("loginService", "performLCDSHeartBeat",
+					int id = writeInvoke("loginService", "performLCDSHeartBeat",
 							new Object[] { accountID, sessionToken, heartbeat, sdf.format(new Date()) });
+					
+					TypedObject result = getResult(id);
+					// Ignore result for now
 
 					heartbeat++;
 					
