@@ -134,6 +134,9 @@ public class RTMPSClient
 	public void close()
 	{
 		pr.die();
+		
+		if (receiveThread != null)
+			receiveThread.die();
 
 		try
 		{
@@ -342,8 +345,8 @@ public class RTMPSClient
 	}
 
 	/**
-	 * Removes and returns a result for a given invoke ID if it's ready Returns
-	 * null otherwise
+	 * Removes and returns a result for a given invoke ID if it's ready
+	 * Returns null otherwise
 	 * 
 	 * @param id The invoke ID
 	 * @return The invoke's result or null
@@ -424,8 +427,8 @@ public class RTMPSClient
 	}
 
 	/**
-	 * Sets the handler for receive packets (things like champ select) Kills the
-	 * old handler if there is one
+	 * Sets the handler for receive packets (things like champ select)
+	 * Kills the old handler if there is one
 	 * 
 	 * @param cb The handler to use
 	 */

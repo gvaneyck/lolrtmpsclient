@@ -94,8 +94,7 @@ public class LoLRTMPSClient extends RTMPSClient
 	 * Sets up a RTMPSClient for this client to use
 	 * 
 	 * @param region The region to connect to (NA/EUW/EUN)
-	 * @param clientVersion The current client version for LoL (top left of
-	 *            client)
+	 * @param clientVersion The current client version for LoL (top left of client)
 	 * @param user The user to login as
 	 * @param pass The user's password
 	 */
@@ -261,8 +260,7 @@ public class LoLRTMPSClient extends RTMPSClient
 
 		// IF QUEUE
 		// login-queue/rest/queue/ticker/CHAMPHERE
-		// {"backlog":
-		// "8","387":"3d23b","388":"3cba5","389":"3c9ac","390":"3d10a","391":"3cc67"}
+		// {"backlog":"8","387":"3d23b","388":"3cba5","389":"3c9ac","390":"3d10a","391":"3cc67"}
 
 		// THEN
 		// login-queue/rest/queue/authToken/USERHERE
@@ -289,70 +287,77 @@ public class LoLRTMPSClient extends RTMPSClient
 
 		// Read the response
 		String response = readAll(connection.getInputStream());
+		TypedObject result = (TypedObject)JSON.parse(response);
 
 		// Handle login queue
 		int idx;
-		if (!response.contains("token"))
+		if (!result.containsKey("token"))
 		{
-			// node is our login queue
-			idx = response.indexOf("node");
-			String node = response.substring(idx + 6, response.indexOf(",", idx + 6));
-
-			// champ is the name of our login queue
-			idx = response.lastIndexOf("champ");
-			String champ = response.substring(idx + 8, response.indexOf("\"", idx + 8));
-
-			// id is our ticket in line
-			idx = response.lastIndexOf("node\":" + node);
-			idx = response.substring(0, idx).lastIndexOf("id");
-			int id = Integer.parseInt(response.substring(idx + 4, response.indexOf(",", idx + 4)));
-
-			// cur is the current ticket being processed
-			idx = response.indexOf("current", idx);
-			int cur = Integer.parseInt(response.substring(idx + 9, response.indexOf("}", idx + 9)));
-
-			// delay is how often the queue status updates
-			idx = response.indexOf("delay");
-			int sleeptime = Integer.parseInt(response.substring(idx + 7, response.indexOf(",", idx + 7)));
-
-			// rate is how many people are processed every queue update (I
-			// think?)
-			idx = response.indexOf("rate");
-			int rate = Integer.parseInt(response.substring(idx + 6, response.indexOf(",", idx + 6)));
+			int node = (Integer)result.get("node"); // Our login queue ID
+			String nodeStr = "" + node;
+			String champ = (String)result.get("champ"); // The name of our login queue
+			int rate = (Integer)result.get("rate"); // How many tickets are processed every queue update
+			int delay = (Integer)result.get("delay"); // How often the queue status updates
+			
+			int id = 0;
+			int cur = 0;
+			Object[] tickers = (Object[])result.get("tickers");
+			for (Object o : tickers)
+			{
+				TypedObject to = (TypedObject)o;
+				
+				// Find our queue
+				int tnode = (Integer)to.get("node");
+				if (tnode != node)
+					continue;
+				
+				id = (Integer)to.get("id"); // Our ticket in line
+				cur = (Integer)to.get("current"); // The current ticket being processed
+				break;
+			}
+			
+			// Let the user know
+			System.out.println("In login queue, #" + (id - cur) + " in line");
 
 			// Request the queue status until there's only 'rate' left to go
-			while (cur + rate < id)
+			while (id - cur > rate)
 			{
-				try
-				{
-					Thread.sleep(sleeptime);
-				}
-				catch (InterruptedException e)
-				{
-				} // Sleep until the queue updates
+				sleep(delay); // Sleep until the queue updates
 				response = readURL(loginQueue + "login-queue/rest/queue/ticker/" + champ);
-				idx = response.indexOf(node) + 3 + node.length();
-				cur = hexToInt(response.substring(idx, response.indexOf("\"", idx)));
+				result = (TypedObject)JSON.parse(response);
+			
+				cur = hexToInt((String)result.get(nodeStr));
+				System.out.println("In login queue, #" + (id - cur) + " in line");
 			}
 
 			// Then try getting our token repeatedly
 			response = readURL(loginQueue + "login-queue/rest/queue/authToken/" + user);
 			while (!response.contains("token"))
 			{
-				try
-				{
-					Thread.sleep(sleeptime / 10);
-				}
-				catch (InterruptedException e)
-				{
-				}
+				sleep(delay / 10);
 				response = readURL(loginQueue + "login-queue/rest/queue/authToken/" + user);
 			}
 		}
 
 		// Read the auth token
-		idx = response.indexOf("token") + 8;
-		authToken = response.substring(idx, idx + 36);
+		authToken = (String)result.get("token");
+	}
+	
+	/**
+	 * Alias for Thread.sleep to get rid of the try/catch
+	 * 
+	 * @param ms The number of milliseconds to sleep
+	 */
+	private void sleep(int ms)
+	{
+		try
+		{
+			Thread.sleep(ms);
+		}
+		catch (InterruptedException e)
+		{
+			// Ignored
+		}
 	}
 
 	/**
