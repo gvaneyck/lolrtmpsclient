@@ -461,7 +461,8 @@ public class AMF3Decoder
 						size = size * 256 + readByteAsInt();
 
 					String json = new String(readBytes(size));
-					ret.put("json", json);
+					ret = (TypedObject)JSON.parse(json);
+					ret.type = cd.type;
 				}
 				else
 					throw new NotImplementedException("Externalizable not handled for " + cd.type);
@@ -672,7 +673,7 @@ public class AMF3Decoder
 		{
 			if (i == 4 || i == 6 || i == 8 || i == 10)
 				ret.append('-');
-			ret.append(String.format("%02x", data[i])); // Casing matters!
+			ret.append(String.format("%02x", data[i]));
 		}
 
 		return ret.toString();

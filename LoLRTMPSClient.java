@@ -17,7 +17,7 @@ import javax.net.ssl.HttpsURLConnection;
 public class LoLRTMPSClient extends RTMPSClient
 {
 	/** Server information */
-	private static final int port = 2099;
+	private static final int port = 3099;
 	private String server;
 
 	/** Login information */
@@ -163,6 +163,9 @@ public class LoLRTMPSClient extends RTMPSClient
 
 		// Read relevant data
 		result = getResult(id);
+		if ("_error".equals(result.get("result")))
+			throw new IOException(getErrorMessage(result));
+		
 		body = result.getTO("data").getTO("body");
 		sessionToken = (String)body.get("token");
 		accountID = ((Double)body.getTO("accountSummary").get("accountId")).intValue();
@@ -204,11 +207,31 @@ public class LoLRTMPSClient extends RTMPSClient
 		 * cn-41222 gn-41222 } ] },
 		 */
 	}
+	
+	/**
+	 * Closes the connection
+	 */
+	public void close()
+	{
+		hb.die();
+		super.close();
+	}
+	
+	/**
+	 * Extracts the rootCause from an error message
+	 *  
+	 * @param message The packet result
+	 * @return The error message
+	 */
+	public String getErrorMessage(TypedObject message)
+	{
+		return (String)message.getTO("data").getTO("rootCause").get("message");
+	}
 
 	/**
 	 * Calls Riot's IP address informer
 	 * 
-	 * throws IOException
+	 * @throws IOException
 	 */
 	private void getIPAddress() throws IOException
 	{
@@ -228,8 +251,7 @@ public class LoLRTMPSClient extends RTMPSClient
 		// --- OR ---
 		// {"node":388,"vcap":20000,"rate":30,
 		// "tickers":[
-		// {"id":267284,"node":388,"champ":"Soraka","current":248118}, CHAMP
-		// MATTERS
+		// {"id":267284,"node":388,"champ":"Soraka","current":248118}, CHAMP MATTERS
 		// {"id":266782,"node":389,"champ":"Soraka","current":247595},
 		// {"id":269287,"node":390,"champ":"Soraka","current":249444},
 		// {"id":270005,"node":387,"champ":"Soraka","current":249735},
@@ -421,6 +443,7 @@ public class LoLRTMPSClient extends RTMPSClient
 			{
 				try
 				{
+					long hbTime = System.currentTimeMillis();
 					int id = writeInvoke("loginService", "performLCDSHeartBeat", new Object[] { accountID, sessionToken, heartbeat, sdf.format(new Date()) });
 
 					TypedObject result = getResult(id);
@@ -428,11 +451,13 @@ public class LoLRTMPSClient extends RTMPSClient
 
 					heartbeat++;
 
-					Thread.sleep(120000);
+					while (running && System.currentTimeMillis() - hbTime < 120000)
+						Thread.sleep(100);
 				}
 				catch (Exception e)
 				{
-				} // Ignored for now
+					// Ignored for now
+				}
 			}
 		}
 	}
