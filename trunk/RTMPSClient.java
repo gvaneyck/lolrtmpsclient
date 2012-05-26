@@ -647,8 +647,11 @@ public class RTMPSClient
 			}
 			catch (IOException e)
 			{
-				System.out.println("Error while reading from stream");
-				e.printStackTrace();
+				if (running)
+				{
+					System.out.println("Error while reading from stream");
+					e.printStackTrace();
+				}
 			}
 
 			running = false;
