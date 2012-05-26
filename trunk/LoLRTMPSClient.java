@@ -332,7 +332,8 @@ public class LoLRTMPSClient extends RTMPSClient
 
 			// Then try getting our token repeatedly
 			response = readURL(loginQueue + "login-queue/rest/queue/authToken/" + user);
-			while (!response.contains("token"))
+			result = (TypedObject)JSON.parse(response);
+			while (!result.containsKey("token"))
 			{
 				sleep(delay / 10);
 				response = readURL(loginQueue + "login-queue/rest/queue/authToken/" + user);

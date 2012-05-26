@@ -305,7 +305,7 @@ public class RTMPSClient
 	 */
 	protected TypedObject wrapBody(Object body, String destination, Object operation)
 	{
-		TypedObject headers = new TypedObject(null);
+		TypedObject headers = new TypedObject();
 		headers.put("DSRequestTimeout", 60);
 		headers.put("DSId", DSId);
 		headers.put("DSEndpoint", "my-rtmps");

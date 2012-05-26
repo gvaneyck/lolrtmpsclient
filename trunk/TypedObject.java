@@ -10,10 +10,18 @@ public class TypedObject extends HashMap<String, Object>
 	private static final long serialVersionUID = 1244827787088018807L;
 
 	public String type;
+	
+	/**
+	 * Creates a typed object that is simply a map (null type)
+	 */
+	public TypedObject()
+	{
+		this.type = null;
+	}
 
 	/**
-	 * Initializes the type of the object null type implies a dynamic class
-	 * (used for headers)
+	 * Initializes the type of the object, null type implies a dynamic class
+	 * (used for headers and some other things)
 	 * 
 	 * @param type The type of the object
 	 */
