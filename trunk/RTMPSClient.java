@@ -248,6 +248,25 @@ public class RTMPSClient
 		if (!valid)
 			throw new IOException("Server returned invalid handshake");
 	}
+	
+	/**
+	 * Invokes something
+	 * 
+	 * @param packet The packet completely setup just needing to be encoded
+	 * @return The invoke ID to use with getResult(), peekResult, and join()
+	 * @throws IOException
+	 */
+	public synchronized int writeInvoke(TypedObject packet) throws IOException
+	{
+		int id = nextInvokeID();
+		pendingInvokes.add(id);
+		
+		byte[] data = aec.encodeInvoke(id, packet);
+		out.write(data, 0, data.length);
+		out.flush();
+		
+		return id;
+	}
 
 	/**
 	 * Invokes something
@@ -633,6 +652,7 @@ public class RTMPSClient
 						else if (messageType == 0x11) // Invoke
 							result = adc.decodeInvoke(temp);
 
+						System.out.println(result);
 						int id = (Integer)result.get("invokeId");
 						if (id == 0)
 							receives.add(result);

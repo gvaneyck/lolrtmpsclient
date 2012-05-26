@@ -176,35 +176,36 @@ public class LoLRTMPSClient extends RTMPSClient
 		body = wrapBody(Base64.encodeBytes(encbuff), "auth", 8);
 		body.type = "flex.messaging.messages.CommandMessage";
 
-		id = nextInvokeID();
-		byte[] data = aec.encodeInvoke(id, body);
-		out.write(data, 0, data.length);
-		out.flush();
+		id = writeInvoke(body);
+		result = getResult(id); // Read result (and discard)
 
-		// Read result (and discard)
-		result = getResult(id);
+		// Subscribe to the necessary items
+		body = wrapBody(new Object[] { new TypedObject() }, "messagingDestination", 0);
+		body.type = "flex.messaging.messages.CommandMessage";
+		TypedObject headers = body.getTO("headers");
+		//headers.put("DSRemoteCredentialsCharset", null); // unneeded
+		//headers.put("DSRemoteCredentials", "");
+		
+		// bc
+		headers.put("DSSubtopic", "bc");
+		body.put("clientId", "bc-" + accountID);
+		id = writeInvoke(body);
+		result = getResult(id); // Read result and discard
+		
+		// cn
+		headers.put("DSSubtopic", "cn" + accountID);
+		body.put("clientId", "cn-" + accountID);
+		id = writeInvoke(body);
+		result = getResult(id); // Read result and discard
+
+		// gn
+		headers.put("DSSubtopic", "gn" + accountID);
+		body.put("clientId", "gn-" + accountID);
+		id = writeInvoke(body);
+		result = getResult(id); // Read result and discard
 
 		// Start the heartbeat
 		hb = new HeartbeatThread();
-
-		// TODO:Subscribe
-		/*
-		 * "ServiceCall": { "$type":
-		 * "FluorineFx.Messaging.Rtmp.Service.PendingCall, FluorineFx",
-		 * "Result": null, "IsSuccess": false, "ServiceMethodName": null,
-		 * "ServiceName": null, "Arguments": { "$type":
-		 * "System.Object[], mscorlib", "$values": [ { "$type":
-		 * "FluorineFx.Messaging.Messages.CommandMessage, FluorineFx",
-		 * "operation": 0, "correlationId": "", "timestamp": 0, "timeToLive": 0,
-		 * "messageId": "F9C975CA-3255-66CE-3E24-B4EDB21426F9", "destination":
-		 * "messagingDestination", "body": { "$type":
-		 * "FluorineFx.ASObject, FluorineFx", "TypeName": null }, "headers": {
-		 * "$type": "FluorineFx.ASObject, FluorineFx",
-		 * "DSRemoteCredentialsCharset": null, "DSEndpoint": "my-rtmps", "DSId":
-		 * "ADB86BAF-441D-4B4C-0F69-62B6A800AD00", "DSRemoteCredentials": "",
-		 * "DSSubtopic": "bc" cn-41222 gn-41222 }, "clientId": "bc-41222"
-		 * cn-41222 gn-41222 } ] },
-		 */
 	}
 	
 	/**
@@ -324,6 +325,7 @@ public class LoLRTMPSClient extends RTMPSClient
 			{
 				sleep(delay); // Sleep until the queue updates
 				response = readURL(loginQueue + "login-queue/rest/queue/ticker/" + champ);
+				System.out.println(response);
 				result = (TypedObject)JSON.parse(response);
 			
 				cur = hexToInt((String)result.get(nodeStr));
@@ -337,6 +339,7 @@ public class LoLRTMPSClient extends RTMPSClient
 			{
 				sleep(delay / 10);
 				response = readURL(loginQueue + "login-queue/rest/queue/authToken/" + user);
+				result = (TypedObject)JSON.parse(response);
 			}
 		}
 
