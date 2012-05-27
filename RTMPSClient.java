@@ -653,8 +653,8 @@ public class RTMPSClient
 							result = adc.decodeInvoke(temp);
 
 						System.out.println(result);
-						int id = (Integer)result.get("invokeId");
-						if (id == 0)
+						Integer id = (Integer)result.get("invokeId");
+						if (id == null || id == 0)
 							receives.add(result);
 						else if (callbacks.containsKey(id))
 						{
