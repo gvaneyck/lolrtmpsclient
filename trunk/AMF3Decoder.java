@@ -449,6 +449,8 @@ public class AMF3Decoder
 			{
 				if (cd.type.equals("DSK"))
 					ret = readDSK();
+				else if (cd.type.equals("DSA"))
+					ret = readDSA();
 				else if (cd.type.equals("flex.messaging.io.ArrayCollection"))
 				{
 					Object obj = decode();
@@ -465,7 +467,11 @@ public class AMF3Decoder
 					ret.type = cd.type;
 				}
 				else
+				{
+					for (int i = dataPos; i < dataBuffer.length; i++)
+						System.out.print(String.format("%02X", dataBuffer[i]));
 					throw new NotImplementedException("Externalizable not handled for " + cd.type);
+				}
 			}
 			else
 			{
@@ -530,13 +536,13 @@ public class AMF3Decoder
 	}
 
 	/**
-	 * Decodes a DSK
+	 * Decodes a DSA
 	 * 
-	 * @return The decoded DSK
+	 * @return The decoded DSA
 	 * @throws NotImplementedException
 	 * @throws EncodingException
 	 */
-	private TypedObject readDSK() throws EncodingException, NotImplementedException
+	private TypedObject readDSA() throws EncodingException, NotImplementedException
 	{
 		TypedObject ret = new TypedObject("DSK");
 
@@ -583,16 +589,7 @@ public class AMF3Decoder
 				bits = 2;
 			}
 
-			// For forwards compatibility, read in any other flagged objects to
-			// preserve the integrity of the input stream...
-			if ((flag >> bits) != 0)
-			{
-				for (int o = bits; o < 6; o++)
-				{
-					if (((flag >> o) & 1) != 0)
-						decode();
-				}
-			}
+			readRemaining(flag, bits);
 		}
 
 		flags = readFlags();
@@ -615,35 +612,28 @@ public class AMF3Decoder
 				bits = 2;
 			}
 
-			// For forwards compatibility, read in any other flagged objects to
-			// preserve the integrity of the input stream...
-			if ((flag >> bits) != 0)
-			{
-				for (int o = bits; o < 6; o++)
-				{
-					if (((flag >> o) & 1) != 0)
-						decode();
-				}
-			}
+			readRemaining(flag, bits);
 		}
+		
+		return ret;
+	}
 
-		flags = readFlags();
+	/**
+	 * Decodes a DSK
+	 * 
+	 * @return The decoded DSK
+	 * @throws NotImplementedException
+	 * @throws EncodingException
+	 */
+	private TypedObject readDSK() throws EncodingException, NotImplementedException
+	{
+		// DSK is just a DSA + extra set of flags/objects
+		TypedObject ret = readDSA();
+		ret.type = "DSK";
+		
+		List<Integer> flags = readFlags();
 		for (int i = 0; i < flags.size(); i++)
-		{
-			flag = flags.get(i);
-			int bits = 0;
-
-			// For forwards compatibility, read in any other flagged objects to
-			// preserve the integrity of the input stream...
-			if ((flag >> bits) != 0)
-			{
-				for (int o = bits; o < 6; o++)
-				{
-					if (((flag >> o) & 1) != 0)
-						decode();
-				}
-			}
-		}
+			readRemaining(flags.get(i), 0);
 
 		return ret;
 	}
@@ -659,6 +649,20 @@ public class AMF3Decoder
 		} while ((flag & 0x80) != 0);
 
 		return flags;
+	}
+	
+	private void readRemaining(int flag, int bits) throws EncodingException, NotImplementedException
+	{
+		// For forwards compatibility, read in any other flagged objects to
+		// preserve the integrity of the input stream...
+		if ((flag >> bits) != 0)
+		{
+			for (int o = bits; o < 6; o++)
+			{
+				if (((flag >> o) & 1) != 0)
+					decode();
+			}
+		}
 	}
 
 	/**

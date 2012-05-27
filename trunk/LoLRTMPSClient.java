@@ -193,13 +193,13 @@ public class LoLRTMPSClient extends RTMPSClient
 		result = getResult(id); // Read result and discard
 		
 		// cn
-		headers.put("DSSubtopic", "cn" + accountID);
+		headers.put("DSSubtopic", "cn-" + accountID);
 		body.put("clientId", "cn-" + accountID);
 		id = writeInvoke(body);
 		result = getResult(id); // Read result and discard
 
 		// gn
-		headers.put("DSSubtopic", "gn" + accountID);
+		headers.put("DSSubtopic", "gn-" + accountID);
 		body.put("clientId", "gn-" + accountID);
 		id = writeInvoke(body);
 		result = getResult(id); // Read result and discard
