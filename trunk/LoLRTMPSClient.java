@@ -273,7 +273,7 @@ public class LoLRTMPSClient extends RTMPSClient
 		String payload = "user=" + user + ",password=" + pass;
 		String query = "payload=" + URLEncoder.encode(payload, "ISO-8859-1");
 
-		URL url = new URL("https://lq.na1.lol.riotgames.com/login-queue/rest/queue/authenticate");
+		URL url = new URL(loginQueue + "login-queue/rest/queue/authenticate");
 		HttpsURLConnection connection = (HttpsURLConnection)url.openConnection();
 
 		connection.setDoOutput(true);
