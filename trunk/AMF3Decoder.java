@@ -388,10 +388,10 @@ public class AMF3Decoder
 				throw new NotImplementedException("Associative arrays are not supported");
 
 			Object[] ret = new Object[handle];
+			objectReferences.add(ret);
+
 			for (int i = 0; i < handle; i++)
 				ret[i] = decode();
-
-			objectReferences.add(ret);
 
 			return ret;
 		}
