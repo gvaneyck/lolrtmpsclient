@@ -32,6 +32,9 @@ public class JSON
 	private static Object parse(LinkedList<Character> json)
 	{
 		char c = json.removeFirst();
+		while (c == ' ')
+			c = json.removeFirst();
+		
 		switch (c)
 		{
 		case '{':
@@ -42,7 +45,7 @@ public class JSON
 
 		case '"':
 			return parseString(json);
-
+			
 		default:
 			json.addFirst(c);
 			return parseOther(json);
