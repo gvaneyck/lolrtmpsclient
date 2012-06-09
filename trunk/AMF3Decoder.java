@@ -485,7 +485,7 @@ public class AMF3Decoder
 				if (cd.dynamic)
 				{
 					String key;
-					while (!(key = readString()).isEmpty())
+					while ((key = readString()).length() != 0)
 					{
 						Object value = decode();
 						ret.put(key, value);
