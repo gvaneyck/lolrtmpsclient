@@ -22,6 +22,8 @@ import javax.net.ssl.SSLSocketFactory;
  */
 public class RTMPSClient
 {
+	public boolean debug = false;
+	
 	/** Server information */
 	protected String server;
 	protected int port;
@@ -652,7 +654,7 @@ public class RTMPSClient
 						else if (messageType == 0x11) // Invoke
 							result = adc.decodeInvoke(temp);
 
-						System.out.println(result);
+						if (debug) System.out.println(result);
 						Integer id = (Integer)result.get("invokeId");
 						if (id == null || id == 0)
 							receives.add(result);
