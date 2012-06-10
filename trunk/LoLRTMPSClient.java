@@ -325,7 +325,6 @@ public class LoLRTMPSClient extends RTMPSClient
 			{
 				sleep(delay); // Sleep until the queue updates
 				response = readURL(loginQueue + "login-queue/rest/queue/ticker/" + champ);
-				System.out.println(response);
 				result = (TypedObject)JSON.parse(response);
 			
 				cur = hexToInt((String)result.get(nodeStr));

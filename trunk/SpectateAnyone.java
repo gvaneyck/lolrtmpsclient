@@ -1,8 +1,10 @@
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -60,7 +62,7 @@ public class SpectateAnyone
 			try
 			{
 				String line;
-				BufferedReader in = new BufferedReader(new FileReader(conf));
+				BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(conf), "UTF-8"));
 				while ((line = in.readLine()) != null)
 				{
 					String[] parts = line.split("=");
