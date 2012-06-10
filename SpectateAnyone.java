@@ -259,13 +259,14 @@ public class SpectateAnyone
 					
 					// Running the process directly causes it to hang, so create a batch file and run that
 					BufferedWriter out = new BufferedWriter(new FileWriter("run.bat"));
-					out.write("cd \"" + loc + "RADS\\solutions\\lol_game_client_sln\\releases\\0.0.0." + maxGame + "\\deploy\"\n");
+					out.write(loc.substring(0, 2) + "\r\n"); // Change to drive if necessary
+					out.write("cd \"" + loc + "RADS\\solutions\\lol_game_client_sln\\releases\\0.0.0." + maxGame + "\\deploy\"\r\n");
 					out.write("start \"\" ");
 					out.write("\"" + loc + "RADS\\solutions\\lol_game_client_sln\\releases\\0.0.0." + maxGame + "\\deploy\\League of Legends.exe\" ");
 					out.write("8394 ");
 					out.write("LoLLauncher.exe ");
 					out.write("\"" + loc + "RADS\\projects\\lol_air_client\\releases\\0.0.0." + maxClient + "\\deploy\\LolClient.exe\" ");
-					out.write("\"spectator " + ip + ":" + port + " " + key + " " + gameID + " " + region + "\"\n");
+					out.write("\"spectator " + ip + ":" + port + " " + key + " " + gameID + " " + region + "\"\r\n");
 					out.flush();
 					out.close();
 					
