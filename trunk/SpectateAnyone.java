@@ -81,6 +81,12 @@ public class SpectateAnyone
 				e.printStackTrace();
 			}
 		}
+		else
+		{
+			System.out.println("config.txt did not exist.");
+			System.out.println("Please enter the following information.");
+			System.out.println();
+		}
 		
 		// Check for completeness
 		if (!(params.containsKey("user") && 
@@ -89,9 +95,7 @@ public class SpectateAnyone
 			  params.containsKey("version") && 
 			  params.containsKey("region")))
 		{
-			System.out.println("config.txt did not contain all necessary connection information.");
-			System.out.println("Fill it in to not get prompted in the future.");
-			System.out.println();
+			// Removed for now
 		}
 
 		// Get missing information
@@ -129,7 +133,6 @@ public class SpectateAnyone
 		{
 			System.out.print("Pass: ");
 			params.put("pass", getInput());
-			newinfo = true;
 		}
 		
 		// Set up config.txt if needed
@@ -140,7 +143,7 @@ public class SpectateAnyone
 				BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(conf), "UTF-8"));
 				out.write("lollocation=" + params.get("lollocation") + "\r\n");
 				out.write("user=" + params.get("user") + "\r\n");
-				out.write("pass=" + params.get("pass") + "\r\n");
+				//out.write("pass=" + params.get("pass") + "\r\n");
 				out.write("version=" + params.get("version") + "\r\n");
 				out.write("region=" + params.get("region") + "\r\n");
 				out.close();
