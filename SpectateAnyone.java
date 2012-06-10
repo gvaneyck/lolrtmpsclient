@@ -2,10 +2,12 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -135,7 +137,7 @@ public class SpectateAnyone
 		{
 			try
 			{
-				BufferedWriter out = new BufferedWriter(new FileWriter(conf));
+				BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(conf), "UTF8"));
 				out.write("lollocation=" + params.get("lollocation") + "\r\n");
 				out.write("user=" + params.get("user") + "\r\n");
 				out.write("pass=" + params.get("pass") + "\r\n");
