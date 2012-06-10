@@ -137,7 +137,7 @@ public class SpectateAnyone
 		{
 			try
 			{
-				BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(conf), "UTF8"));
+				BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(conf), "UTF-8"));
 				out.write("lollocation=" + params.get("lollocation") + "\r\n");
 				out.write("user=" + params.get("user") + "\r\n");
 				out.write("pass=" + params.get("pass") + "\r\n");
