@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -270,9 +271,20 @@ public class SpectateAnyone
 					out.flush();
 					out.close();
 					
-					// Run and delete
+					// Run (and make sure to consume output)
 					Process game = Runtime.getRuntime().exec("run.bat");
+					StreamGobbler stdout = new StreamGobbler(game.getInputStream());
+					StreamGobbler stderr = new StreamGobbler(game.getErrorStream());
 					game.waitFor();
+					
+					// Print out any data
+					//System.out.println("STDOUT");
+					//System.out.println(stdout.getData());
+					//System.out.println();
+					//System.out.println("STDERR");
+					//System.out.println(stderr.getData());
+					
+					// Delete temp file
 					File temp = new File("run.bat");
 					temp.delete();
 				}
@@ -295,5 +307,37 @@ public class SpectateAnyone
 		
 		// And close the client
 		client.close();
+	}
+}
+
+class StreamGobbler extends Thread
+{
+	private InputStream in;
+	private StringBuilder buffer = new StringBuilder();
+	
+	public StreamGobbler(InputStream in)
+	{
+		this.in = in;
+		this.start();
+	}
+	
+	public void run()
+	{
+		try
+		{
+			int c;
+			
+			while ((c = in.read()) != -1)
+				buffer.append((char)c);
+		}
+		catch (IOException e)
+		{
+			// Ignored
+		}
+	}
+	
+	public String getData()
+	{
+		return buffer.toString();
 	}
 }
