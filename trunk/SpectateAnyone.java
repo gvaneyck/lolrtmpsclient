@@ -3,7 +3,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -273,8 +272,10 @@ public class SpectateAnyone
 					
 					// Run (and make sure to consume output)
 					Process game = Runtime.getRuntime().exec("run.bat");
-					StreamGobbler stdout = new StreamGobbler(game.getInputStream());
-					StreamGobbler stderr = new StreamGobbler(game.getErrorStream());
+					//StreamGobbler stdout = new StreamGobbler(game.getInputStream());
+					//StreamGobbler stderr = new StreamGobbler(game.getErrorStream());
+					new StreamGobbler(game.getInputStream());
+					new StreamGobbler(game.getErrorStream());
 					game.waitFor();
 					
 					// Print out any data

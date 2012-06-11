@@ -291,7 +291,6 @@ public class LoLRTMPSClient extends RTMPSClient
 		TypedObject result = (TypedObject)JSON.parse(response);
 
 		// Handle login queue
-		int idx;
 		if (!result.containsKey("token"))
 		{
 			int node = (Integer)result.get("node"); // Our login queue ID
@@ -455,8 +454,7 @@ public class LoLRTMPSClient extends RTMPSClient
 					long hbTime = System.currentTimeMillis();
 					int id = writeInvoke("loginService", "performLCDSHeartBeat", new Object[] { accountID, sessionToken, heartbeat, sdf.format(new Date()) });
 
-					TypedObject result = getResult(id);
-					// Ignore result for now
+					getResult(id); // Ignore result for now
 
 					heartbeat++;
 
