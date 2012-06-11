@@ -86,9 +86,9 @@ public class RTMPSClient
 	}
 
 	/**
-	 * Hidden constructor
+	 * Basic constructor, need to use setConnectionInfo
 	 */
-	protected RTMPSClient()
+	public RTMPSClient()
 	{
 	}
 
@@ -103,12 +103,7 @@ public class RTMPSClient
 	 */
 	public RTMPSClient(String server, int port, String app, String swfUrl, String pageUrl)
 	{
-		this.server = server;
-		this.port = port;
-
-		this.app = app;
-		this.swfUrl = swfUrl;
-		this.pageUrl = pageUrl;
+		setConnectionInfo(server, port, app, swfUrl, pageUrl);
 	}
 
 	/**
@@ -281,15 +276,7 @@ public class RTMPSClient
 	 */
 	public synchronized int writeInvoke(String destination, Object operation, Object body) throws IOException
 	{
-		int id = nextInvokeID();
-		pendingInvokes.add(id);
-
-		TypedObject wrapped = wrapBody(body, destination, operation);
-		byte[] data = aec.encodeInvoke(id, wrapped);
-		out.write(data, 0, data.length);
-		out.flush();
-
-		return id;
+		return writeInvoke(wrapBody(body, destination, operation));
 	}
 
 	/**
@@ -304,16 +291,8 @@ public class RTMPSClient
 	 */
 	public synchronized int writeInvokeWithCallback(String destination, Object operation, Object body, Callback cb) throws IOException
 	{
-		int id = nextInvokeID();
-		callbacks.put(id, cb);
-		pendingInvokes.add(id);
-
-		TypedObject wrapped = wrapBody(body, destination, operation);
-		byte[] data = aec.encodeInvoke(id, wrapped);
-		out.write(data, 0, data.length);
-		out.flush();
-
-		return id;
+		callbacks.put(invokeID, cb); // Register the callback
+		return writeInvoke(destination, operation, body);
 	}
 
 	/**
@@ -644,9 +623,11 @@ public class RTMPSClient
 						for (int i = 0; i < temp.length; i++)
 							temp[i] = dataBuffer.get(i);
 
+						// Reset state
 						dataSize = -1;
 						dataBuffer = new ArrayList<Byte>();
 
+						// Decode result
 						TypedObject result = null;
 						adc.reset();
 						if (messageType == 0x14) // Connect
@@ -654,10 +635,14 @@ public class RTMPSClient
 						else if (messageType == 0x11) // Invoke
 							result = adc.decodeInvoke(temp);
 
+						// Store result
 						if (debug) System.out.println(result);
 						Integer id = (Integer)result.get("invokeId");
+						
 						if (id == null || id == 0)
+						{
 							receives.add(result);
+						}
 						else if (callbacks.containsKey(id))
 						{
 							Callback cb = callbacks.remove(id);
@@ -665,7 +650,9 @@ public class RTMPSClient
 								cb.callback(result);
 						}
 						else
+						{
 							results.put(id, result);
+						}
 						pendingInvokes.remove(id);
 					}
 				}
