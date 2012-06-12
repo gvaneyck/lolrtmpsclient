@@ -3,7 +3,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -238,7 +237,7 @@ public class SpectateAnyone
 				String filename = toSpec.substring(1).trim();
 				try
 				{
-					BufferedReader in = new BufferedReader(new FileReader(filename));
+					BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(conf), "UTF-8"));
 					String line;
 					while ((line = in.readLine()) != null)
 					{
