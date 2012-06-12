@@ -3,6 +3,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -176,7 +177,7 @@ public class SpectateAnyone
 		File clientDir = new File(loc + "RADS\\projects\\lol_air_client\\releases\\");
 		if (!gameDir.exists() || !clientDir.exists())
 		{
-			System.out.println("The installation location does not appear to be valid, make sure it is correct");
+			System.err.println("The installation location does not appear to be valid, make sure it is correct");
 			System.exit(0);
 		}
 		
@@ -224,81 +225,126 @@ public class SpectateAnyone
 		// Spectate people
 		System.out.println();
 		System.out.println("Hit enter without typing anything to exit");
+		System.out.println("!filename.txt will print out the summoners from 'filename.txt' that can be observed");
+		System.out.println("E.g. '!list.txt' will read from list.txt, use one summoner name per line");
+		System.out.println();
 		System.out.print("Spectate whom? ");
 		String toSpec = getInput();
 		while (toSpec.length() != 0)
 		{
-			try
+			// Check game status of all summoners in file
+			if (toSpec.startsWith("!"))
 			{
-				// Get spectator info
-				int id = client.writeInvoke("gameService", "retrieveInProgressSpectatorGameInfo", new Object[] { toSpec });
-				TypedObject result = client.getResult(id);
-				TypedObject data = result.getTO("data");
-
-				// Handle errors
-				if (result.get("result").equals("_error"))
+				String filename = toSpec.substring(1).trim();
+				try
 				{
-					if (data.getTO("rootCause").type.equals("com.riotgames.platform.messaging.UnexpectedServiceException"))
-						System.out.println("No summoner found for " + toSpec);
-					else if (data.getTO("rootCause").type.equals("com.riotgames.platform.game.GameNotFoundException"))
-						System.out.println(toSpec + " is not currently in a game");
+					BufferedReader in = new BufferedReader(new FileReader(filename));
+					String line;
+					while ((line = in.readLine()) != null)
+					{
+						line = line.trim();
+						if (line.length() < 4)
+							continue;
+						
+						// Invoke asynchronously
+						final String name = line;
+						client.writeInvokeWithCallback("gameService", "retrieveInProgressSpectatorGameInfo", new Object[] { name },
+								new Callback()
+								{
+									public void callback(TypedObject result)
+									{
+										if (result.get("result").equals("_result"))
+											System.out.println(name);
+									}
+								});
+						
+					}
+					in.close();
+					
+					// Wait for all requests to finish;
+					client.join();
+				}
+				catch (IOException e)
+				{
+					System.err.println("Error reading from " + filename + ":");
+					e.printStackTrace();
+				}
+			}
+			// Attempt to spectate a summoner
+			else
+			{
+				try
+				{
+					// Get spectator info
+					int id = client.writeInvoke("gameService", "retrieveInProgressSpectatorGameInfo", new Object[] { toSpec });
+					TypedObject result = client.getResult(id);
+					TypedObject data = result.getTO("data");
+	
+					// Handle errors
+					if (result.get("result").equals("_error"))
+					{
+						if (data.getTO("rootCause").type.equals("com.riotgames.platform.messaging.UnexpectedServiceException"))
+							System.err.println("No summoner found for " + toSpec);
+						else if (data.getTO("rootCause").type.equals("com.riotgames.platform.game.GameNotFoundException"))
+							System.err.println(toSpec + " is not currently in a game");
+						else
+						{
+							System.err.println("Encountered an error when retrieving spectator information for " + toSpec + ":");
+							System.err.println(data.getTO("rootCause").get("localizedMessage"));
+						}
+					}
 					else
 					{
-						System.out.println("Encountered an error when retrieving spectator information for " + toSpec + ":");
-						System.out.println(data.getTO("rootCause").get("localizedMessage"));
+						// Extract needed info
+						TypedObject cred = data.getTO("body").getTO("playerCredentials");
+						String ip = (String)cred.get("observerServerIp");
+						int port = (Integer)cred.get("observerServerPort");
+						String key = (String)cred.get("observerEncryptionKey");
+						int gameID = ((Double)cred.get("gameId")).intValue();
+						
+						// Running the process directly causes it to hang, so create a batch file and run that
+						BufferedWriter out = new BufferedWriter(new FileWriter("run.bat"));
+						out.write(loc.substring(0, 2) + "\r\n"); // Change to drive if necessary
+						out.write("cd \"" + loc + "RADS\\solutions\\lol_game_client_sln\\releases\\0.0.0." + maxGame + "\\deploy\"\r\n");
+						out.write("start \"\" ");
+						out.write("\"" + loc + "RADS\\solutions\\lol_game_client_sln\\releases\\0.0.0." + maxGame + "\\deploy\\League of Legends.exe\" ");
+						out.write("8394 ");
+						out.write("LoLLauncher.exe ");
+						out.write("\"" + loc + "RADS\\projects\\lol_air_client\\releases\\0.0.0." + maxClient + "\\deploy\\LolClient.exe\" ");
+						out.write("\"spectator " + ip + ":" + port + " " + key + " " + gameID + " " + region + "\"\r\n");
+						out.flush();
+						out.close();
+						
+						// Run (and make sure to consume output)
+						Process game = Runtime.getRuntime().exec("run.bat");
+						//StreamGobbler stdout = new StreamGobbler(game.getInputStream());
+						//StreamGobbler stderr = new StreamGobbler(game.getErrorStream());
+						new StreamGobbler(game.getInputStream());
+						new StreamGobbler(game.getErrorStream());
+						game.waitFor();
+						
+						// Print out any data
+						//System.out.println("STDOUT");
+						//System.out.println(stdout.getData());
+						//System.out.println();
+						//System.out.println("STDERR");
+						//System.out.println(stderr.getData());
+						
+						// Delete temp file
+						File temp = new File("run.bat");
+						temp.delete();
 					}
 				}
-				else
+				catch (IOException e)
 				{
-					// Extract needed info
-					TypedObject cred = data.getTO("body").getTO("playerCredentials");
-					String ip = (String)cred.get("observerServerIp");
-					int port = (Integer)cred.get("observerServerPort");
-					String key = (String)cred.get("observerEncryptionKey");
-					int gameID = ((Double)cred.get("gameId")).intValue();
-					
-					// Running the process directly causes it to hang, so create a batch file and run that
-					BufferedWriter out = new BufferedWriter(new FileWriter("run.bat"));
-					out.write(loc.substring(0, 2) + "\r\n"); // Change to drive if necessary
-					out.write("cd \"" + loc + "RADS\\solutions\\lol_game_client_sln\\releases\\0.0.0." + maxGame + "\\deploy\"\r\n");
-					out.write("start \"\" ");
-					out.write("\"" + loc + "RADS\\solutions\\lol_game_client_sln\\releases\\0.0.0." + maxGame + "\\deploy\\League of Legends.exe\" ");
-					out.write("8394 ");
-					out.write("LoLLauncher.exe ");
-					out.write("\"" + loc + "RADS\\projects\\lol_air_client\\releases\\0.0.0." + maxClient + "\\deploy\\LolClient.exe\" ");
-					out.write("\"spectator " + ip + ":" + port + " " + key + " " + gameID + " " + region + "\"\r\n");
-					out.flush();
-					out.close();
-					
-					// Run (and make sure to consume output)
-					Process game = Runtime.getRuntime().exec("run.bat");
-					//StreamGobbler stdout = new StreamGobbler(game.getInputStream());
-					//StreamGobbler stderr = new StreamGobbler(game.getErrorStream());
-					new StreamGobbler(game.getInputStream());
-					new StreamGobbler(game.getErrorStream());
-					game.waitFor();
-					
-					// Print out any data
-					//System.out.println("STDOUT");
-					//System.out.println(stdout.getData());
-					//System.out.println();
-					//System.out.println("STDERR");
-					//System.out.println(stderr.getData());
-					
-					// Delete temp file
-					File temp = new File("run.bat");
-					temp.delete();
+					System.err.println("Encountered an error when trying to retrieve spectate information for " + toSpec + ":");
+					e.printStackTrace();
 				}
-			}
-			catch (IOException e)
-			{
-				System.out.println("Encountered an error when trying to retrieve spectate information for " + toSpec + ":");
-				e.printStackTrace();
-			}
-			catch (InterruptedException e)
-			{
-				System.out.println("Something terrible happened");
-				e.printStackTrace();
+				catch (InterruptedException e)
+				{
+					System.err.println("Something terrible happened");
+					e.printStackTrace();
+				}
 			}
 			
 			// And loop
