@@ -311,8 +311,6 @@ public class AMF3Encoder
 	 */
 	private void writeString(List<Byte> ret, String val) throws EncodingException
 	{
-		writeInt(ret, (val.length() << 1) | 1);
-
 		byte[] temp = null;
 		try
 		{
@@ -322,6 +320,8 @@ public class AMF3Encoder
 		{
 			throw new EncodingException("Unable to encode string as UTF-8: " + val);
 		}
+
+		writeInt(ret, (temp.length << 1) | 1);
 
 		for (byte b : temp)
 			ret.add(b);
