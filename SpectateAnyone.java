@@ -225,7 +225,7 @@ public class SpectateAnyone
 		// Spectate people
 		System.out.println();
 		System.out.println("Hit enter without typing anything to exit");
-		System.out.println("!filename.txt will print out the summoners from 'filename.txt' that can be observed");
+		System.out.println("!file.txt will print out the summoners from 'file.txt' that can be observed");
 		System.out.println("E.g. '!list.txt' will read from list.txt, use one summoner name per line");
 		System.out.println();
 		System.out.print("Spectate whom? ");
