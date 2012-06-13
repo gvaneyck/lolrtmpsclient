@@ -166,7 +166,7 @@ public class SpectateAnyone
 		
 		// Fix location if necessary
 		String loc = params.get("lollocation");
-		loc.replaceAll("/", "\\");
+		loc.replace("/", "\\");
 		if (!loc.endsWith("\\"))
 			loc = loc + "\\";
 		params.put("lollocation", loc);
