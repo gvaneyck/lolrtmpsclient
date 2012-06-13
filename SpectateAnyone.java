@@ -237,7 +237,7 @@ public class SpectateAnyone
 				String filename = toSpec.substring(1).trim();
 				try
 				{
-					BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(conf), "UTF-8"));
+					BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(filename), "UTF-8"));
 					String line;
 					while ((line = in.readLine()) != null)
 					{
