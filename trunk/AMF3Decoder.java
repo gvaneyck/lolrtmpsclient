@@ -30,36 +30,6 @@ public class AMF3Decoder
 	}
 
 	/**
-	 * Removes headers from a packet
-	 * 
-	 * @param data The packet that includes headers
-	 * @return Byte array with headers removed
-	 */
-	public byte[] removeHeaders(byte[] data)
-	{
-		List<Byte> result = new ArrayList<Byte>();
-		int pos = 12; // Skip initial header
-		while (pos < data.length)
-		{
-			for (int i = 0; i < 128; i++)
-			{
-				if (pos >= data.length)
-					break;
-
-				result.add(data[pos]);
-				pos++;
-			}
-			pos++; // Skip single byte headers
-		}
-
-		byte[] ret = new byte[result.size()];
-		for (int i = 0; i < ret.length; i++)
-			ret[i] = result.get(i);
-
-		return ret;
-	}
-
-	/**
 	 * Decodes the result of a connect call
 	 * 
 	 * @param data The connect result
@@ -69,7 +39,7 @@ public class AMF3Decoder
 	 */
 	public TypedObject decodeConnect(byte[] data) throws NotImplementedException, EncodingException
 	{
-		dataBuffer = removeHeaders(data);
+		dataBuffer = data;
 		dataPos = 0;
 
 		TypedObject result = new TypedObject("Invoke");
@@ -94,7 +64,7 @@ public class AMF3Decoder
 	 */
 	public TypedObject decodeInvoke(byte[] data) throws NotImplementedException, EncodingException
 	{
-		dataBuffer = removeHeaders(data);
+		dataBuffer = data;
 		dataPos = 0;
 
 		TypedObject result = new TypedObject("Invoke");
