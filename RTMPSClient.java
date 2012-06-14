@@ -506,11 +506,6 @@ public class RTMPSClient
 		/** The stream to read from */
 		private InputStream in;
 
-		/** Current packet information and buffer */
-		private int dataSize;
-		private int messageType;
-		private List<Byte> dataBuffer = new ArrayList<Byte>();
-
 		/** Map of decoded packets */
 		private Map<Integer, TypedObject> results = Collections.synchronizedMap(new HashMap<Integer, TypedObject>());
 
@@ -593,82 +588,99 @@ public class RTMPSClient
 		{
 			try
 			{
-				dataSize = -1;
+				Map<Integer, Packet> packets = new HashMap<Integer, Packet>();
+				
 				while (running)
 				{
-					if (dataSize == -1)
+					// Parse the basic header
+					byte basicHeader = (byte)in.read();
+
+					int channel = basicHeader & 0x2F;
+					int headerType = basicHeader & 0xC0;
+					
+					int headerSize = 0;
+					if (headerType == 0x00)
+						headerSize = 12;
+					else if (headerType == 0x40)
+						headerSize = 8;
+					else if (headerType == 0x80)
+						headerSize = 4;
+					else if (headerType == 0xC0)
+						headerSize = 1;
+					
+					// Retrieve the packet or make a new one
+					Packet p;
+					if (packets.containsKey(channel))
+						p = packets.get(channel);
+					else
 					{
-						// Read header to find out how much more we need to read
-						// before decoding
-						byte[] header = new byte[12];
-						in.read(header, 0, 12);
-						messageType = header[7];
+						p = new Packet();
+						packets.put(channel, p);
+					}
+					
+					// Parse the full header
+					if (headerSize > 1)
+					{
+						byte[] header = new byte[headerSize - 1];
+						in.read(header, 0, header.length);
+						
+						if (headerSize >= 8)
+						{
+							int size = 0;
+							for (int i = 3; i < 6; i++)
+								size = size * 256 + (header[i] & 0xFF);
+							p.setSize(size);
+							
+							p.setType(header[6]);
+						}
+					}
+					
+					// Read rest of packet
+					for (int i = 0; i < 128; i++)
+					{
+						p.add((byte)in.read());
+						if (p.isComplete())
+							break;
+					}
+					
+					// Continue reading if we didn't complete a packet
+					if (!p.isComplete())
+						continue;
+					
+					// Remove the read packet
+					packets.remove(channel);
+					
+					// Skip most messages
+					if (p.getType() != 0x14 && p.getType() != 0x11)
+						continue;
 
-						dataSize = 0;
-						for (int i = 0; i < 3; i++)
-							dataSize = dataSize * 256 + (header[4 + i] < 0 ? header[4 + i] + 256 : header[4 + i]);
+					// Decode result
+					TypedObject result = null;
+					adc.reset();
+					if (p.getType() == 0x14) // Connect
+						result = adc.decodeConnect(p.getData());
+					else if (p.getType() == 0x11) // Invoke
+						result = adc.decodeInvoke(p.getData());
 
-						for (byte b : header)
-							dataBuffer.add(b);
+					// Store result
+					if (debug) System.out.println(result);
+					Integer id = (Integer)result.get("invokeId");
+						
+					if (id == null || id == 0)
+					{
+						receives.add(result);
+					}
+					else if (callbacks.containsKey(id))
+					{
+						Callback cb = callbacks.remove(id);
+						if (cb != null)
+							cb.callback(result);
 					}
 					else
 					{
-						// Read rest of packet
-						int pos = 0;
-						while (pos < dataSize)
-						{
-							dataBuffer.add((byte)in.read());
-							if (pos != 0 && pos % 128 == 0) // Read extra byte
-															// for chunking
-								dataBuffer.add((byte)in.read());
-							pos++;
-						}
-
-						// Skip most messages
-						if (messageType != 0x14 && messageType != 0x11)
-						{
-							dataSize = -1;
-							dataBuffer = new ArrayList<Byte>();
-							continue;
-						}
-
-						// Switch to byte array for decoding
-						byte[] temp = new byte[dataBuffer.size()];
-						for (int i = 0; i < temp.length; i++)
-							temp[i] = dataBuffer.get(i);
-
-						// Reset state
-						dataSize = -1;
-						dataBuffer = new ArrayList<Byte>();
-
-						// Decode result
-						TypedObject result = null;
-						adc.reset();
-						if (messageType == 0x14) // Connect
-							result = adc.decodeConnect(temp);
-						else if (messageType == 0x11) // Invoke
-							result = adc.decodeInvoke(temp);
-
-						// Store result
-						if (debug) System.out.println(result);
-						Integer id = (Integer)result.get("invokeId");
-						
-						if (id == null || id == 0)
-						{
-							receives.add(result);
-						}
-						else if (callbacks.containsKey(id))
-						{
-							Callback cb = callbacks.remove(id);
-							if (cb != null)
-								cb.callback(result);
-						}
-						else
-						{
-							results.put(id, result);
-						}
-						pendingInvokes.remove(id);
+						results.put(id, result);
 					}
+					pendingInvokes.remove(id);
 				}
 			}
 			catch (IOException e)
@@ -683,4 +695,51 @@ public class RTMPSClient
 			running = false;
 		}
 	}
+
+	/**
+	 * A simple packet structure for PacketReader
+	 */
+	class Packet
+	{
+		private byte[] dataBuffer;
+		private int dataPos;
+		private int dataSize;
+		private int messageType;
+
+		public void setSize(int size)
+		{
+			dataSize = size;
+			dataBuffer = new byte[dataSize];
+		}
+		
+		public void setType(int type)
+		{
+			messageType = type;
+		}
+		
+		public void add(byte b)
+		{
+			dataBuffer[dataPos++] = b;
+		}
+		
+		public boolean isComplete()
+		{
+			return (dataPos == dataSize);
+		}
+		
+		public int getSize()
+		{
+			return dataSize;
+		}
+
+		public int getType()
+		{
+			return messageType;
+		}
+		
+		public byte[] getData()
+		{
+			return dataBuffer;
+		}
+}
 }
