@@ -130,6 +130,9 @@ public class RTMPSClient
 	 */
 	public void close()
 	{
+		// We could join here, but should leave that to the programmer
+		// Typically close should be preceded by a call to join if necessary
+		
 		pr.die();
 		
 		if (receiveThread != null)
@@ -256,13 +259,24 @@ public class RTMPSClient
 	public synchronized int writeInvoke(TypedObject packet) throws IOException
 	{
 		int id = nextInvokeID();
-		pendingInvokes.add(id);
-		
-		byte[] data = aec.encodeInvoke(id, packet);
-		out.write(data, 0, data.length);
-		out.flush();
-		
-		return id;
+		try
+		{
+			pendingInvokes.add(id);
+			
+			byte[] data = aec.encodeInvoke(id, packet);
+			out.write(data, 0, data.length);
+			out.flush();
+			
+			return id;
+		}
+		catch (IOException e)
+		{
+			// Clear the pending invoke
+			pendingInvokes.remove(id);
+			
+			// Rethrow
+			throw e;
+		}
 	}
 
 	/**

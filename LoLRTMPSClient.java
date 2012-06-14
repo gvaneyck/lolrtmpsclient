@@ -214,6 +214,18 @@ public class LoLRTMPSClient extends RTMPSClient
 	public void close()
 	{
 		hb.die();
+		
+		// And attempt to logout, but don't care if we fail
+		try
+		{
+			int id = writeInvoke("loginService", "logout", new Object[] { authToken });
+			join(id);
+		}
+		catch (IOException e)
+		{
+			// Ignored
+		}
+		
 		super.close();
 	}
 	
