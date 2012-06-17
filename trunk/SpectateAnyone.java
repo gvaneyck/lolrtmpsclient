@@ -70,6 +70,10 @@ public class SpectateAnyone
 					String[] parts = line.split("=");
 					if (parts.length != 2)
 						continue;
+
+					// Handle notepad saving extra bytes for UTF8
+					if (parts[0].charAt(0) == 65279)
+						parts[0] = parts[0].substring(1);
 					
 					params.put(parts[0].trim(), parts[1].trim());
 				}
@@ -242,6 +246,7 @@ public class SpectateAnyone
 					while ((line = in.readLine()) != null)
 					{
 						line = line.trim();
+						line = line.replace("\"", "");
 						if (line.length() < 4)
 							continue;
 						
