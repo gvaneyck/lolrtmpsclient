@@ -3,7 +3,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -77,12 +76,13 @@ public class RTMPSClient
 				System.out.println("Success");
 			else
 				System.out.println("Failure");
-			client.close();
 		}
 		catch (Exception e)
 		{
 			e.printStackTrace();
 		}
+
+		client.close();
 	}
 
 	/**
@@ -137,6 +137,7 @@ public class RTMPSClient
 		
 		if (receiveThread != null)
 			receiveThread.die();
+		receiveThread = null;
 
 		try
 		{
@@ -147,6 +148,48 @@ public class RTMPSClient
 			// Do nothing
 			// e.printStackTrace();
 		}
+
+		// Reset pending invokes and callbacks so this connection can be restarted
+		pendingInvokes = Collections.synchronizedSet(new HashSet<Integer>());
+		callbacks = Collections.synchronizedMap(new HashMap<Integer, Callback>());
+	}
+	
+	/**
+	 * Attempts a reconnect
+	 */
+	public void reconnect()
+	{
+		// Save the handler if we have one and then close 
+		Callback recvHandler = null;
+		if (receiveThread != null)
+			recvHandler = receiveThread.getHandler();
+		close();
+
+		// Attempt reconnects every 5s
+		while (!isConnected())
+		{
+			try
+			{
+				connect();
+			}
+			catch (IOException e)
+			{
+				System.err.println("Error when reconnecting: ");
+				e.printStackTrace(); // For debug purposes
+				
+				try
+				{
+					Thread.sleep(5000);
+				}
+				catch (InterruptedException e2)
+				{
+				}
+			}
+		}
+		
+		// Recreate the receive handler if there was one
+		if (recvHandler != null)
+			receiveThread = new ReceiveThread(recvHandler);
 	}
 
 	/**
@@ -163,7 +206,7 @@ public class RTMPSClient
 		doHandshake();
 
 		// Start reading responses
-		pr = new RTMPPacketReader(in);
+		pr = new RTMPPacketReader(in, this);
 
 		// Handle preconnect Messages?
 		// -- 02 | 00 00 00 | 00 00 05 | 06 00 00 00 00 | 00 03 D0 90 02
@@ -256,7 +299,7 @@ public class RTMPSClient
 	 * @return The invoke ID to use with getResult(), peekResult, and join()
 	 * @throws IOException
 	 */
-	public synchronized int writeInvoke(TypedObject packet) throws IOException
+	public synchronized int invoke(TypedObject packet) throws IOException
 	{
 		int id = nextInvokeID();
 		try
@@ -288,9 +331,9 @@ public class RTMPSClient
 	 * @return The invoke ID to use with getResult(), peekResult(), and join()
 	 * @throws IOException
 	 */
-	public synchronized int writeInvoke(String destination, Object operation, Object body) throws IOException
+	public synchronized int invoke(String destination, Object operation, Object body) throws IOException
 	{
-		return writeInvoke(wrapBody(body, destination, operation));
+		return invoke(wrapBody(body, destination, operation));
 	}
 
 	/**
@@ -303,10 +346,10 @@ public class RTMPSClient
 	 * @return The invoke ID to use with getResult(), peekResult(), and join()
 	 * @throws IOException
 	 */
-	public synchronized int writeInvokeWithCallback(String destination, Object operation, Object body, Callback cb) throws IOException
+	public synchronized int invokeWithCallback(String destination, Object operation, Object body, Callback cb) throws IOException
 	{
 		callbacks.put(invokeID, cb); // Register the callback
-		return writeInvoke(destination, operation, body);
+		return invoke(destination, operation, body);
 	}
 
 	/**
@@ -493,6 +536,11 @@ public class RTMPSClient
 				}
 			}
 		}
+		
+		public Callback getHandler()
+		{
+			return receiveHandler;
+		}
 	}
 
 	/**
@@ -514,16 +562,20 @@ public class RTMPSClient
 
 		/** The AMF3 decoder */
 		private AMF3Decoder adc = new AMF3Decoder();
+		
+		/** The client we're running from so we can initiate reconnects */
+		private RTMPSClient client;
 
 		/**
 		 * Starts a packet reader on the given stream
 		 * 
 		 * @param stream The stream to read packets from
 		 */
-		public RTMPPacketReader(InputStream stream)
+		public RTMPPacketReader(InputStream stream, RTMPSClient client)
 		{
 			this.in = stream;
 			this.running = true;
+			this.client = client;
 			this.start();
 		}
 
@@ -691,6 +743,12 @@ public class RTMPSClient
 					e.printStackTrace();
 				}
 			}
+			
+			// Attempt to reconnect if this was an unintentional disconnect
+			if (running) //? && reconnect)
+			{
+				client.reconnect();
+			}
 
 			running = false;
 		}
@@ -741,5 +799,5 @@ public class RTMPSClient
 		{
 			return dataBuffer;
 		}
-}
+	}
 }

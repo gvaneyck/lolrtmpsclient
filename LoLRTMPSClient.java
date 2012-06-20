@@ -19,8 +19,10 @@ public class LoLRTMPSClient extends RTMPSClient
 	/** Server information */
 	private static final int port = 3099;
 	private String server;
+	private String region;
 
 	/** Login information */
+	private boolean loggedIn;
 	private String loginQueue;
 	private String user;
 	private String pass;
@@ -45,7 +47,7 @@ public class LoLRTMPSClient extends RTMPSClient
 	 */
 	public static void main(String[] args)
 	{
-		String user = "qweasn";
+		String user = "qweash";
 		String pass = "123qwe";
 
 		String summoner = "Jabe";
@@ -58,11 +60,11 @@ public class LoLRTMPSClient extends RTMPSClient
 			client.connectAndLogin();
 
 			// Synchronous invoke
-			id = client.writeInvoke("summonerService", "getSummonerByName", new Object[] { summoner });
+			id = client.invoke("summonerService", "getSummonerByName", new Object[] { summoner });
 			System.out.println(client.getResult(id));
 
 			// Asynchronous invoke
-			client.writeInvokeWithCallback("summonerService", "getSummonerByName", new Object[] { summoner },
+			client.invokeWithCallback("summonerService", "getSummonerByName", new Object[] { summoner },
 					new Callback()
 					{
 						public void callback(TypedObject result)
@@ -72,14 +74,14 @@ public class LoLRTMPSClient extends RTMPSClient
 					});
 
 			client.join(); // Wait for all current requests to finish
-
-			client.close();
 		}
 		catch (Exception e)
 		{
 			System.out.println(client.lastDecode);
 			e.printStackTrace();
 		}
+
+		client.close();
 	}
 
 	/**
@@ -100,6 +102,7 @@ public class LoLRTMPSClient extends RTMPSClient
 	 */
 	public LoLRTMPSClient(String region, String clientVersion, String user, String pass)
 	{
+		this.region = region;
 		this.clientVersion = clientVersion;
 		this.user = user;
 		this.pass = pass;
@@ -139,10 +142,21 @@ public class LoLRTMPSClient extends RTMPSClient
 	 */
 	public void connectAndLogin() throws IOException
 	{
+		connect();
+		login();
+	}
+
+	/**
+	 * Logs into Riot's servers
+	 * 
+	 * @throws IOException
+	 */
+	public void login() throws IOException
+	{
+		loggedIn = false;
+		
 		getIPAddress();
 		getAuthToken();
-
-		connect(); // Will throw the connection exception
 
 		TypedObject result, body;
 
@@ -158,11 +172,11 @@ public class LoLRTMPSClient extends RTMPSClient
 		body.put("oldPassword", null);
 		body.put("username", user);
 		body.put("authToken", authToken);
-		int id = writeInvoke("loginService", "login", new Object[] { body });
+		int id = invoke("loginService", "login", new Object[] { body });
 
 		// Read relevant data
 		result = getResult(id);
-		if ("_error".equals(result.get("result")))
+		if (result.get("result").equals("_error"))
 			throw new IOException(getErrorMessage(result));
 		
 		body = result.getTO("data").getTO("body");
@@ -176,7 +190,7 @@ public class LoLRTMPSClient extends RTMPSClient
 		body = wrapBody(Base64.encodeBytes(encbuff), "auth", 8);
 		body.type = "flex.messaging.messages.CommandMessage";
 
-		id = writeInvoke(body);
+		id = invoke(body);
 		result = getResult(id); // Read result (and discard)
 
 		// Subscribe to the necessary items
@@ -189,23 +203,25 @@ public class LoLRTMPSClient extends RTMPSClient
 		// bc
 		headers.put("DSSubtopic", "bc");
 		body.put("clientId", "bc-" + accountID);
-		id = writeInvoke(body);
+		id = invoke(body);
 		result = getResult(id); // Read result and discard
 		
 		// cn
 		headers.put("DSSubtopic", "cn-" + accountID);
 		body.put("clientId", "cn-" + accountID);
-		id = writeInvoke(body);
+		id = invoke(body);
 		result = getResult(id); // Read result and discard
 
 		// gn
 		headers.put("DSSubtopic", "gn-" + accountID);
 		body.put("clientId", "gn-" + accountID);
-		id = writeInvoke(body);
+		id = invoke(body);
 		result = getResult(id); // Read result and discard
 
 		// Start the heartbeat
 		hb = new HeartbeatThread();
+		
+		loggedIn = true;
 	}
 	
 	/**
@@ -213,12 +229,13 @@ public class LoLRTMPSClient extends RTMPSClient
 	 */
 	public void close()
 	{
-		hb.die();
+		if (hb != null)
+			hb.die();
 		
 		// And attempt to logout, but don't care if we fail
 		try
 		{
-			int id = writeInvoke("loginService", "logout", new Object[] { authToken });
+			int id = invoke("loginService", "logout", new Object[] { authToken });
 			join(id);
 		}
 		catch (IOException e)
@@ -230,6 +247,35 @@ public class LoLRTMPSClient extends RTMPSClient
 	}
 	
 	/**
+	 * Additional reconnect steps for logging in after a reconnect
+	 */
+	public void reconnect()
+	{
+		super.reconnect(); // Handles the basic connect()
+		
+		// Then login
+		try
+		{
+			login();
+		}
+		catch (IOException e)
+		{
+			System.err.println("Failed to login after reconnect");
+			e.printStackTrace();
+		} 
+	}
+	
+	/**
+	 * Returns the login state
+	 * 
+	 * @return True if passed login queue and commands
+	 */
+	public boolean isLoggedIn()
+	{
+		return loggedIn;
+	}
+	
+	/**
 	 * Extracts the rootCause from an error message
 	 *  
 	 * @param message The packet result
@@ -237,7 +283,8 @@ public class LoLRTMPSClient extends RTMPSClient
 	 */
 	public String getErrorMessage(TypedObject message)
 	{
-		return (String)message.getTO("data").getTO("rootCause").get("message");
+		// Works for clientVersion
+		return message.toString(); //(String)message.getTO("data").getTO("rootCause").get("message");
 	}
 
 	/**
@@ -329,7 +376,7 @@ public class LoLRTMPSClient extends RTMPSClient
 			}
 			
 			// Let the user know
-			System.out.println("In login queue, #" + (id - cur) + " in line");
+			System.out.println("In login queue for " + region + ", #" + (id - cur) + " in line");
 
 			// Request the queue status until there's only 'rate' left to go
 			while (id - cur > rate)
@@ -339,14 +386,13 @@ public class LoLRTMPSClient extends RTMPSClient
 				result = (TypedObject)JSON.parse(response);
 			
 				cur = hexToInt((String)result.get(nodeStr));
-				System.out.println("In login queue, #" + (id - cur) + " in line");
+				System.out.println("In login queue for " + region + ", #" + (int)Math.max(1, id - cur) + " in line");
 			}
 
-			// Then try getting our token repeatedly (after a short delay)
-			sleep(delay / 10);
+			// Then try getting our token repeatedly
 			response = readURL(loginQueue + "login-queue/rest/queue/authToken/" + user);
 			result = (TypedObject)JSON.parse(response);
-			while (!result.containsKey("token"))
+			while (response == null || !result.containsKey("token"))
 			{
 				sleep(delay / 10);
 				response = readURL(loginQueue + "login-queue/rest/queue/authToken/" + user);
@@ -382,7 +428,7 @@ public class LoLRTMPSClient extends RTMPSClient
 	 * @return All data present at the given URL
 	 * @throws IOException
 	 */
-	private String readURL(String url) throws IOException
+	private String readURL(String url)
 	{
 		try
 		{
@@ -390,8 +436,13 @@ public class LoLRTMPSClient extends RTMPSClient
 		}
 		catch (MalformedURLException e)
 		{
-			// Shouldn't happen
+			// Should never happen
 			e.printStackTrace();
+			return null;
+		}
+		catch (IOException e)
+		{
+			// Only happens when we try to get our token too fast
 			return null;
 		}
 	}
@@ -464,7 +515,7 @@ public class LoLRTMPSClient extends RTMPSClient
 				try
 				{
 					long hbTime = System.currentTimeMillis();
-					int id = writeInvoke("loginService", "performLCDSHeartBeat", new Object[] { accountID, sessionToken, heartbeat, sdf.format(new Date()) });
+					int id = invoke("loginService", "performLCDSHeartBeat", new Object[] { accountID, sessionToken, heartbeat, sdf.format(new Date()) });
 
 					getResult(id); // Ignore result for now
 
