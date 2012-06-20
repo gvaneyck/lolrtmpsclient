@@ -17,6 +17,9 @@ public class JSON
 	 */
 	public static Object parse(String json)
 	{
+		if (json == null)
+			return null;
+		
 		LinkedList<Character> buff = new LinkedList<Character>();
 		for (int i = 0; i < json.length(); i++)
 			buff.add(json.charAt(i));

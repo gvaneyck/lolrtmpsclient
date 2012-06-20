@@ -252,7 +252,7 @@ public class SpectateAnyone
 						
 						// Invoke asynchronously
 						final String name = line;
-						client.writeInvokeWithCallback("gameService", "retrieveInProgressSpectatorGameInfo", new Object[] { name },
+						client.invokeWithCallback("gameService", "retrieveInProgressSpectatorGameInfo", new Object[] { name },
 								new Callback()
 								{
 									public void callback(TypedObject result)
@@ -280,7 +280,7 @@ public class SpectateAnyone
 				try
 				{
 					// Get spectator info
-					int id = client.writeInvoke("gameService", "retrieveInProgressSpectatorGameInfo", new Object[] { toSpec });
+					int id = client.invoke("gameService", "retrieveInProgressSpectatorGameInfo", new Object[] { toSpec });
 					TypedObject result = client.getResult(id);
 					TypedObject data = result.getTO("data");
 	
