@@ -232,15 +232,18 @@ public class LoLRTMPSClient extends RTMPSClient
 		if (hb != null)
 			hb.die();
 		
-		// And attempt to logout, but don't care if we fail
-		try
+		if (out != null)
 		{
-			int id = invoke("loginService", "logout", new Object[] { authToken });
-			join(id);
-		}
-		catch (IOException e)
-		{
-			// Ignored
+			// And attempt to logout, but don't care if we fail
+			try
+			{
+				int id = invoke("loginService", "logout", new Object[] { authToken });
+				join(id);
+			}
+			catch (IOException e)
+			{
+				// Ignored
+			}
 		}
 		
 		super.close();
@@ -346,8 +349,18 @@ public class LoLRTMPSClient extends RTMPSClient
 		output.close();
 
 		// Read the response
-		String response = readAll(connection.getInputStream());
-		TypedObject result = (TypedObject)JSON.parse(response);
+		String response;
+		TypedObject result;
+		try
+		{
+			response = readAll(connection.getInputStream());
+			result = (TypedObject)JSON.parse(response);
+		}
+		catch (IOException e)
+		{
+			System.err.println("Incorrect username or password");
+			throw e;
+		}
 
 		// Handle login queue
 		if (!result.containsKey("token"))

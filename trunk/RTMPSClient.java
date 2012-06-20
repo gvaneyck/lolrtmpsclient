@@ -661,14 +661,9 @@ public class RTMPSClient
 						headerSize = 1;
 					
 					// Retrieve the packet or make a new one
-					Packet p;
-					if (packets.containsKey(channel))
-						p = packets.get(channel);
-					else
-					{
-						p = new Packet();
-						packets.put(channel, p);
-					}
+					if (!packets.containsKey(channel))
+						packets.put(channel, new Packet());
+					Packet p = packets.get(channel);
 					
 					// Parse the full header
 					if (headerSize > 1)
