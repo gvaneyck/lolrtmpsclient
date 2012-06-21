@@ -17,12 +17,12 @@ import javax.net.ssl.HttpsURLConnection;
 public class LoLRTMPSClient extends RTMPSClient
 {
 	/** Server information */
-	private static final int port = 3099;
+	private static final int port = 2099; // Must be 2099
 	private String server;
 	private String region;
 
 	/** Login information */
-	private boolean loggedIn;
+	private boolean loggedIn = false;
 	private String loginQueue;
 	private String user;
 	private String pass;
@@ -52,7 +52,7 @@ public class LoLRTMPSClient extends RTMPSClient
 
 		String summoner = "Jabe";
 
-		LoLRTMPSClient client = new LoLRTMPSClient("NA", "1.60.FOOBAR", user, pass);
+		LoLRTMPSClient client = new LoLRTMPSClient("NA", "1.61.FOOBAR", user, pass);
 
 		try
 		{
@@ -153,8 +153,6 @@ public class LoLRTMPSClient extends RTMPSClient
 	 */
 	public void login() throws IOException
 	{
-		loggedIn = false;
-		
 		getIPAddress();
 		getAuthToken();
 
@@ -229,8 +227,7 @@ public class LoLRTMPSClient extends RTMPSClient
 	 */
 	public void close()
 	{
-		if (hb != null)
-			hb.die();
+		loggedIn = false;
 		
 		if (out != null)
 		{
@@ -257,14 +254,25 @@ public class LoLRTMPSClient extends RTMPSClient
 		super.reconnect(); // Handles the basic connect()
 		
 		// Then login
-		try
+		while (!isLoggedIn())
 		{
-			login();
-		}
-		catch (IOException e)
-		{
-			System.err.println("Failed to login after reconnect");
-			e.printStackTrace();
+			try
+			{
+				login();
+			}
+			catch (IOException e)
+			{
+				System.err.println("Error when reconnecting: ");
+				e.printStackTrace(); // For debug purposes
+				
+				try
+				{
+					Thread.sleep(5000);
+				}
+				catch (InterruptedException e2)
+				{
+				}
+			}
 		} 
 	}
 	
@@ -503,27 +511,28 @@ public class LoLRTMPSClient extends RTMPSClient
 	/**
 	 * Executes a LCDSHeartBeat every 2 minutes
 	 */
-	class HeartbeatThread extends Thread
+	class HeartbeatThread
 	{
-		private boolean running;
+		private Thread curThread;
 		private int heartbeat;
 		private SimpleDateFormat sdf = new SimpleDateFormat("ddd MMM d yyyy HH:mm:ss 'GMTZ'");
 
 		public HeartbeatThread()
 		{
 			this.heartbeat = 1;
-			this.start();
+			curThread = new Thread() {
+	            public void run() {
+	            	beatHeart(this);
+	            }
+	        };
+	        curThread.setName("LoLRTMPSClient (HeartbeatThread)");
+	        curThread.setDaemon(true);
+	        curThread.start();
 		}
 
-		public void die()
+		public void beatHeart(Thread thread)
 		{
-			running = false;
-		}
-
-		public void run()
-		{
-			running = true;
-			while (running)
+			while (curThread == thread)
 			{
 				try
 				{
@@ -534,7 +543,8 @@ public class LoLRTMPSClient extends RTMPSClient
 
 					heartbeat++;
 
-					while (running && System.currentTimeMillis() - hbTime < 120000)
+					// Quick sleeps to shutdown the heartbeat quickly on a reconnect
+					while (curThread == thread && System.currentTimeMillis() - hbTime < 120000)
 						Thread.sleep(100);
 				}
 				catch (Exception e)
