@@ -144,6 +144,7 @@ public class LoLRTMPSClient extends RTMPSClient
 	{
 		connect();
 		login();
+		System.out.println("Connected to " + region);
 	}
 
 	/**
@@ -530,7 +531,7 @@ public class LoLRTMPSClient extends RTMPSClient
 	        curThread.start();
 		}
 
-		public void beatHeart(Thread thread)
+		private void beatHeart(Thread thread)
 		{
 			while (curThread == thread)
 			{

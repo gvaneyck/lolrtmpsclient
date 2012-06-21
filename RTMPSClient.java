@@ -512,6 +512,11 @@ public class RTMPSClient
 	        curThread.start();
 		}
 		
+		public Callback getHandler()
+		{
+			return receiveHandler;
+		}
+
 		private void handlePackets(Thread thread)
 		{
 			while (curThread == thread)
@@ -530,11 +535,6 @@ public class RTMPSClient
 				{
 				}
 			}
-		}
-
-		public Callback getHandler()
-		{
-			return receiveHandler;
 		}
 	}
 
@@ -630,7 +630,7 @@ public class RTMPSClient
 		/**
 		 * The main loop for the packet reader
 		 */
-		public void parsePackets(Thread thread)
+		private void parsePackets(Thread thread)
 		{
 			try
 			{
