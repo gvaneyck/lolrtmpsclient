@@ -54,6 +54,54 @@ public class TypedObject extends HashMap<String, Object>
 	{
 		return (TypedObject)get(key);
 	}
+	
+	/**
+	 * Convenience for retrieving Strings
+	 * 
+	 * @param key The key of the String
+	 * @return The String
+	 */
+	public String getString(String key)
+	{
+		return (String)get(key);
+	}
+
+	/**
+	 * Convenience for retrieving ints
+	 * 
+	 * @param key The key of the int
+	 * @return The int
+	 */
+	public Integer getInt(String key)
+	{
+		return (Integer)get(key);
+	}
+
+	/**
+	 * Convenience for retrieving doubles
+	 * 
+	 * @param key The key of the double
+	 * @return The double
+	 */
+	public Double getDouble(String key)
+	{
+		return (Double)get(key);
+	}
+
+	/**
+	 * Convenience for retrieving object arrays
+	 * Also handles flex.messaging.io.ArrayCollection
+	 * 
+	 * @param key The key of the object array
+	 * @return The object array
+	 */
+	public Object[] getArray(String key)
+	{
+		if (get(key) instanceof TypedObject && getTO(key).type.equals("flex.messaging.io.ArrayCollection"))
+			return (Object[])getTO(key).get("array");
+		else
+			return (Object[])get(key);
+	}
 
 	public String toString()
 	{
