@@ -144,7 +144,6 @@ public class LoLRTMPSClient extends RTMPSClient
 	{
 		connect();
 		login();
-		System.out.println("Connected to " + region);
 	}
 
 	/**
@@ -181,7 +180,7 @@ public class LoLRTMPSClient extends RTMPSClient
 		body = result.getTO("data").getTO("body");
 		sessionToken = (String)body.get("token");
 		accountID = ((Double)body.getTO("accountSummary").get("accountId")).intValue();
-
+		
 		// Login 2
 		byte[] encbuff = null;
 		encbuff = (user.toLowerCase() + ":" + sessionToken).getBytes("UTF-8");
@@ -191,7 +190,7 @@ public class LoLRTMPSClient extends RTMPSClient
 
 		id = invoke(body);
 		result = getResult(id); // Read result (and discard)
-
+		
 		// Subscribe to the necessary items
 		body = wrapBody(new Object[] { new TypedObject() }, "messagingDestination", 0);
 		body.type = "flex.messaging.messages.CommandMessage";
@@ -221,6 +220,8 @@ public class LoLRTMPSClient extends RTMPSClient
 		hb = new HeartbeatThread();
 		
 		loggedIn = true;
+
+		System.out.println("Connected to " + region);
 	}
 	
 	/**
@@ -412,12 +413,12 @@ public class LoLRTMPSClient extends RTMPSClient
 			}
 
 			// Then try getting our token repeatedly
-			response = readURL(loginQueue + "login-queue/rest/queue/authToken/" + user);
+			response = readURL(loginQueue + "login-queue/rest/queue/authToken/" + user.toLowerCase());
 			result = (TypedObject)JSON.parse(response);
 			while (response == null || !result.containsKey("token"))
 			{
 				sleep(delay / 10);
-				response = readURL(loginQueue + "login-queue/rest/queue/authToken/" + user);
+				response = readURL(loginQueue + "login-queue/rest/queue/authToken/" + user.toLowerCase());
 				result = (TypedObject)JSON.parse(response);
 			}
 		}
