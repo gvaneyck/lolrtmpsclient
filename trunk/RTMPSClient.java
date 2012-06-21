@@ -133,15 +133,13 @@ public class RTMPSClient
 		// We could join here, but should leave that to the programmer
 		// Typically close should be preceded by a call to join if necessary
 		
-		pr.die();
+		if (pr != null)
+			pr.reconnect = false; // Prevents automatic reconnect
 		
-		if (receiveThread != null)
-			receiveThread.die();
-		receiveThread = null;
-
 		try
 		{
-			sslsocket.close();
+			if (sslsocket != null)
+				sslsocket.close();
 		}
 		catch (IOException e)
 		{
@@ -199,7 +197,7 @@ public class RTMPSClient
 	 */
 	public void connect() throws IOException
 	{
-		sslsocket = SSLSocketFactory.getDefault().createSocket(server, 2099);
+		sslsocket = SSLSocketFactory.getDefault().createSocket(server, port);
 		in = new BufferedInputStream(sslsocket.getInputStream());
 		out = new DataOutputStream(sslsocket.getOutputStream());
 
@@ -398,7 +396,7 @@ public class RTMPSClient
 	 */
 	public boolean isConnected()
 	{
-		return (connected && pr.running);
+		return connected;
 	}
 
 	/**
@@ -485,43 +483,40 @@ public class RTMPSClient
 
 	/**
 	 * Sets the handler for receive packets (things like champ select)
-	 * Kills the old handler if there is one
 	 * 
 	 * @param cb The handler to use
 	 */
 	public void setReceiveHandler(Callback cb)
 	{
-		if (receiveThread != null)
-			receiveThread.die();
-
 		receiveThread = new ReceiveThread(cb);
 	}
 
 	/**
 	 * Handles the receives
 	 */
-	class ReceiveThread extends Thread
+	class ReceiveThread
 	{
-		private boolean running;
+		private Thread curThread = null;
 		private Callback receiveHandler;
 
 		public ReceiveThread(Callback cb)
 		{
 			receiveHandler = cb;
-			this.start();
+			curThread = new Thread() {
+	            public void run() {
+	            	handlePackets(this);
+	            }
+	        };
+	        curThread.setName("RTMPSClient (ReceiveThread)");
+	        curThread.setDaemon(true);
+	        curThread.start();
 		}
-
-		public void die()
+		
+		private void handlePackets(Thread thread)
 		{
-			running = false;
-		}
-
-		public void run()
-		{
-			running = true;
-			while (running)
+			while (curThread == thread)
 			{
-				while (!pr.receives.isEmpty() && running)
+				while (curThread == thread && !pr.receives.isEmpty())
 				{
 					TypedObject result = pr.receives.remove(0);
 					receiveHandler.callback(result);
@@ -536,7 +531,7 @@ public class RTMPSClient
 				}
 			}
 		}
-		
+
 		public Callback getHandler()
 		{
 			return receiveHandler;
@@ -546,10 +541,10 @@ public class RTMPSClient
 	/**
 	 * Reads RTMP packets from a stream
 	 */
-	class RTMPPacketReader extends Thread
+	class RTMPPacketReader
 	{
-		/** The status of the packet reader */
-		public boolean running;
+		/** Current thread reading packets */
+		private Thread curThread = null;
 
 		/** The stream to read from */
 		private InputStream in;
@@ -561,10 +556,13 @@ public class RTMPSClient
 		private List<TypedObject> receives = Collections.synchronizedList(new LinkedList<TypedObject>());
 
 		/** The AMF3 decoder */
-		private AMF3Decoder adc = new AMF3Decoder();
+		private final AMF3Decoder adc = new AMF3Decoder();
 		
 		/** The client we're running from so we can initiate reconnects */
 		private RTMPSClient client;
+
+		/** True for automatically reconnecting */
+		public boolean reconnect = true;
 
 		/**
 		 * Starts a packet reader on the given stream
@@ -574,17 +572,16 @@ public class RTMPSClient
 		public RTMPPacketReader(InputStream stream, RTMPSClient client)
 		{
 			this.in = stream;
-			this.running = true;
 			this.client = client;
-			this.start();
-		}
 
-		/**
-		 * Stops the packet reader
-		 */
-		public void die()
-		{
-			running = false;
+			curThread = new Thread() {
+	            public void run() {
+	            	parsePackets(this);
+	            }
+	        };
+	        curThread.setName("RTMPSClient (PacketReader)");
+	        curThread.setDaemon(true);
+	        curThread.start();
 		}
 
 		/**
@@ -614,7 +611,7 @@ public class RTMPSClient
 		 */
 		public TypedObject getPacket(int id)
 		{
-			while (!results.containsKey(id) && running)
+			while (!results.containsKey(id))
 			{
 				try
 				{
@@ -625,9 +622,6 @@ public class RTMPSClient
 				}
 			}
 
-			if (!running)
-				return null;
-
 			TypedObject ret = results.remove(id);
 			lastDecode = ret;
 			return ret;
@@ -636,13 +630,13 @@ public class RTMPSClient
 		/**
 		 * The main loop for the packet reader
 		 */
-		public void run()
+		public void parsePackets(Thread thread)
 		{
 			try
 			{
 				Map<Integer, Packet> packets = new HashMap<Integer, Packet>();
 				
-				while (running)
+				while (curThread == thread)
 				{
 					// Parse the basic header
 					byte basicHeader = (byte)in.read();
@@ -732,7 +726,8 @@ public class RTMPSClient
 			}
 			catch (IOException e)
 			{
-				if (running)
+				// Debug only since this happens evev on close
+				if (debug && curThread == thread)
 				{
 					System.out.println("Error while reading from stream");
 					e.printStackTrace();
@@ -740,12 +735,10 @@ public class RTMPSClient
 			}
 			
 			// Attempt to reconnect if this was an unintentional disconnect
-			if (running) //? && reconnect)
+			if (curThread == thread && reconnect)
 			{
 				client.reconnect();
 			}
-
-			running = false;
 		}
 	}
 
