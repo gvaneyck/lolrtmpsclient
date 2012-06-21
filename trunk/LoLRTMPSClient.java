@@ -178,8 +178,8 @@ public class LoLRTMPSClient extends RTMPSClient
 			throw new IOException(getErrorMessage(result));
 		
 		body = result.getTO("data").getTO("body");
-		sessionToken = (String)body.get("token");
-		accountID = ((Double)body.getTO("accountSummary").get("accountId")).intValue();
+		sessionToken = body.getString("token");
+		accountID = body.getTO("accountSummary").getDouble("accountId").intValue();
 		
 		// Login 2
 		byte[] encbuff = null;
@@ -297,7 +297,7 @@ public class LoLRTMPSClient extends RTMPSClient
 	public String getErrorMessage(TypedObject message)
 	{
 		// Works for clientVersion
-		return message.toString(); //(String)message.getTO("data").getTO("rootCause").get("message");
+		return message.toString(); //message.getTO("data").getTO("rootCause").getString("message");
 	}
 
 	/**
@@ -375,26 +375,26 @@ public class LoLRTMPSClient extends RTMPSClient
 		// Handle login queue
 		if (!result.containsKey("token"))
 		{
-			int node = (Integer)result.get("node"); // Our login queue ID
+			int node = result.getInt("node"); // Our login queue ID
 			String nodeStr = "" + node;
-			String champ = (String)result.get("champ"); // The name of our login queue
-			int rate = (Integer)result.get("rate"); // How many tickets are processed every queue update
-			int delay = (Integer)result.get("delay"); // How often the queue status updates
+			String champ = result.getString("champ"); // The name of our login queue
+			int rate = result.getInt("rate"); // How many tickets are processed every queue update
+			int delay = result.getInt("delay"); // How often the queue status updates
 			
 			int id = 0;
 			int cur = 0;
-			Object[] tickers = (Object[])result.get("tickers");
+			Object[] tickers = result.getArray("tickers");
 			for (Object o : tickers)
 			{
 				TypedObject to = (TypedObject)o;
 				
 				// Find our queue
-				int tnode = (Integer)to.get("node");
+				int tnode = to.getInt("node");
 				if (tnode != node)
 					continue;
 				
-				id = (Integer)to.get("id"); // Our ticket in line
-				cur = (Integer)to.get("current"); // The current ticket being processed
+				id = to.getInt("id"); // Our ticket in line
+				cur = to.getInt("current"); // The current ticket being processed
 				break;
 			}
 			
@@ -408,7 +408,7 @@ public class LoLRTMPSClient extends RTMPSClient
 				response = readURL(loginQueue + "login-queue/rest/queue/ticker/" + champ);
 				result = (TypedObject)JSON.parse(response);
 			
-				cur = hexToInt((String)result.get(nodeStr));
+				cur = hexToInt(result.getString(nodeStr));
 				System.out.println("In login queue for " + region + ", #" + (int)Math.max(1, id - cur) + " in line");
 			}
 
@@ -424,7 +424,7 @@ public class LoLRTMPSClient extends RTMPSClient
 		}
 
 		// Read the auth token
-		authToken = (String)result.get("token");
+		authToken = result.getString("token");
 	}
 	
 	/**

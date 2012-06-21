@@ -229,7 +229,7 @@ public class RTMPSClient
 		out.flush();
 
 		TypedObject result = pr.getPacket(1);
-		DSId = (String)result.getTO("data").get("id");
+		DSId = result.getTO("data").getString("id");
 
 		connected = true;
 	}
@@ -705,10 +705,12 @@ public class RTMPSClient
 
 					// Store result
 					if (debug) System.out.println(result);
-					Integer id = (Integer)result.get("invokeId");
+					Integer id = result.getInt("invokeId");
 						
 					if (id == null || id == 0)
 					{
+						// Add to list rather than just calling receive handler
+						// because we might not have one
 						receives.add(result);
 					}
 					else if (callbacks.containsKey(id))
