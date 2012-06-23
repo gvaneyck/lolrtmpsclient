@@ -219,8 +219,6 @@ public class SpectateAnyone
 		catch (IOException e)
 		{
 			System.out.println("Failed to connect");
-			if (e.getMessage() != null && e.getMessage().contains("403"))
-				System.out.println("Incorrect user or pass");
 			e.printStackTrace();
 			System.exit(0);
 		}
