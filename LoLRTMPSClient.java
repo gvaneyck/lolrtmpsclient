@@ -29,8 +29,8 @@ public class LoLRTMPSClient extends RTMPSClient
 
 	/** Secondary login information */
 	private String clientVersion;
-	private String locale;
 	private String ipAddress;
+	private String locale;
 
 	/** Connection information */
 	private String authToken;
@@ -47,12 +47,13 @@ public class LoLRTMPSClient extends RTMPSClient
 	 */
 	public static void main(String[] args)
 	{
-		String user = "qweash";
+		String user = "qweasn";
 		String pass = "123qwe";
 
 		String summoner = "Jabe";
 
 		LoLRTMPSClient client = new LoLRTMPSClient("NA", "1.61.FOOBAR", user, pass);
+		client.debug = true;
 
 		try
 		{
@@ -253,8 +254,9 @@ public class LoLRTMPSClient extends RTMPSClient
 	 */
 	public void reconnect()
 	{
-		super.reconnect(); // Handles the basic connect()
-		
+		// Socket/RTMP reconnect
+		super.reconnect();
+
 		// Then login
 		while (!isLoggedIn())
 		{
@@ -266,7 +268,7 @@ public class LoLRTMPSClient extends RTMPSClient
 			{
 				System.err.println("Error when reconnecting: ");
 				e.printStackTrace(); // For debug purposes
-				
+			
 				try
 				{
 					Thread.sleep(5000);
@@ -274,6 +276,7 @@ public class LoLRTMPSClient extends RTMPSClient
 				catch (InterruptedException e2)
 				{
 				}
+				super.reconnect(); // Need to reconnect again here
 			}
 		} 
 	}
@@ -297,7 +300,7 @@ public class LoLRTMPSClient extends RTMPSClient
 	public String getErrorMessage(TypedObject message)
 	{
 		// Works for clientVersion
-		return message.toString(); //message.getTO("data").getTO("rootCause").getString("message");
+		return (debug ? message.toString() : message.getTO("data").getTO("rootCause").getString("message"));
 	}
 
 	/**
@@ -307,8 +310,13 @@ public class LoLRTMPSClient extends RTMPSClient
 	 */
 	private void getIPAddress() throws IOException
 	{
+		// Don't need to retrieve IP address on reconnect (probably)
+		if (ipAddress != null)
+			return;
+		
 		String response = readURL("http://ll.leagueoflegends.com/services/connection_info");
-		ipAddress = response.substring(response.indexOf(":") + 2, response.length() - 2);
+		TypedObject result = (TypedObject)JSON.parse(response);
+		ipAddress = result.getString("ip_address");
 	}
 
 	/**
@@ -407,6 +415,8 @@ public class LoLRTMPSClient extends RTMPSClient
 				sleep(delay); // Sleep until the queue updates
 				response = readURL(loginQueue + "login-queue/rest/queue/ticker/" + champ);
 				result = (TypedObject)JSON.parse(response);
+				if (result == null)
+					continue;
 			
 				cur = hexToInt(result.getString(nodeStr));
 				System.out.println("In login queue for " + region + ", #" + (int)Math.max(1, id - cur) + " in line");

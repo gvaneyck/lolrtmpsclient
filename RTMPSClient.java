@@ -130,6 +130,8 @@ public class RTMPSClient
 	 */
 	public void close()
 	{
+		connected = false;
+		
 		// We could join here, but should leave that to the programmer
 		// Typically close should be preceded by a call to join if necessary
 		
