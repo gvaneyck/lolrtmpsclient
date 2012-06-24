@@ -47,18 +47,19 @@ public class LoLRTMPSClient extends RTMPSClient
 	 */
 	public static void main(String[] args)
 	{
-		String user = "qweasn";
+		String user = "qweasm";
 		String pass = "123qwe";
 
 		String summoner = "Jabe";
 
-		LoLRTMPSClient client = new LoLRTMPSClient("NA", "1.61.FOOBAR", user, pass);
-		client.debug = true;
+		LoLRTMPSClient client = new LoLRTMPSClient("EUW", "1.60http://isleagueoflegendsup.com/.FOOBAR", user, pass);
+		//client.debug = true;
 
 		try
 		{
 			int id;
 			client.connectAndLogin();
+			client.reconnect();
 
 			// Synchronous invoke
 			id = client.invoke("summonerService", "getSummonerByName", new Object[] { summoner });
