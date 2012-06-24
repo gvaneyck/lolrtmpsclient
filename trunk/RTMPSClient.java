@@ -1,8 +1,15 @@
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.DataOutputStream;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PushbackInputStream;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -549,7 +556,7 @@ public class RTMPSClient
 		private Thread curThread = null;
 
 		/** The stream to read from */
-		private InputStream in;
+		private BufferedInputStream in;
 
 		/** Map of decoded packets */
 		private Map<Integer, TypedObject> results = Collections.synchronizedMap(new HashMap<Integer, TypedObject>());
@@ -573,7 +580,7 @@ public class RTMPSClient
 		 */
 		public RTMPPacketReader(InputStream stream, RTMPSClient client)
 		{
-			this.in = stream;
+			this.in = new BufferedInputStream(stream, 16384);
 			this.client = client;
 
 			curThread = new Thread() {
@@ -613,7 +620,7 @@ public class RTMPSClient
 		 */
 		public TypedObject getPacket(int id)
 		{
-			while (!results.containsKey(id))
+			while (results != null && !results.containsKey(id))
 			{
 				try
 				{
@@ -623,6 +630,9 @@ public class RTMPSClient
 				{
 				}
 			}
+			
+			if (results == null)
+				return null;
 
 			TypedObject ret = results.remove(id);
 			lastDecode = ret;
@@ -636,12 +646,17 @@ public class RTMPSClient
 		{
 			try
 			{
+				DataOutputStream out = null;
+				if (debug)
+					out = new DataOutputStream(new FileOutputStream("debug.dmp"));
+
 				Map<Integer, Packet> packets = new HashMap<Integer, Packet>();
 				
 				while (curThread == thread)
 				{
 					// Parse the basic header
 					byte basicHeader = (byte)in.read();
+					if (debug) { out.write(basicHeader & 0xFF); out.flush(); }
 
 					int channel = basicHeader & 0x2F;
 					int headerType = basicHeader & 0xC0;
@@ -665,7 +680,9 @@ public class RTMPSClient
 					if (headerSize > 1)
 					{
 						byte[] header = new byte[headerSize - 1];
-						in.read(header, 0, header.length);
+						for (int i = 0; i < header.length; i++)
+							header[i] = (byte)in.read();
+						if (debug) { for (int i = 0; i < header.length; i++) out.write(header[i] & 0xFF); out.flush(); }
 						
 						if (headerSize >= 8)
 						{
@@ -681,7 +698,9 @@ public class RTMPSClient
 					// Read rest of packet
 					for (int i = 0; i < 128; i++)
 					{
-						p.add((byte)in.read());
+						byte b = (byte)in.read(); 
+						p.add(b);
+						
 						if (p.isComplete())
 							break;
 					}
@@ -706,8 +725,8 @@ public class RTMPSClient
 						result = adc.decodeInvoke(p.getData());
 
 					// Store result
-					if (debug) System.out.println(result);
 					Integer id = result.getInt("invokeId");
+					if (debug) System.out.println(result);
 						
 					if (id == null || id == 0)
 					{
@@ -730,11 +749,14 @@ public class RTMPSClient
 			}
 			catch (IOException e)
 			{
-				// Debug only since this happens evev on close
+				// Debug only since this happens even on close
+				// TODO Exit gracefully on close
 				if (debug && curThread == thread)
 				{
 					System.out.println("Error while reading from stream");
 					e.printStackTrace();
+					try { out.close(); } catch (IOException e1) { }
+					System.exit(0);
 				}
 			}
 			
@@ -743,6 +765,9 @@ public class RTMPSClient
 			{
 				client.reconnect();
 			}
+			
+			// Will kill any getResults requests
+			results = null;
 		}
 	}
 
@@ -769,6 +794,8 @@ public class RTMPSClient
 		
 		public void add(byte b)
 		{
+			if (dataSize == 0)
+				dataBuffer = new byte[1000];
 			dataBuffer[dataPos++] = b;
 		}
 		

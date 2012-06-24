@@ -1,15 +1,41 @@
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Label;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.HierarchyBoundsListener;
+import java.awt.event.HierarchyEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.swing.DefaultListModel;
+import javax.swing.JButton;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
+import javax.swing.JTextField;
+import javax.swing.ListSelectionModel;
 
 /**
  * A simple program that allows a player to spectate anyone playing a game
@@ -19,44 +45,164 @@ import java.util.Map;
  */
 public class SpectateAnyone
 {
-	/**
-	 * Wrapper to get a line of text from System.in
-	 * 
-	 * @return The next line of text from System.in
-	 */
-	public static String getInput()
-	{
-		StringBuilder buffer = new StringBuilder();
-		int c;
-		
-		try
-		{
-			while ((c = System.in.read()) != -1)
-			{
-				if (c == '\r')
-					continue;
-				if (c == '\n')
-					break;
-				
-				buffer.append((char)c);
-			}
-		}
-		catch (IOException e) { }
-		
-		return buffer.toString();
-	}
+	public static final JFrame f = new JFrame("Spectate Anyone!");
+	
+	public static final Label lblName = new Label("Name:");
+	public static final JTextField txtName = new JTextField();
+	public static final JButton btnName = new JButton();
 
-	/**
-	 * Entry point for the application
-	 * 
-	 * @param args Unused
-	 */
+	public static final JSeparator sep = new JSeparator(JSeparator.HORIZONTAL);
+
+	public static final Label lblFile = new Label("Load List:");
+	public static final JTextField txtFile = new JTextField();
+	public static final JButton btnFile = new JButton("Check");
+
+	public static final DefaultListModel lstModel = new DefaultListModel();
+	public static final JList lstInGame = new JList(lstModel);
+	public static final JScrollPane lstScroll = new JScrollPane(lstInGame);
+
+	public static final JFileChooser fc = new JFileChooser(new File("."));
+	
+	public static int width = 350;
+	public static int height = 250;
+	
+	public static LoLRTMPSClient client;
+	public static Map<String, String> params;
+
 	public static void main(String[] args)
 	{
+		setupFrame();
+		setupClient();
+	}
+	
+	public static void setupFrame()
+	{
+		// GUI settings
+		lblName.setAlignment(Label.RIGHT);
+		lblFile.setAlignment(Label.RIGHT);
+		lstInGame.setLayoutOrientation(JList.VERTICAL_WRAP);
+		lstInGame.setVisibleRowCount(-1);
+		lstInGame.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		
+		// Initially grey out buttons
+		btnName.setText("Connecting...");
+		btnName.setEnabled(false);
+		btnFile.setEnabled(false);
+		
+		// Add the items
+		Container pane = f.getContentPane();
+		pane.setLayout(null);
+
+		pane.add(lblName);
+		pane.add(txtName);
+		pane.add(btnName);
+		
+		pane.add(sep);
+		
+		pane.add(lblFile);
+		pane.add(txtFile);
+		pane.add(btnFile);
+		
+		pane.add(lstScroll);
+
+		// Layout everything
+		doLayout();
+		
+		// Listeners
+		txtName.addKeyListener(new KeyListener()
+				{
+					public void keyTyped(KeyEvent e) { }
+					public void keyPressed(KeyEvent e) { }
+	
+					public void keyReleased(KeyEvent e)
+					{
+						if (e.getKeyCode() == KeyEvent.VK_ENTER)
+							handleSpectate();
+					}
+				});
+		
+		btnName.addActionListener(new ActionListener()
+				{
+					public void actionPerformed(ActionEvent e)
+					{
+						handleSpectate();
+					}
+				});
+		
+		txtFile.addFocusListener(new FocusListener()
+				{
+					public void focusLost(FocusEvent e) { }
+
+					public void focusGained(FocusEvent e)
+					{
+						setFile();
+					}
+				});
+
+		btnFile.addActionListener(new ActionListener()
+				{
+					public void actionPerformed(ActionEvent e)
+					{
+						
+						loadFile();
+					}
+				});
+		
+		lstInGame.addMouseListener(new MouseListener()
+				{
+					public void mousePressed(MouseEvent e) { }
+					public void mouseReleased(MouseEvent e) { }
+					public void mouseEntered(MouseEvent e) { }
+					public void mouseExited(MouseEvent e) { }
+
+					public void mouseClicked(MouseEvent e)
+					{
+						if (e.getClickCount() == 1)
+							txtName.setText((String)lstInGame.getSelectedValue());
+						if (e.getClickCount() == 2)
+							handleSpectate();
+					}
+				});
+
+		pane.addHierarchyBoundsListener(new HierarchyBoundsListener()
+				{
+					public void ancestorMoved(HierarchyEvent e) { }
+		
+					public void ancestorResized(HierarchyEvent e)
+					{
+						Dimension d = f.getSize();
+						width = d.width;
+						height = d.height;
+						doLayout();
+					}
+				});
+
+		f.addWindowListener(new WindowListener()
+				{
+					public void windowOpened(WindowEvent e) { }
+					public void windowClosing(WindowEvent e) { }
+					public void windowIconified(WindowEvent e) { }
+					public void windowDeiconified(WindowEvent e) { }
+					public void windowActivated(WindowEvent e) { }
+					public void windowDeactivated(WindowEvent e) { }
+
+					public void windowClosed(WindowEvent e)
+					{
+						client.close();
+					}
+				});
+		
+		// Window settings
+		f.setSize(width, height);
+		f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		f.setVisible(true);
+	}
+	
+	public static void setupClient()
+	{
 		// Read in the config
-		System.out.println("Loading config.txt");
 		File conf = new File("config.txt");
-		Map<String, String> params = new HashMap<String, String>();
+		params = new HashMap<String, String>();
 		
 		// Parse if exists
 		if (conf.exists())
@@ -81,62 +227,73 @@ public class SpectateAnyone
 			}
 			catch (IOException e)
 			{
-				System.out.println("Encountered an error when parsing config.txt:");
-				e.printStackTrace();
+				JOptionPane.showMessageDialog(
+						f,
+						"Encountered an error when parsing config.txt",
+					    "Error",
+					    JOptionPane.ERROR_MESSAGE);
 			}
-		}
-		else
-		{
-			System.out.println("config.txt did not exist.");
-			System.out.println("Please enter the following information.");
-			System.out.println();
-		}
-		
-		// Check for completeness
-		if (!(params.containsKey("user") && 
-			  params.containsKey("pass") && 
-			  params.containsKey("lollocation") && 
-			  params.containsKey("version") && 
-			  params.containsKey("region")))
-		{
-			// Removed for now
 		}
 
 		// Get missing information
 		boolean newinfo = false;
 		if (!params.containsKey("lollocation"))
 		{
-			System.out.print("LoL install location (e.g. C:\\Riot Games\\League of Legends\\): ");
-			params.put("lollocation", getInput());
+			String res = (String)JOptionPane.showInputDialog(
+					f,
+                    "Enter your LoL installation location\nE.g. C:\\Riot Games\\League of Legends\\",
+                    "Login Information",
+                    JOptionPane.QUESTION_MESSAGE);
+			
+			params.put("lollocation", res);
 			newinfo = true;
 		}
 
 		if (!params.containsKey("region"))
 		{
-			System.out.print("Region (NA/EUW/EUN): ");
-			params.put("region", getInput().toUpperCase());
+			String res = (String)JOptionPane.showInputDialog(
+					f,
+                    "Enter the region (NA/EUW/EUN)",
+                    "Login Information",
+                    JOptionPane.QUESTION_MESSAGE);
+			
+			params.put("region", res);
 			newinfo = true;
 		}
 
 		if (!params.containsKey("version"))
 		{
-			System.out.println("Client version can be found at the top left of the real client");
-			System.out.print("Client version (e.g. 1.60.foo): ");
-			params.put("version", getInput());
+			String res = (String)JOptionPane.showInputDialog(
+					f,
+                    "Enter the Client Version for " + params.get("region") + "\nClient version can be found at the top left of the real client",
+                    "Login Information",
+                    JOptionPane.QUESTION_MESSAGE);
+
+			params.put("version", res);
 			newinfo = true;
 		}
 
 		if (!params.containsKey("user"))
 		{
-			System.out.print("User: ");
-			params.put("user", getInput());
+			String res = (String)JOptionPane.showInputDialog(
+					f,
+                    "Enter your login name for " + params.get("region"),
+                    "Login Information",
+                    JOptionPane.QUESTION_MESSAGE);
+
+			params.put("user", res);
 			newinfo = true;
 		}
 
 		if (!params.containsKey("pass"))
 		{
-			System.out.print("Pass: ");
-			params.put("pass", getInput());
+			String res = (String)JOptionPane.showInputDialog(
+					f,
+                    "Enter the password for '" + params.get("user") + "'",
+                    "Login Information",
+                    JOptionPane.QUESTION_MESSAGE);
+
+			params.put("pass", res);
 		}
 		
 		// Set up config.txt if needed
@@ -147,7 +304,7 @@ public class SpectateAnyone
 				BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(conf), "UTF-8"));
 				out.write("lollocation=" + params.get("lollocation") + "\r\n");
 				out.write("user=" + params.get("user") + "\r\n");
-				//out.write("pass=" + params.get("pass") + "\r\n");
+				//out.write("pass=" + params.get("pass") + "\r\n"); // Don't save password by default
 				out.write("version=" + params.get("version") + "\r\n");
 				out.write("region=" + params.get("region") + "\r\n");
 				out.close();
@@ -162,11 +319,11 @@ public class SpectateAnyone
 		// Set the region used for the game executable
 		String region = params.get("region");
 		if (region.equals("NA"))
-			region = "NA1";
+			params.put("region2", "NA1");
 		else if (region.equals("EUW"))
-			region = "EUW1";
+			params.put("region2", "EUW1");
 		else if (region.equals("EUN"))
-			region = "EUN1";
+			params.put("region2", "EUN1");
 		
 		// Fix location if necessary
 		String loc = params.get("lollocation");
@@ -180,7 +337,11 @@ public class SpectateAnyone
 		File clientDir = new File(loc + "RADS\\projects\\lol_air_client\\releases\\");
 		if (!gameDir.exists() || !clientDir.exists())
 		{
-			System.err.println("The installation location does not appear to be valid, make sure it is correct");
+			JOptionPane.showMessageDialog(
+					f,
+					"The installation location does not appear to be valid, make sure it is correct in config.txt.",
+				    "Error",
+				    JOptionPane.ERROR_MESSAGE);
 			System.exit(0);
 		}
 		
@@ -195,6 +356,7 @@ public class SpectateAnyone
 			if (ver > maxGame)
 				maxGame = ver;
 		}
+		params.put("maxGame", "" + maxGame);
 		
 		int maxClient = 0;
 		for (File f : clientDir.listFiles())
@@ -207,155 +369,197 @@ public class SpectateAnyone
 			if (ver > maxClient)
 				maxClient = ver;
 		}
+		params.put("maxClient", "" + maxClient);
 		
 		// Connect
-		System.out.println("Connecting...");
-		System.out.println();
-		LoLRTMPSClient client = new LoLRTMPSClient(params.get("region"), params.get("version"), params.get("user"), params.get("pass"));
+		client = new LoLRTMPSClient(params.get("region"), params.get("version"), params.get("user"), params.get("pass"));
+		client.reconnect();
+		
+		// Enable the buttons
+		btnName.setText("Spectate!");
+		btnName.setEnabled(true);
+		btnFile.setEnabled(true);
+	}
+
+	public static void doLayout()
+	{
+		lblName.setBounds(5, 5, 60, 25);
+		txtName.setBounds(65, 5, width - 185, 25);
+		btnName.setBounds(width - 120, 5, 107, 24);
+		
+		sep.setBounds(5, 35, width - 18, 5);
+		
+		lblFile.setBounds(5, 42, 60, 25);
+		txtFile.setBounds(65, 42, width - 185, 25);
+		btnFile.setBounds(width - 120, 42, 107, 24);
+		
+		lstScroll.setBounds(5, 72, width - 17, height - 104);
+	}
+	
+	public static synchronized void handleSpectate()
+	{
+		String toSpec = txtName.getText();
+		if (toSpec.length() == 0)
+			return;
+		
 		try
 		{
-			client.connectAndLogin();
+			// Get spectator info
+			int id = client.invoke("gameService", "retrieveInProgressSpectatorGameInfo", new Object[] { toSpec });
+			TypedObject result = client.getResult(id);
+			TypedObject data = result.getTO("data");
+
+			// Handle errors
+			if (result.get("result").equals("_error"))
+			{
+				if (data.getTO("rootCause").type.equals("com.riotgames.platform.messaging.UnexpectedServiceException"))
+				{
+					JOptionPane.showMessageDialog(
+							f,
+							"No summoner found for " + toSpec + ".",
+						    "Error",
+						    JOptionPane.ERROR_MESSAGE);
+				}
+				else if (data.getTO("rootCause").type.equals("com.riotgames.platform.game.GameNotFoundException"))
+				{
+					JOptionPane.showMessageDialog(
+							f,
+							toSpec + " is not currently in a game.",
+						    "Error",
+						    JOptionPane.ERROR_MESSAGE);
+				}
+				else
+				{
+					JOptionPane.showMessageDialog(
+							f,
+							"Encountered an error when retrieving spectator information for " + toSpec + ":\n" + data.getTO("rootCause").get("localizedMessage"),
+						    "Error",
+						    JOptionPane.ERROR_MESSAGE);
+				}
+			}
+			else
+			{
+				// Extract needed info
+				TypedObject cred = data.getTO("body").getTO("playerCredentials");
+				String ip = (String)cred.get("observerServerIp");
+				int port = (Integer)cred.get("observerServerPort");
+				String key = (String)cred.get("observerEncryptionKey");
+				int gameID = ((Double)cred.get("gameId")).intValue();
+				
+				// Running the process directly causes it to hang, so create a batch file and run that
+				String loc = params.get("lollocation");
+				BufferedWriter out = new BufferedWriter(new FileWriter("run.bat"));
+				out.write(loc.substring(0, 2) + "\r\n"); // Change to drive if necessary
+				out.write("cd \"" + loc + "RADS\\solutions\\lol_game_client_sln\\releases\\0.0.0." + params.get("maxGame") + "\\deploy\"\r\n");
+				out.write("start \"\" ");
+				out.write("\"" + loc + "RADS\\solutions\\lol_game_client_sln\\releases\\0.0.0." + params.get("maxGame") + "\\deploy\\League of Legends.exe\" ");
+				out.write("8394 ");
+				out.write("LoLLauncher.exe ");
+				out.write("\"" + loc + "RADS\\projects\\lol_air_client\\releases\\0.0.0." + params.get("maxGame") + "\\deploy\\LolClient.exe\" ");
+				out.write("\"spectator " + ip + ":" + port + " " + key + " " + gameID + " " + params.get("region2") + "\"\r\n");
+				out.flush();
+				out.close();
+				
+				// Run (and make sure to consume output)
+				Process game = Runtime.getRuntime().exec("run.bat");
+				new StreamGobbler(game.getInputStream());
+				new StreamGobbler(game.getErrorStream());
+				game.waitFor();
+				
+				// Delete temp file
+				File temp = new File("run.bat");
+				temp.delete();
+			}
 		}
 		catch (IOException e)
 		{
-			System.out.println("Failed to connect");
+			System.err.println("Encountered an error when trying to retrieve spectate information for " + toSpec + ":");
 			e.printStackTrace();
-			System.exit(0);
 		}
-		
-		// Spectate people
-		System.out.println();
-		System.out.println("Hit enter without typing anything to exit");
-		System.out.println("!file.txt will print out the summoners from 'file.txt' that can be observed");
-		System.out.println("E.g. '!list.txt' will read from list.txt, use one summoner name per line");
-		System.out.println();
-		System.out.print("Spectate whom? ");
-		String toSpec = getInput();
-		while (toSpec.length() != 0)
+		catch (InterruptedException e)
 		{
-			// Check game status of all summoners in file
-			if (toSpec.startsWith("!"))
-			{
-				String filename = toSpec.substring(1).trim();
-				try
-				{
-					BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(filename), "UTF-8"));
-					String line;
-					while ((line = in.readLine()) != null)
-					{
-						line = line.trim();
-						line = line.replace("\"", "");
-						if (line.length() < 4)
-							continue;
-						
-						// Invoke asynchronously
-						final String name = line;
-						client.invokeWithCallback("gameService", "retrieveInProgressSpectatorGameInfo", new Object[] { name },
-								new Callback()
-								{
-									public void callback(TypedObject result)
-									{
-										if (result.get("result").equals("_result"))
-											System.out.println(name);
-									}
-								});
-						
-					}
-					in.close();
-					
-					// Wait for all requests to finish;
-					client.join();
-				}
-				catch (IOException e)
-				{
-					System.err.println("Error reading from " + filename + ":");
-					e.printStackTrace();
-				}
-			}
-			// Attempt to spectate a summoner
-			else
-			{
-				try
-				{
-					// Get spectator info
-					int id = client.invoke("gameService", "retrieveInProgressSpectatorGameInfo", new Object[] { toSpec });
-					TypedObject result = client.getResult(id);
-					TypedObject data = result.getTO("data");
+			System.err.println("Something terrible happened");
+			e.printStackTrace();
+		}
+	}
 	
-					// Handle errors
-					if (result.get("result").equals("_error"))
-					{
-						if (data.getTO("rootCause").type.equals("com.riotgames.platform.messaging.UnexpectedServiceException"))
-							System.err.println("No summoner found for " + toSpec);
-						else if (data.getTO("rootCause").type.equals("com.riotgames.platform.game.GameNotFoundException"))
-							System.err.println(toSpec + " is not currently in a game");
-						else
+	public static void setFile()
+	{
+		// Change focus first so no infinite loop
+		btnFile.requestFocusInWindow();
+		
+		int returnVal = fc.showOpenDialog(f);
+		if (returnVal != JFileChooser.APPROVE_OPTION)
+			return;
+		
+		File f = fc.getSelectedFile();
+
+		txtFile.setText(f.getAbsolutePath());
+	}
+	
+	public static synchronized void loadFile()
+	{
+		if (!client.isLoggedIn())
+			return;
+		
+		String filename = txtFile.getText();
+		if (filename == null)
+			return;
+		
+		File file = new File(filename);
+		if (!file.exists() || !file.isFile())
+			return;
+
+		// Grey out spectate button
+		btnName.setEnabled(false);
+		
+		// Clear old list
+		lstModel.clear();
+		
+		try
+		{
+			BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(filename), "UTF-8"));
+			String line;
+			while ((line = in.readLine()) != null)
+			{
+				line = line.trim();
+				line = line.replace("\"", "");
+				
+				// Handle notepad saving extra bytes for UTF8
+				if (line.charAt(0) == 65279)
+					line = line.substring(1);
+				
+				if (line.length() < 4)
+					continue;
+				
+				// Invoke asynchronously
+				final String name = line;
+				client.invokeWithCallback("gameService", "retrieveInProgressSpectatorGameInfo", new Object[] { name },
+						new Callback()
 						{
-							System.err.println("Encountered an error when retrieving spectator information for " + toSpec + ":");
-							System.err.println(data.getTO("rootCause").get("localizedMessage"));
-						}
-					}
-					else
-					{
-						// Extract needed info
-						TypedObject cred = data.getTO("body").getTO("playerCredentials");
-						String ip = (String)cred.get("observerServerIp");
-						int port = (Integer)cred.get("observerServerPort");
-						String key = (String)cred.get("observerEncryptionKey");
-						int gameID = ((Double)cred.get("gameId")).intValue();
-						
-						// Running the process directly causes it to hang, so create a batch file and run that
-						BufferedWriter out = new BufferedWriter(new FileWriter("run.bat"));
-						out.write(loc.substring(0, 2) + "\r\n"); // Change to drive if necessary
-						out.write("cd \"" + loc + "RADS\\solutions\\lol_game_client_sln\\releases\\0.0.0." + maxGame + "\\deploy\"\r\n");
-						out.write("start \"\" ");
-						out.write("\"" + loc + "RADS\\solutions\\lol_game_client_sln\\releases\\0.0.0." + maxGame + "\\deploy\\League of Legends.exe\" ");
-						out.write("8394 ");
-						out.write("LoLLauncher.exe ");
-						out.write("\"" + loc + "RADS\\projects\\lol_air_client\\releases\\0.0.0." + maxClient + "\\deploy\\LolClient.exe\" ");
-						out.write("\"spectator " + ip + ":" + port + " " + key + " " + gameID + " " + region + "\"\r\n");
-						out.flush();
-						out.close();
-						
-						// Run (and make sure to consume output)
-						Process game = Runtime.getRuntime().exec("run.bat");
-						//StreamGobbler stdout = new StreamGobbler(game.getInputStream());
-						//StreamGobbler stderr = new StreamGobbler(game.getErrorStream());
-						new StreamGobbler(game.getInputStream());
-						new StreamGobbler(game.getErrorStream());
-						game.waitFor();
-						
-						// Print out any data
-						//System.out.println("STDOUT");
-						//System.out.println(stdout.getData());
-						//System.out.println();
-						//System.out.println("STDERR");
-						//System.out.println(stderr.getData());
-						
-						// Delete temp file
-						File temp = new File("run.bat");
-						temp.delete();
-					}
-				}
-				catch (IOException e)
-				{
-					System.err.println("Encountered an error when trying to retrieve spectate information for " + toSpec + ":");
-					e.printStackTrace();
-				}
-				catch (InterruptedException e)
-				{
-					System.err.println("Something terrible happened");
-					e.printStackTrace();
-				}
+							public void callback(TypedObject result)
+							{
+								if (result.get("result").equals("_result"))
+									lstModel.addElement(name);
+							}
+						});
 			}
-			
-			// And loop
-			System.out.print("Spectate whom? ");
-			toSpec = getInput();
+			in.close();
+		}
+		catch (IOException e)
+		{
+			JOptionPane.showMessageDialog(
+					f,
+					"Error reading from " + filename + ":\n" + e.getMessage(),
+				    "Error",
+				    JOptionPane.ERROR_MESSAGE);
 		}
 		
-		// And close the client
-		client.close();
+		// Wait for all requests to finish;
+		client.join();
+
+		// Re-enable button
+		btnName.setEnabled(true);
 	}
 }
 
