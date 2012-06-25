@@ -458,7 +458,6 @@ public class SpectateAnyone
 					};
 				
 				// Run (and make sure to consume output)
-				//Process game = Runtime.getRuntime().exec("run.bat");
 				Process game = Runtime.getRuntime().exec(cmd, null, dir);
 				new StreamGobbler(game.getInputStream());
 				new StreamGobbler(game.getErrorStream());
