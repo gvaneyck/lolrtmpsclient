@@ -446,39 +446,27 @@ public class SpectateAnyone
 				String key = (String)cred.get("observerEncryptionKey");
 				int gameID = ((Double)cred.get("gameId")).intValue();
 				
-				// Running the process directly causes it to hang, so create a batch file and run that
+				// Set up the command line
 				String loc = params.get("lollocation");
-				BufferedWriter out = new BufferedWriter(new FileWriter("run.bat"));
-				out.write(loc.substring(0, 2) + "\r\n"); // Change to drive if necessary
-				out.write("cd \"" + loc + "RADS\\solutions\\lol_game_client_sln\\releases\\0.0.0." + params.get("maxGame") + "\\deploy\"\r\n");
-				out.write("start \"\" ");
-				out.write("\"" + loc + "RADS\\solutions\\lol_game_client_sln\\releases\\0.0.0." + params.get("maxGame") + "\\deploy\\League of Legends.exe\" ");
-				out.write("8394 ");
-				out.write("LoLLauncher.exe ");
-				out.write("\"" + loc + "RADS\\projects\\lol_air_client\\releases\\0.0.0." + params.get("maxGame") + "\\deploy\\LolClient.exe\" ");
-				out.write("\"spectator " + ip + ":" + port + " " + key + " " + gameID + " " + params.get("region2") + "\"\r\n");
-				out.flush();
-				out.close();
+				File dir = new File(loc + "RADS\\solutions\\lol_game_client_sln\\releases\\0.0.0." + params.get("maxGame") + "\\deploy\\");
+				String[] cmd = new String[] {
+						loc + "RADS\\solutions\\lol_game_client_sln\\releases\\0.0.0." + params.get("maxGame") + "\\deploy\\League of Legends.exe",
+						"8394",
+						"LoLLauncher.exe",
+						loc + "RADS\\projects\\lol_air_client\\releases\\0.0.0." + params.get("maxGame") + "\\deploy\\LolClient.exe",
+						"spectator " + ip + ":" + port + " " + key + " " + gameID + " " + params.get("region2")
+					};
 				
 				// Run (and make sure to consume output)
-				Process game = Runtime.getRuntime().exec("run.bat");
+				//Process game = Runtime.getRuntime().exec("run.bat");
+				Process game = Runtime.getRuntime().exec(cmd, null, dir);
 				new StreamGobbler(game.getInputStream());
 				new StreamGobbler(game.getErrorStream());
-				game.waitFor();
-				
-				// Delete temp file
-				File temp = new File("run.bat");
-				temp.delete();
 			}
 		}
 		catch (IOException e)
 		{
 			System.err.println("Encountered an error when trying to retrieve spectate information for " + toSpec + ":");
-			e.printStackTrace();
-		}
-		catch (InterruptedException e)
-		{
-			System.err.println("Something terrible happened");
 			e.printStackTrace();
 		}
 	}
