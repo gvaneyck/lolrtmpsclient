@@ -116,7 +116,7 @@ public class SpectateAnyone
 	
 					public void keyReleased(KeyEvent e)
 					{
-						if (e.getKeyCode() == KeyEvent.VK_ENTER)
+						if (e.getKeyCode() == KeyEvent.VK_ENTER && btnName.isEnabled())
 							handleSpectate();
 					}
 				});
