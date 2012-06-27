@@ -760,14 +760,14 @@ public class RTMPSClient
 				}
 			}
 			
+			// Will kill any getResults requests
+			results = null;
+
 			// Attempt to reconnect if this was an unintentional disconnect
 			if (curThread == thread && reconnect)
 			{
 				client.reconnect();
 			}
-			
-			// Will kill any getResults requests
-			results = null;
 		}
 	}
 
@@ -794,8 +794,6 @@ public class RTMPSClient
 		
 		public void add(byte b)
 		{
-			if (dataSize == 0)
-				dataBuffer = new byte[1000];
 			dataBuffer[dataPos++] = b;
 		}
 		

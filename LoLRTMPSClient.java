@@ -372,6 +372,7 @@ public class LoLRTMPSClient extends RTMPSClient
 		TypedObject result;
 		try
 		{
+			//{"rate":0,"reason":"account_banned","status":"FAILED","delay":10000,"banned":7647952951000}
 			response = readAll(connection.getInputStream());
 			result = (TypedObject)JSON.parse(response);
 		}
