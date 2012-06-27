@@ -129,7 +129,7 @@ public class JSON
 		StringBuilder buff = new StringBuilder();
 		char c;
 
-		while ((c = json.removeFirst()) != '"' && !postBackslash)
+		while ((c = json.removeFirst()) != '"' || postBackslash)
 		{
 			if (!postBackslash)
 			{
