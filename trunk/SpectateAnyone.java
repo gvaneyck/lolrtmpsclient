@@ -36,6 +36,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 /**
  * A simple program that allows a player to spectate anyone playing a game
@@ -154,16 +156,34 @@ public class SpectateAnyone
 					public void mouseReleased(MouseEvent e) { }
 					public void mouseEntered(MouseEvent e) { }
 					public void mouseExited(MouseEvent e) { }
-
+		
 					public void mouseClicked(MouseEvent e)
 					{
-						if (e.getClickCount() == 1)
-							txtName.setText((String)lstInGame.getSelectedValue());
 						if (e.getClickCount() == 2)
 							handleSpectate();
 					}
 				});
 
+		lstInGame.addKeyListener(new KeyListener()
+				{
+					public void keyTyped(KeyEvent e) { }
+					public void keyPressed(KeyEvent e) { }
+		
+					public void keyReleased(KeyEvent e)
+					{
+						if (e.getKeyCode() == KeyEvent.VK_ENTER)
+							handleSpectate();
+					}
+				});
+		
+		lstInGame.addListSelectionListener(new ListSelectionListener()
+				{
+					public void valueChanged(ListSelectionEvent e)
+					{
+						txtName.setText((String)lstInGame.getSelectedValue());
+					}
+				});
+		
 		pane.addHierarchyBoundsListener(new HierarchyBoundsListener()
 				{
 					public void ancestorMoved(HierarchyEvent e) { }
@@ -497,9 +517,6 @@ public class SpectateAnyone
 		if (!file.exists() || !file.isFile())
 			return;
 
-		// Grey out spectate button
-		btnName.setEnabled(false);
-		
 		// Clear old list
 		lstModel.clear();
 		
@@ -544,9 +561,6 @@ public class SpectateAnyone
 		
 		// Wait for all requests to finish;
 		client.join();
-
-		// Re-enable button
-		btnName.setEnabled(true);
 	}
 }
 
