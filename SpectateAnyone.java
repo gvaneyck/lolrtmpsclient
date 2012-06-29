@@ -533,9 +533,6 @@ public class SpectateAnyone
 				if (line.charAt(0) == 65279)
 					line = line.substring(1);
 				
-				if (line.length() < 4)
-					continue;
-				
 				// Invoke asynchronously
 				final String name = line;
 				client.invokeWithCallback("gameService", "retrieveInProgressSpectatorGameInfo", new Object[] { name },
