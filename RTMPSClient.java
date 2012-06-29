@@ -1,15 +1,9 @@
 import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PushbackInputStream;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -712,21 +706,19 @@ public class RTMPSClient
 					// Remove the read packet
 					packets.remove(channel);
 					
-					// Skip most messages
-					if (p.getType() != 0x14 && p.getType() != 0x11)
-						continue;
-
 					// Decode result
-					TypedObject result = null;
-					adc.reset();
-					if (p.getType() == 0x14) // Connect
-						result = adc.decodeConnect(p.getData());
-					else if (p.getType() == 0x11) // Invoke
-						result = adc.decodeInvoke(p.getData());
+					final TypedObject result;
+					if (p.getType() == 0x14)
+						result = adc.decodeConnect(p.getData()); // Connect
+					else if (p.getType() == 0x11)
+						result = adc.decodeInvoke(p.getData()); // Invoke
+					else
+						continue; // Skip most messages
+
+					if (debug) System.out.println(result);
 
 					// Store result
 					Integer id = result.getInt("invokeId");
-					if (debug) System.out.println(result);
 						
 					if (id == null || id == 0)
 					{
@@ -736,9 +728,19 @@ public class RTMPSClient
 					}
 					else if (callbacks.containsKey(id))
 					{
-						Callback cb = callbacks.remove(id);
+						final Callback cb = callbacks.remove(id);
 						if (cb != null)
-							cb.callback(result);
+						{
+							// Thread the callback so it doesn't hang us
+							Thread t = new Thread()
+									{
+										public void run()
+										{
+											cb.callback(result);
+										}
+									};
+							t.start();
+						}
 					}
 					else
 					{

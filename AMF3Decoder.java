@@ -24,9 +24,9 @@ public class AMF3Decoder
 	 */
 	public void reset()
 	{
-		stringReferences = new ArrayList<String>();
-		objectReferences = new ArrayList<Object>();
-		classDefinitions = new ArrayList<ClassDefinition>();
+		stringReferences.clear();
+		objectReferences.clear();
+		classDefinitions.clear();
 	}
 
 	/**
@@ -39,6 +39,8 @@ public class AMF3Decoder
 	 */
 	public TypedObject decodeConnect(byte[] data) throws NotImplementedException, EncodingException
 	{
+		reset();
+
 		dataBuffer = data;
 		dataPos = 0;
 
@@ -64,6 +66,8 @@ public class AMF3Decoder
 	 */
 	public TypedObject decodeInvoke(byte[] data) throws NotImplementedException, EncodingException
 	{
+		reset();
+
 		dataBuffer = data;
 		dataPos = 0;
 
