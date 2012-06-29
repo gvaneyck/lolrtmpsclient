@@ -1,8 +1,7 @@
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.Insets;
 import java.awt.Label;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.HierarchyBoundsListener;
@@ -18,13 +17,13 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Semaphore;
 
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
@@ -47,6 +46,10 @@ import javax.swing.event.ListSelectionListener;
  */
 public class SpectateAnyone
 {
+	public static final boolean debug = false;
+	
+	public static final Semaphore listLock = new Semaphore(1); // Needed due to list updating
+	
 	public static final JFrame f = new JFrame("Spectate Anyone!");
 	
 	public static final Label lblName = new Label("Name:");
@@ -110,6 +113,44 @@ public class SpectateAnyone
 		// Layout everything
 		doLayout();
 		
+		// Setup delay updater
+		Thread t = new Thread()
+				{
+					public void run()
+					{
+						while (true)
+						{
+							try
+							{
+								listLock.acquire();
+								for (int i = 0; i < lstModel.size(); i++)
+								{
+									String val = (String)lstModel.get(i);
+									if (val.contains("("))
+									{
+										int idx = val.indexOf("(");
+										int time = Integer.parseInt(val.substring(idx + 1, val.indexOf("s", idx))) - 1;
+										String name = val.substring(0, idx - 1);
+										
+										if (time == 0)
+											lstModel.set(i, name);
+										else
+											lstModel.set(i, name + " (" + time + "s)");
+									}
+								}
+								listLock.release();
+								
+								Thread.sleep(1000);
+							}
+							catch (InterruptedException e)
+							{
+							}
+						}
+					}
+				};
+		t.setDaemon(true);
+		t.start();
+		
 		// Listeners
 		txtName.addKeyListener(new KeyListener()
 				{
@@ -123,9 +164,14 @@ public class SpectateAnyone
 					}
 				});
 		
-		btnName.addActionListener(new ActionListener()
+		btnName.addMouseListener(new MouseListener()
 				{
-					public void actionPerformed(ActionEvent e)
+					public void mousePressed(MouseEvent e) { }
+					public void mouseReleased(MouseEvent e) { }
+					public void mouseEntered(MouseEvent e) { }
+					public void mouseExited(MouseEvent e) { }
+					
+					public void mouseClicked(MouseEvent e)
 					{
 						handleSpectate();
 					}
@@ -141,11 +187,15 @@ public class SpectateAnyone
 					}
 				});
 
-		btnFile.addActionListener(new ActionListener()
+		btnFile.addMouseListener(new MouseListener()
 				{
-					public void actionPerformed(ActionEvent e)
+					public void mousePressed(MouseEvent e) { }
+					public void mouseReleased(MouseEvent e) { }
+					public void mouseEntered(MouseEvent e) { }
+					public void mouseExited(MouseEvent e) { }
+					
+					public void mouseClicked(MouseEvent e)
 					{
-						
 						loadFile();
 					}
 				});
@@ -180,7 +230,13 @@ public class SpectateAnyone
 				{
 					public void valueChanged(ListSelectionEvent e)
 					{
-						txtName.setText((String)lstInGame.getSelectedValue());
+						try { listLock.acquire(); } catch (InterruptedException e1) { }
+						String name = (String)lstInGame.getSelectedValue();
+						listLock.release();
+						
+						if (name.contains("("))
+							name = name.substring(0, name.indexOf("(") - 1);
+						txtName.setText(name);
 					}
 				});
 		
@@ -275,7 +331,10 @@ public class SpectateAnyone
 					f,
                     "Enter the region (NA/EUW/EUN)",
                     "Login Information",
-                    JOptionPane.QUESTION_MESSAGE);
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    new Object[] { "NA", "EUW", "EUN" },
+                    "NA");
 			
 			params.put("region", res);
 			newinfo = true;
@@ -393,6 +452,7 @@ public class SpectateAnyone
 		
 		// Connect
 		client = new LoLRTMPSClient(params.get("region"), params.get("version"), params.get("user"), params.get("pass"));
+		client.debug = debug;
 		client.reconnect();
 		
 		// Enable the buttons
@@ -403,22 +463,30 @@ public class SpectateAnyone
 
 	public static void doLayout()
 	{
-		lblName.setBounds(5, 5, 60, 25);
-		txtName.setBounds(65, 5, width - 185, 25);
-		btnName.setBounds(width - 120, 5, 107, 24);
+		Insets i = f.getInsets();
+		int twidth = width - i.left - i.right;
+		int theight = height - i.top - i.bottom;
+
+		int lblWidth = 60;
+		int btnWidth = 125;
+		int txtWidth = twidth - lblWidth - btnWidth - 10;
 		
-		sep.setBounds(5, 35, width - 18, 5);
+		lblName.setBounds(5, 5, lblWidth, 25);
+		txtName.setBounds(5 + lblWidth, 5, txtWidth, 25);
+		btnName.setBounds(twidth - btnWidth - 5, 5, btnWidth, 24);
 		
-		lblFile.setBounds(5, 42, 60, 25);
-		txtFile.setBounds(65, 42, width - 185, 25);
-		btnFile.setBounds(width - 120, 42, 107, 24);
+		sep.setBounds(5, 35, twidth - 10, 5);
 		
-		lstScroll.setBounds(5, 72, width - 17, height - 104);
+		lblFile.setBounds(5, 42, lblWidth, 25);
+		txtFile.setBounds(5 + lblWidth, 42, txtWidth, 25);
+		btnFile.setBounds(twidth - btnWidth - 5, 42, btnWidth, 24);
+		
+		lstScroll.setBounds(5, 72, twidth - 9, theight - 77);
 	}
 	
 	public static synchronized void handleSpectate()
 	{
-		String toSpec = txtName.getText();
+		final String toSpec = txtName.getText();
 		if (toSpec.length() == 0)
 			return;
 		
@@ -461,31 +529,97 @@ public class SpectateAnyone
 			{
 				// Extract needed info
 				TypedObject cred = data.getTO("body").getTO("playerCredentials");
-				String ip = (String)cred.get("observerServerIp");
-				int port = (Integer)cred.get("observerServerPort");
-				String key = (String)cred.get("observerEncryptionKey");
-				int gameID = ((Double)cred.get("gameId")).intValue();
+				final String ip = (String)cred.get("observerServerIp");
+				final int port = (Integer)cred.get("observerServerPort");
+				final String key = (String)cred.get("observerEncryptionKey");
+				final int gameID = ((Double)cred.get("gameId")).intValue();
 				
-				// Set up the command line
-				String loc = params.get("lollocation");
-				File dir = new File(loc + "RADS\\solutions\\lol_game_client_sln\\releases\\0.0.0." + params.get("maxGame") + "\\deploy\\");
-				String[] cmd = new String[] {
-						loc + "RADS\\solutions\\lol_game_client_sln\\releases\\0.0.0." + params.get("maxGame") + "\\deploy\\League of Legends.exe",
-						"8394",
-						"LoLLauncher.exe",
-						loc + "RADS\\projects\\lol_air_client\\releases\\0.0.0." + params.get("maxGame") + "\\deploy\\LolClient.exe",
-						"spectator " + ip + ":" + port + " " + key + " " + gameID + " " + params.get("region2")
-					};
+				// Check delay time first
+				final int delay = data.getTO("body").getInt("reconnectDelay") - 5;
 				
-				// Run (and make sure to consume output)
-				Process game = Runtime.getRuntime().exec(cmd, null, dir);
-				new StreamGobbler(game.getInputStream());
-				new StreamGobbler(game.getErrorStream());
+				// If there's more than a 5s wait, create a thread to automatically launch
+				if (delay > 0)
+				{
+					Thread t = new Thread()
+							{
+								public void run()
+								{
+									// Delay until 5s left or text changes
+									int wait = delay;
+									lblName.requestFocusInWindow(); // Force the focus away so txtFile isn't accidentally selected
+									btnName.setEnabled(false);
+									while (toSpec.equals(txtName.getText()) && wait > 0)
+									{
+										btnName.setText("Delaying (" + wait + "s)");
+										for (int i = 0; i < 10; i++)
+										{
+											if (!toSpec.equals(txtName.getText()))
+												break;
+											
+											try { Thread.sleep(100); } catch (InterruptedException e) { }
+										}
+										wait--;
+									}
+									
+									// Reset button state
+									btnName.setEnabled(true);
+									btnName.setText("Spectate!");
+									
+									// Spectate if text didn't change
+									if (toSpec.equals(txtName.getText()))
+										doSpectate(ip, port, key, gameID);
+								}
+							};
+					t.start();
+				}
+				// Otherwise, just spectate
+				else
+					doSpectate(ip, port, key, gameID);
 			}
 		}
 		catch (IOException e)
 		{
-			System.err.println("Encountered an error when trying to retrieve spectate information for " + toSpec + ":");
+			JOptionPane.showMessageDialog(
+					f,
+					"Encountered an error when trying to retrieve spectate information for " + toSpec + " (check console)\n" + e.getMessage(),
+				    "Error",
+				    JOptionPane.ERROR_MESSAGE);
+			e.printStackTrace();
+		}
+	}
+	
+	public static void doSpectate(String ip, int port, String key, int gameID) 
+	{
+		// Set up the command line
+		String loc = params.get("lollocation");
+		File dir = new File(loc + "RADS\\solutions\\lol_game_client_sln\\releases\\0.0.0." + params.get("maxGame") + "\\deploy\\");
+		String[] cmd = new String[] {
+				loc + "RADS\\solutions\\lol_game_client_sln\\releases\\0.0.0." + params.get("maxGame") + "\\deploy\\League of Legends.exe",
+				"8394",
+				"LoLLauncher.exe",
+				loc + "RADS\\projects\\lol_air_client\\releases\\0.0.0." + params.get("maxGame") + "\\deploy\\LolClient.exe",
+				"spectator " + ip + ":" + port + " " + key + " " + gameID + " " + params.get("region2")
+			};
+		
+		try
+		{
+			// Run (and make sure to consume output)
+			Process game = Runtime.getRuntime().exec(cmd, null, dir);
+			new StreamGobbler(game.getInputStream());
+			new StreamGobbler(game.getErrorStream());
+		}
+		catch (IOException e)
+		{
+			JOptionPane.showMessageDialog(
+					f,
+					"Encountered an error when trying to launch spectator mode\n" + e.getMessage(),
+				    "Error",
+				    JOptionPane.ERROR_MESSAGE);
+
+			System.err.println("loc=" + loc);
+			System.err.println("dir=" + dir.getAbsolutePath());
+			for (String s : cmd)
+				System.out.println("cmd=" + s);
 			e.printStackTrace();
 		}
 	}
@@ -517,6 +651,15 @@ public class SpectateAnyone
 		if (!file.exists() || !file.isFile())
 			return;
 
+		// Grab the lock
+		try
+		{
+			listLock.acquire();
+		}
+		catch (InterruptedException e)
+		{
+		}
+		
 		// Clear old list
 		lstModel.clear();
 		
@@ -541,7 +684,16 @@ public class SpectateAnyone
 							public void callback(TypedObject result)
 							{
 								if (result.get("result").equals("_result"))
-									lstModel.addElement(name);
+								{
+									// Check delay
+									final int delay = result.getTO("data").getTO("body").getInt("reconnectDelay") - 5;
+
+									// If long enough delay, show it in parens
+									if (delay > 0)
+										lstModel.addElement(name + " (" + delay + "s)");
+									else
+										lstModel.addElement(name);
+								}
 							}
 						});
 			}
@@ -558,6 +710,9 @@ public class SpectateAnyone
 		
 		// Wait for all requests to finish;
 		client.join();
+		
+		// Release the lock
+		listLock.release();
 	}
 }
 
