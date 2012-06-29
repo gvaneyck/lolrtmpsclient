@@ -48,8 +48,6 @@ public class SpectateAnyone
 {
 	public static final boolean debug = false;
 	
-	public static final Semaphore listLock = new Semaphore(1); // Needed due to list updating
-	
 	public static final JFrame f = new JFrame("Spectate Anyone!");
 	
 	public static final Label lblName = new Label("Name:");
@@ -122,7 +120,6 @@ public class SpectateAnyone
 						{
 							try
 							{
-								listLock.acquire();
 								for (int i = 0; i < lstModel.size(); i++)
 								{
 									String val = (String)lstModel.get(i);
@@ -138,7 +135,6 @@ public class SpectateAnyone
 											lstModel.set(i, name + " (" + time + "s)");
 									}
 								}
-								listLock.release();
 								
 								Thread.sleep(1000);
 							}
@@ -230,9 +226,9 @@ public class SpectateAnyone
 				{
 					public void valueChanged(ListSelectionEvent e)
 					{
-						try { listLock.acquire(); } catch (InterruptedException e1) { }
 						String name = (String)lstInGame.getSelectedValue();
-						listLock.release();
+						if (name == null)
+							return;
 						
 						if (name.contains("("))
 							name = name.substring(0, name.indexOf("(") - 1);
@@ -651,15 +647,6 @@ public class SpectateAnyone
 		if (!file.exists() || !file.isFile())
 			return;
 
-		// Grab the lock
-		try
-		{
-			listLock.acquire();
-		}
-		catch (InterruptedException e)
-		{
-		}
-		
 		// Clear old list
 		lstModel.clear();
 		
@@ -710,9 +697,6 @@ public class SpectateAnyone
 		
 		// Wait for all requests to finish;
 		client.join();
-		
-		// Release the lock
-		listLock.release();
 	}
 }
 
