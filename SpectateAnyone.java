@@ -659,6 +659,9 @@ public class SpectateAnyone
 				line = line.trim();
 				line = line.replace("\"", "");
 				
+				if (line.length() == 0)
+					continue;
+				
 				// Handle notepad saving extra bytes for UTF8
 				if (line.charAt(0) == 65279)
 					line = line.substring(1);
