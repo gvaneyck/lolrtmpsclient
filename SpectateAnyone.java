@@ -525,10 +525,10 @@ public class SpectateAnyone
 			{
 				// Extract needed info
 				TypedObject cred = data.getTO("body").getTO("playerCredentials");
-				final String ip = (String)cred.get("observerServerIp");
-				final int port = (Integer)cred.get("observerServerPort");
-				final String key = (String)cred.get("observerEncryptionKey");
-				final int gameID = ((Double)cred.get("gameId")).intValue();
+				final String ip = cred.getString("observerServerIp");
+				final int port = cred.getInt("observerServerPort");
+				final String key = cred.getString("observerEncryptionKey");
+				final int gameID = cred.getInt("gameId");
 				
 				// Check delay time first
 				final int delay = data.getTO("body").getInt("reconnectDelay") - 5;
