@@ -67,14 +67,20 @@ public class TypedObject extends HashMap<String, Object>
 	}
 
 	/**
-	 * Convenience for retrieving ints
+	 * Convenience for retrieving integers
 	 * 
-	 * @param key The key of the int
-	 * @return The int
+	 * @param key The key of the integer
+	 * @return The integer
 	 */
 	public Integer getInt(String key)
 	{
-		return (Integer)get(key);
+		Object val = get(key);
+		if (val == null)
+			return null;
+		else if (val instanceof Integer)
+			return (Integer)val;
+		else 
+			return ((Double)val).intValue();
 	}
 
 	/**
@@ -85,7 +91,18 @@ public class TypedObject extends HashMap<String, Object>
 	 */
 	public Double getDouble(String key)
 	{
-		return (Double)get(key);
+		Object val = get(key);
+		if (val == null)
+			return null;
+		else if (val instanceof Double)
+			return (Double)val;
+		else 
+			return ((Integer)val).doubleValue();
+	}
+	
+	public Boolean getBool(String key)
+	{
+		return (Boolean)get(key);
 	}
 
 	/**

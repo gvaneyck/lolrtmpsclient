@@ -127,10 +127,16 @@ public class LoLRTMPSClient extends RTMPSClient
 			this.loginQueue = "https://lq.eun1.lol.riotgames.com/";
 			this.locale = "en_GB";
 		}
+		else if (region.equals("KR"))
+		{
+			this.server = "prod.kr.lol.riotgames.com";
+			this.loginQueue = "https://lq.kr.lol.riotgames.com/login-queue/rest/queue";
+			this.locale = "ko_KR";
+		}
 		else
 		{
 			System.out.println("Invalid region: " + region);
-			System.out.println("Valid region are: NA, EUW, EUN");
+			System.out.println("Valid region are: NA, EUW, EUN, KR");
 			System.exit(0);
 		}
 
@@ -181,7 +187,7 @@ public class LoLRTMPSClient extends RTMPSClient
 		
 		body = result.getTO("data").getTO("body");
 		sessionToken = body.getString("token");
-		accountID = body.getTO("accountSummary").getDouble("accountId").intValue();
+		accountID = body.getTO("accountSummary").getInt("accountId");
 		
 		// Login 2
 		byte[] encbuff = null;

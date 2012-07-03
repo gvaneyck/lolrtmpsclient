@@ -227,10 +227,14 @@ public class JSON
 			}
 			json.addFirst(c);
 
-			if (isInt)
-				return Integer.parseInt(buff.toString());
-			else
-				return Double.parseDouble(buff.toString());
+			try
+			{
+				if (isInt)
+					return Integer.parseInt(buff.toString());
+			}
+			catch (NumberFormatException e) { }
+
+			return Double.parseDouble(buff.toString());
 		}
 	}
 }
