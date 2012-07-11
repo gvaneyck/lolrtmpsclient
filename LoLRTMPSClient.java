@@ -79,7 +79,6 @@ public class LoLRTMPSClient extends RTMPSClient
 		}
 		catch (Exception e)
 		{
-			System.out.println(client.lastDecode);
 			e.printStackTrace();
 		}
 
@@ -130,13 +129,19 @@ public class LoLRTMPSClient extends RTMPSClient
 		else if (region.equals("KR"))
 		{
 			this.server = "prod.kr.lol.riotgames.com";
-			this.loginQueue = "https://lq.kr.lol.riotgames.com/login-queue/rest/queue";
+			this.loginQueue = "https://lq.kr.lol.riotgames.com/";
 			this.locale = "ko_KR";
+		}
+		else if (region.equals("PBE"))
+		{
+			this.server = "prod.pbe1.lol.riotgames.com";
+			this.loginQueue = "https://lq.pbe1.lol.riotgames.com/";
+			this.locale = "en_US";
 		}
 		else
 		{
 			System.out.println("Invalid region: " + region);
-			System.out.println("Valid region are: NA, EUW, EUN, KR");
+			System.out.println("Valid region are: NA, EUW, EUN, KR, PBE");
 			System.exit(0);
 		}
 
@@ -275,14 +280,8 @@ public class LoLRTMPSClient extends RTMPSClient
 			{
 				System.err.println("Error when reconnecting: ");
 				e.printStackTrace(); // For debug purposes
-			
-				try
-				{
-					Thread.sleep(5000);
-				}
-				catch (InterruptedException e2)
-				{
-				}
+
+				sleep(5000);
 				super.reconnect(); // Need to reconnect again here
 			}
 		} 
@@ -446,23 +445,6 @@ public class LoLRTMPSClient extends RTMPSClient
 	}
 	
 	/**
-	 * Alias for Thread.sleep to get rid of the try/catch
-	 * 
-	 * @param ms The number of milliseconds to sleep
-	 */
-	private void sleep(int ms)
-	{
-		try
-		{
-			Thread.sleep(ms);
-		}
-		catch (InterruptedException e)
-		{
-			// Ignored
-		}
-	}
-
-	/**
 	 * Reads all data available at a given URL
 	 * 
 	 * @param url The URL to read
@@ -557,19 +539,20 @@ public class LoLRTMPSClient extends RTMPSClient
 				try
 				{
 					long hbTime = System.currentTimeMillis();
+					
 					int id = invoke("loginService", "performLCDSHeartBeat", new Object[] { accountID, sessionToken, heartbeat, sdf.format(new Date()) });
-
-					getResult(id); // Ignore result for now
+					cancel(id); // Ignore result for now
 
 					heartbeat++;
 
 					// Quick sleeps to shutdown the heartbeat quickly on a reconnect
 					while (curThread == thread && System.currentTimeMillis() - hbTime < 120000)
-						Thread.sleep(100);
+						sleep(100);
 				}
 				catch (Exception e)
 				{
-					// Ignored for now
+					if (!reconnecting)
+						doReconnect();
 				}
 			}
 		}

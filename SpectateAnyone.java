@@ -144,6 +144,7 @@ public class SpectateAnyone
 						}
 					}
 				};
+		t.setName("SpectateAnyone (ListUpdater)");
 		t.setDaemon(true);
 		t.start();
 		
@@ -266,6 +267,7 @@ public class SpectateAnyone
 		
 		// Window settings
 		f.setSize(width, height);
+		f.setMinimumSize(new Dimension(width, height));
 		f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		f.setVisible(true);
 	}
@@ -325,11 +327,11 @@ public class SpectateAnyone
 		{
 			String res = (String)JOptionPane.showInputDialog(
 					f,
-                    "Enter the region (NA/EUW/EUN)",
+                    "Select a region (KR might not work)",
                     "Login Information",
                     JOptionPane.QUESTION_MESSAGE,
                     null,
-                    new Object[] { "NA", "EUW", "EUN" },
+                    new Object[] { "NA", "EUW", "EUN", "KR", "PBE" },
                     "NA");
 			
 			params.put("region", res);
@@ -399,6 +401,10 @@ public class SpectateAnyone
 			params.put("region2", "EUW1");
 		else if (region.equals("EUN"))
 			params.put("region2", "EUN1");
+		else if (region.equals("KR"))
+			params.put("region2", "KR1");
+		else if (region.equals("PBE"))
+			params.put("region2", "PBE1");
 		
 		// Fix location if necessary
 		String loc = params.get("lollocation");
@@ -566,6 +572,7 @@ public class SpectateAnyone
 										doSpectate(ip, port, key, gameID);
 								}
 							};
+					t.setName("SpectateAnyone (SpectateDelay)");
 					t.start();
 				}
 				// Otherwise, just spectate

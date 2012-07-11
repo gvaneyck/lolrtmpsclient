@@ -23,7 +23,7 @@ import javax.net.ssl.SSLSocketFactory;
 public class RTMPSClient
 {
 	public boolean debug = false;
-	
+
 	/** Server information */
 	protected String server;
 	protected int port;
@@ -41,7 +41,8 @@ public class RTMPSClient
 	protected RTMPPacketReader pr;
 
 	/** State information */
-	protected boolean connected = false;
+	protected volatile boolean connected = false;
+	protected volatile boolean reconnecting = false;
 	protected int invokeID = 2;
 
 	/** Used for generating handshake */
@@ -50,17 +51,17 @@ public class RTMPSClient
 	/** Encoder */
 	protected AMF3Encoder aec = new AMF3Encoder();
 
-	/** For error tracking */
-	public TypedObject lastDecode = null;
-
 	/** Pending invokes */
 	protected Set<Integer> pendingInvokes = Collections.synchronizedSet(new HashSet<Integer>());
+
+	/** Map of decoded packets */
+	private Map<Integer, TypedObject> results = Collections.synchronizedMap(new HashMap<Integer, TypedObject>());
 
 	/** Callback list */
 	protected Map<Integer, Callback> callbacks = Collections.synchronizedMap(new HashMap<Integer, Callback>());
 
 	/** Receive handler */
-	protected ReceiveThread receiveThread = null;
+	protected volatile Callback receiveCallback = null;
 
 	/**
 	 * A simple test for doing the basic RTMPS connection to Riot
@@ -127,18 +128,30 @@ public class RTMPSClient
 	}
 
 	/**
+	 * Wrapper for sleep
+	 * @param ms The time to sleep
+	 */
+	protected void sleep(long ms)
+	{
+		try
+		{
+			Thread.sleep(ms);
+		}
+		catch (InterruptedException e)
+		{
+		}
+	}
+
+	/**
 	 * Closes the connection
 	 */
 	public void close()
 	{
 		connected = false;
-		
+
 		// We could join here, but should leave that to the programmer
 		// Typically close should be preceded by a call to join if necessary
-		
-		if (pr != null)
-			pr.reconnect = false; // Prevents automatic reconnect
-		
+
 		try
 		{
 			if (sslsocket != null)
@@ -156,14 +169,25 @@ public class RTMPSClient
 	}
 	
 	/**
-	 * Attempts a reconnect
+	 * Does a threaded reconnect
+	 */
+	public void doReconnect()
+	{
+		Thread t = new Thread()
+		{
+		};
+		t.setName("RTMPSClient (reconnect)");
+		t.setDaemon(true);
+		t.start();
+	}
+
+	/**
+	 * Attempts a reconnect (connect until success)
 	 */
 	public void reconnect()
 	{
-		// Save the handler if we have one and then close 
-		Callback recvHandler = null;
-		if (receiveThread != null)
-			recvHandler = receiveThread.getHandler();
+		reconnecting = true;
+		
 		close();
 
 		// Attempt reconnects every 5s
@@ -177,20 +201,12 @@ public class RTMPSClient
 			{
 				System.err.println("Error when reconnecting: ");
 				e.printStackTrace(); // For debug purposes
-				
-				try
-				{
-					Thread.sleep(5000);
-				}
-				catch (InterruptedException e2)
-				{
-				}
+
+				sleep(5000);
 			}
 		}
 		
-		// Recreate the receive handler if there was one
-		if (recvHandler != null)
-			receiveThread = new ReceiveThread(recvHandler);
+		reconnecting = false;
 	}
 
 	/**
@@ -207,7 +223,7 @@ public class RTMPSClient
 		doHandshake();
 
 		// Start reading responses
-		pr = new RTMPPacketReader(in, this);
+		pr = new RTMPPacketReader(in);
 
 		// Handle preconnect Messages?
 		// -- 02 | 00 00 00 | 00 00 05 | 06 00 00 00 00 | 00 03 D0 90 02
@@ -231,7 +247,9 @@ public class RTMPSClient
 		out.write(connect, 0, connect.length);
 		out.flush();
 
-		TypedObject result = pr.getPacket(1);
+		while (!results.containsKey(1))
+			sleep(10);
+		TypedObject result = results.get(1);
 		DSId = result.getTO("data").getString("id");
 
 		connected = true;
@@ -292,7 +310,7 @@ public class RTMPSClient
 		if (!valid)
 			throw new IOException("Server returned invalid handshake");
 	}
-	
+
 	/**
 	 * Invokes something
 	 * 
@@ -303,21 +321,21 @@ public class RTMPSClient
 	public synchronized int invoke(TypedObject packet) throws IOException
 	{
 		int id = nextInvokeID();
+		pendingInvokes.add(id);
+
 		try
 		{
-			pendingInvokes.add(id);
-			
 			byte[] data = aec.encodeInvoke(id, packet);
 			out.write(data, 0, data.length);
 			out.flush();
-			
+
 			return id;
 		}
 		catch (IOException e)
 		{
 			// Clear the pending invoke
 			pendingInvokes.remove(id);
-			
+
 			// Rethrow
 			throw e;
 		}
@@ -411,7 +429,12 @@ public class RTMPSClient
 	 */
 	public TypedObject peekResult(int id)
 	{
-		return pr.peekPacket(id);
+		if (results.containsKey(id))
+		{
+			TypedObject ret = results.remove(id);
+			return ret;
+		}
+		return null;
 	}
 
 	/**
@@ -423,7 +446,16 @@ public class RTMPSClient
 	 */
 	public TypedObject getResult(int id)
 	{
-		return pr.getPacket(id);
+		while (connected && !results.containsKey(id))
+		{
+			sleep(10);
+		}
+
+		if (!connected)
+			return null;
+
+		TypedObject ret = results.remove(id);
+		return ret;
 	}
 
 	/**
@@ -433,13 +465,7 @@ public class RTMPSClient
 	{
 		while (!pendingInvokes.isEmpty())
 		{
-			try
-			{
-				Thread.sleep(10);
-			}
-			catch (InterruptedException e)
-			{
-			}
+			sleep(10);
 		}
 	}
 
@@ -448,15 +474,9 @@ public class RTMPSClient
 	 */
 	public void join(int id)
 	{
-		while (pendingInvokes.contains(id))
+		while (connected && pendingInvokes.contains(id))
 		{
-			try
-			{
-				Thread.sleep(10);
-			}
-			catch (InterruptedException e)
-			{
-			}
+			sleep(10);
 		}
 	}
 
@@ -491,54 +511,7 @@ public class RTMPSClient
 	 */
 	public void setReceiveHandler(Callback cb)
 	{
-		receiveThread = new ReceiveThread(cb);
-	}
-
-	/**
-	 * Handles the receives
-	 */
-	class ReceiveThread
-	{
-		private Thread curThread = null;
-		private Callback receiveHandler;
-
-		public ReceiveThread(Callback cb)
-		{
-			receiveHandler = cb;
-			curThread = new Thread() {
-	            public void run() {
-	            	handlePackets(this);
-	            }
-	        };
-	        curThread.setName("RTMPSClient (ReceiveThread)");
-	        curThread.setDaemon(true);
-	        curThread.start();
-		}
-		
-		public Callback getHandler()
-		{
-			return receiveHandler;
-		}
-
-		private void handlePackets(Thread thread)
-		{
-			while (curThread == thread)
-			{
-				while (curThread == thread && !pr.receives.isEmpty())
-				{
-					TypedObject result = pr.receives.remove(0);
-					receiveHandler.callback(result);
-				}
-
-				try
-				{
-					Thread.sleep(10);
-				}
-				catch (Exception e)
-				{
-				}
-			}
-		}
+		receiveCallback = cb;
 	}
 
 	/**
@@ -546,91 +519,31 @@ public class RTMPSClient
 	 */
 	class RTMPPacketReader
 	{
-		/** Current thread reading packets */
-		private Thread curThread = null;
-
 		/** The stream to read from */
 		private BufferedInputStream in;
 
-		/** Map of decoded packets */
-		private Map<Integer, TypedObject> results = Collections.synchronizedMap(new HashMap<Integer, TypedObject>());
-
-		/** List of received packets (invoke ID = 0) */
-		private List<TypedObject> receives = Collections.synchronizedList(new LinkedList<TypedObject>());
-
 		/** The AMF3 decoder */
 		private final AMF3Decoder adc = new AMF3Decoder();
-		
-		/** The client we're running from so we can initiate reconnects */
-		private RTMPSClient client;
-
-		/** True for automatically reconnecting */
-		public boolean reconnect = true;
 
 		/**
 		 * Starts a packet reader on the given stream
 		 * 
 		 * @param stream The stream to read packets from
 		 */
-		public RTMPPacketReader(InputStream stream, RTMPSClient client)
+		public RTMPPacketReader(InputStream stream)
 		{
 			this.in = new BufferedInputStream(stream, 16384);
-			this.client = client;
 
-			curThread = new Thread() {
-	            public void run() {
-	            	parsePackets(this);
-	            }
-	        };
-	        curThread.setName("RTMPSClient (PacketReader)");
-	        curThread.setDaemon(true);
-	        curThread.start();
-		}
-
-		/**
-		 * Removes and returns a result for a given invoke ID if it's ready
-		 * Returns null otherwise
-		 * 
-		 * @param id The invoke ID
-		 * @return The invoke's result or null
-		 */
-		public TypedObject peekPacket(int id)
-		{
-			if (results.containsKey(id))
-			{
-				TypedObject ret = results.remove(id);
-				lastDecode = ret;
-				return ret;
-			}
-			return null;
-		}
-
-		/**
-		 * Blocks and waits for the invoke's result to be ready, then removes
-		 * and returns it
-		 * 
-		 * @param id The invoke ID
-		 * @return The invoke's result
-		 */
-		public TypedObject getPacket(int id)
-		{
-			while (results != null && !results.containsKey(id))
-			{
-				try
-				{
-					Thread.sleep(10);
-				}
-				catch (Exception e)
-				{
-				}
-			}
-			
-			if (results == null)
-				return null;
-
-			TypedObject ret = results.remove(id);
-			lastDecode = ret;
-			return ret;
+			Thread curThread = new Thread()
+					{
+						public void run()
+						{
+							parsePackets(this);
+						}
+					};
+			curThread.setName("RTMPSClient (PacketReader)");
+			curThread.setDaemon(true);
+			curThread.start();
 		}
 
 		/**
@@ -645,16 +558,20 @@ public class RTMPSClient
 					out = new DataOutputStream(new FileOutputStream("debug.dmp"));
 
 				Map<Integer, Packet> packets = new HashMap<Integer, Packet>();
-				
-				while (curThread == thread)
+
+				while (true)
 				{
 					// Parse the basic header
 					byte basicHeader = (byte)in.read();
-					if (debug) { out.write(basicHeader & 0xFF); out.flush(); }
+					if (debug)
+					{
+						out.write(basicHeader & 0xFF);
+						out.flush();
+					}
 
 					int channel = basicHeader & 0x2F;
 					int headerType = basicHeader & 0xC0;
-					
+
 					int headerSize = 0;
 					if (headerType == 0x00)
 						headerSize = 12;
@@ -664,68 +581,102 @@ public class RTMPSClient
 						headerSize = 4;
 					else if (headerType == 0xC0)
 						headerSize = 1;
-					
+
 					// Retrieve the packet or make a new one
 					if (!packets.containsKey(channel))
 						packets.put(channel, new Packet());
 					Packet p = packets.get(channel);
-					
+
 					// Parse the full header
 					if (headerSize > 1)
 					{
 						byte[] header = new byte[headerSize - 1];
 						for (int i = 0; i < header.length; i++)
 							header[i] = (byte)in.read();
-						if (debug) { for (int i = 0; i < header.length; i++) out.write(header[i] & 0xFF); out.flush(); }
-						
+						if (debug)
+						{
+							for (int i = 0; i < header.length; i++)
+								out.write(header[i] & 0xFF);
+							out.flush();
+						}
+
 						if (headerSize >= 8)
 						{
 							int size = 0;
 							for (int i = 3; i < 6; i++)
 								size = size * 256 + (header[i] & 0xFF);
 							p.setSize(size);
-							
+
 							p.setType(header[6]);
 						}
 					}
-					
+
 					// Read rest of packet
 					for (int i = 0; i < 128; i++)
 					{
-						byte b = (byte)in.read(); 
+						byte b = (byte)in.read();
 						p.add(b);
-						
+
 						if (p.isComplete())
 							break;
 					}
-					
+
 					// Continue reading if we didn't complete a packet
 					if (!p.isComplete())
 						continue;
-					
+
 					// Remove the read packet
 					packets.remove(channel);
-					
+
 					// Decode result
 					final TypedObject result;
-					if (p.getType() == 0x14)
-						result = adc.decodeConnect(p.getData()); // Connect
-					else if (p.getType() == 0x11)
-						result = adc.decodeInvoke(p.getData()); // Invoke
+					if (p.getType() == 0x14) // Connect
+						result = adc.decodeConnect(p.getData());
+					else if (p.getType() == 0x11) // Invoke
+						result = adc.decodeInvoke(p.getData());
+					else if (p.getType() == 0x06) // Set peer bandwidth
+					{
+						byte[] data = p.getData();
+						int windowSize = 0;
+						for (int i = 0; i < 4; i++)
+							windowSize = windowSize * 256 + (data[i] & 0xFF);
+						int type = data[4];
+						continue;
+					}
+					else if (p.getType() == 0x03) // Ack
+					{
+						byte[] data = p.getData();
+						int ackSize = 0;
+						for (int i = 0; i < 4; i++)
+							ackSize = ackSize * 256 + (data[i] & 0xFF);
+						continue;
+					}
 					else
-						continue; // Skip most messages
+					// Skip most messages
+					{
+						if (debug)
+						{
+							System.out.print(String.format("%02X ", p.getType()));
+							for (byte b : p.getData())
+								System.out.print(String.format("%02X", b & 0xff));
+							System.out.println();
+						}
+						continue;
+					}
 
-					if (debug) System.out.println(result);
+					if (debug)
+						System.out.println(result);
 
 					// Store result
 					Integer id = result.getInt("invokeId");
-						
+
+					// Receive handler
 					if (id == null || id == 0)
 					{
-						// Add to list rather than just calling receive handler
-						// because we might not have one
-						receives.add(result);
+						if (receiveCallback != null)
+							receiveCallback.callback(result);
 					}
+					// Callback handler
 					else if (callbacks.containsKey(id))
 					{
 						final Callback cb = callbacks.remove(id);
@@ -733,12 +684,13 @@ public class RTMPSClient
 						{
 							// Thread the callback so it doesn't hang us
 							Thread t = new Thread()
-									{
-										public void run()
-										{
-											cb.callback(result);
-										}
-									};
+							{
+								public void run()
+								{
+									cb.callback(result);
+								}
+							};
+							t.setName("RTMPSClient (Callback-" + id + ")");
 							t.start();
 						}
 					}
@@ -751,24 +703,17 @@ public class RTMPSClient
 			}
 			catch (IOException e)
 			{
-				// Debug only since this happens even on close
-				// TODO Exit gracefully on close
-				if (debug && curThread == thread)
+				if (!reconnecting && connected)
 				{
 					System.out.println("Error while reading from stream");
 					e.printStackTrace();
-					try { out.close(); } catch (IOException e1) { }
-					System.exit(0);
 				}
 			}
-			
-			// Will kill any getResults requests
-			results = null;
 
 			// Attempt to reconnect if this was an unintentional disconnect
-			if (curThread == thread && reconnect)
+			if (!reconnecting && connected)
 			{
-				client.reconnect();
+				doReconnect();
 			}
 		}
 	}
@@ -788,22 +733,22 @@ public class RTMPSClient
 			dataSize = size;
 			dataBuffer = new byte[dataSize];
 		}
-		
+
 		public void setType(int type)
 		{
 			messageType = type;
 		}
-		
+
 		public void add(byte b)
 		{
 			dataBuffer[dataPos++] = b;
 		}
-		
+
 		public boolean isComplete()
 		{
 			return (dataPos == dataSize);
 		}
-		
+
 		public int getSize()
 		{
 			return dataSize;
@@ -813,7 +758,7 @@ public class RTMPSClient
 		{
 			return messageType;
 		}
-		
+
 		public byte[] getData()
 		{
 			return dataBuffer;
