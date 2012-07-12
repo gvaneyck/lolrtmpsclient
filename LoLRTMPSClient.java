@@ -52,7 +52,7 @@ public class LoLRTMPSClient extends RTMPSClient
 
 		String summoner = "Jabe";
 
-		LoLRTMPSClient client = new LoLRTMPSClient("NA", "1.61.FOOBAR", user, pass);
+		LoLRTMPSClient client = new LoLRTMPSClient("NA", "1.62.FOOBAR", user, pass);
 		//client.debug = true;
 
 		try

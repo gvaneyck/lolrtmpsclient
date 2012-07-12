@@ -174,8 +174,12 @@ public class RTMPSClient
 	public void doReconnect()
 	{
 		Thread t = new Thread()
-		{
-		};
+				{
+					public void run()
+					{
+						reconnect();
+					}
+				};
 		t.setName("RTMPSClient (reconnect)");
 		t.setDaemon(true);
 		t.start();
