@@ -402,7 +402,7 @@ public class SpectateAnyone
 		else if (region.equals("EUN"))
 			params.put("region2", "EUN1");
 		else if (region.equals("KR"))
-			params.put("region2", "KR1");
+			params.put("region2", "KR");
 		else if (region.equals("PBE"))
 			params.put("region2", "PBE1");
 		
