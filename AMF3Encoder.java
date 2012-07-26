@@ -57,7 +57,7 @@ public class AMF3Encoder
 		for (int i = 0; i < data.length; i++)
 		{
 			result.add(data[i]);
-			if (i % 128 == 127 && i < data.length - 1)
+			if (i % 128 == 127 && i != data.length - 1)
 				result.add((byte)0xC3);
 		}
 
@@ -217,7 +217,7 @@ public class AMF3Encoder
 			ret.add((byte)0x08);
 			writeDate(ret, (Date)obj);
 		}
-		// Must preceed Object[] check
+		// Must precede Object[] check
 		else if (obj instanceof Byte[])
 		{
 			ret.add((byte)0x0C);
@@ -228,7 +228,7 @@ public class AMF3Encoder
 			ret.add((byte)0x09);
 			writeArray(ret, (Object[])obj);
 		}
-		// Must preceed Map check
+		// Must precede Map check
 		else if (obj instanceof TypedObject)
 		{
 			ret.add((byte)0x0A);
@@ -241,7 +241,7 @@ public class AMF3Encoder
 		}
 		else
 		{
-			throw new EncodingException("Unexpected object type: " + obj);
+			throw new EncodingException("Unexpected object type: " + obj.getClass().getName());
 		}
 	}
 
@@ -386,21 +386,8 @@ public class AMF3Encoder
 	{
 		if (val.type == null || val.type.equals(""))
 		{
-			ret.add((byte)0x0B); // Dynamic class with no members
-		}
-		else if (val.type.equals("flex.messaging.io.ArrayCollection"))
-		{
-			ret.add((byte)0x07); // Externalizable
-			writeString(ret, val.type);
-		}
-		else
-		{
-			writeInt(ret, (val.size() << 4) | 3); // Inline + member count
-			writeString(ret, val.type);
-		}
+			ret.add((byte)0x0B); // Dynamic class
 
-		if (val.type == null || val.type.equals(""))
-		{
 			ret.add((byte)0x01); // No class name
 			for (String key : val.keySet())
 			{
@@ -411,10 +398,16 @@ public class AMF3Encoder
 		}
 		else if (val.type.equals("flex.messaging.io.ArrayCollection"))
 		{
+			ret.add((byte)0x07); // Externalizable
+			writeString(ret, val.type);
+
 			encode(ret, val.get("array"));
 		}
 		else
 		{
+			writeInt(ret, (val.size() << 4) | 3); // Inline + member count
+			writeString(ret, val.type);
+
 			List<String> keyOrder = new ArrayList<String>();
 			for (String key : val.keySet())
 			{
