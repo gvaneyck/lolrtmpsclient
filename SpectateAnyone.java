@@ -174,6 +174,18 @@ public class SpectateAnyone
 					}
 				});
 		
+		btnName.addKeyListener(new KeyListener()
+				{
+					public void keyTyped(KeyEvent e) { }
+					public void keyPressed(KeyEvent e) { }
+		
+					public void keyReleased(KeyEvent e)
+					{
+						if (e.getKeyCode() == KeyEvent.VK_SPACE)
+							handleSpectate();
+					}
+				});
+		
 		txtFile.addFocusListener(new FocusListener()
 				{
 					public void focusLost(FocusEvent e) { }
@@ -197,6 +209,18 @@ public class SpectateAnyone
 					}
 				});
 		
+		btnFile.addKeyListener(new KeyListener()
+				{
+					public void keyTyped(KeyEvent e) { }
+					public void keyPressed(KeyEvent e) { }
+		
+					public void keyReleased(KeyEvent e)
+					{
+						if (e.getKeyCode() == KeyEvent.VK_SPACE)
+							loadFile();
+					}
+		});
+
 		lstInGame.addMouseListener(new MouseListener()
 				{
 					public void mousePressed(MouseEvent e) { }
