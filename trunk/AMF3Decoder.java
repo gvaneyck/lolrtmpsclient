@@ -444,6 +444,7 @@ public class AMF3Decoder
 				{
 					for (int i = dataPos; i < dataBuffer.length; i++)
 						System.out.print(String.format("%02X", dataBuffer[i]));
+					System.out.println();
 					throw new NotImplementedException("Externalizable not handled for " + cd.type);
 				}
 			}
@@ -518,7 +519,7 @@ public class AMF3Decoder
 	 */
 	private TypedObject readDSA() throws EncodingException, NotImplementedException
 	{
-		TypedObject ret = new TypedObject("DSK");
+		TypedObject ret = new TypedObject("DSA");
 
 		int flag;
 		List<Integer> flags = readFlags();
@@ -731,8 +732,9 @@ public class AMF3Decoder
 	 * 
 	 * @return The decoded object
 	 * @throws EncodingException
+	 * @throws NotImplementedException 
 	 */
-	private TypedObject readObjectAMF0() throws EncodingException
+	private TypedObject readObjectAMF0() throws EncodingException, NotImplementedException
 	{
 		TypedObject body = new TypedObject("Body");
 		String key;
@@ -745,6 +747,8 @@ public class AMF3Decoder
 				body.put(key, readStringAMF0());
 			else if (b == 0x05)
 				body.put(key, null);
+			else
+				throw new NotImplementedException("AMF0 type not supported: " + b);
 		}
 		readByte(); // Skip object end marker
 

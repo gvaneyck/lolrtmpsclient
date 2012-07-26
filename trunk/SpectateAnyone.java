@@ -327,7 +327,7 @@ public class SpectateAnyone
 		{
 			String res = (String)JOptionPane.showInputDialog(
 					f,
-                    "Select a region (KR might not work)",
+                    "Select a region",
                     "Login Information",
                     JOptionPane.QUESTION_MESSAGE,
                     null,
@@ -420,7 +420,7 @@ public class SpectateAnyone
 		{
 			JOptionPane.showMessageDialog(
 					f,
-					"The installation location does not appear to be valid, make sure it is correct in config.txt.",
+					"The installation location does not appear to be valid, make sure lollocation is correct in config.txt.",
 				    "Error",
 				    JOptionPane.ERROR_MESSAGE);
 			System.exit(0);
@@ -502,15 +502,16 @@ public class SpectateAnyone
 			// Handle errors
 			if (result.get("result").equals("_error"))
 			{
-				if (data.getTO("rootCause").type.equals("com.riotgames.platform.messaging.UnexpectedServiceException"))
+				TypedObject rootCause = data.getTO("rootCause");
+				if (rootCause.type.equals("com.riotgames.platform.messaging.UnexpectedServiceException"))
 				{
 					JOptionPane.showMessageDialog(
 							f,
-							"No summoner found for " + toSpec + ".",
+							"No summoner found for " + toSpec + ".\nOr, did you not set up a summoner name for this account?",
 						    "Error",
 						    JOptionPane.ERROR_MESSAGE);
 				}
-				else if (data.getTO("rootCause").type.equals("com.riotgames.platform.game.GameNotFoundException"))
+				else if (rootCause.type.equals("com.riotgames.platform.game.GameNotFoundException"))
 				{
 					JOptionPane.showMessageDialog(
 							f,
@@ -518,11 +519,19 @@ public class SpectateAnyone
 						    "Error",
 						    JOptionPane.ERROR_MESSAGE);
 				}
+				else if (rootCause.get("localizedMessage").equals("An Authentication object was not found in the SecurityContext"))
+				{
+					JOptionPane.showMessageDialog(
+							f,
+							"This account has been logged in somewhere else.\nRestart this program to log in again.",
+						    "Error",
+						    JOptionPane.ERROR_MESSAGE);
+				}
 				else
 				{
 					JOptionPane.showMessageDialog(
 							f,
-							"Encountered an error when retrieving spectator information for " + toSpec + ":\n" + data.getTO("rootCause").get("localizedMessage"),
+							"Encountered an error when retrieving spectator information for " + toSpec + ":\n" + rootCause.get("localizedMessage"),
 						    "Error",
 						    JOptionPane.ERROR_MESSAGE);
 				}
