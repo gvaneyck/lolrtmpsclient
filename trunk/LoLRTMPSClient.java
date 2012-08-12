@@ -37,9 +37,6 @@ public class LoLRTMPSClient extends RTMPSClient
 	private String sessionToken;
 	private int accountID;
 
-	/** Heartbeat */
-	private HeartbeatThread hb;
-
 	/**
 	 * A basic test for LoLRTMPSClient
 	 * 
@@ -131,6 +128,12 @@ public class LoLRTMPSClient extends RTMPSClient
 			this.server = "prod.kr.lol.riotgames.com";
 			this.loginQueue = "https://lq.kr.lol.riotgames.com/";
 			this.locale = "ko_KR";
+		}
+		else if (region.equals("BR"))
+		{
+			this.server = "prod.br.lol.riotgames.com";
+			this.loginQueue = "https://lq.br.lol.riotgames.com/login-queue/rest/queue";
+			this.locale = "pt_BR";
 		}
 		else if (region.equals("PBE"))
 		{
@@ -230,7 +233,7 @@ public class LoLRTMPSClient extends RTMPSClient
 		result = getResult(id); // Read result and discard
 
 		// Start the heartbeat
-		hb = new HeartbeatThread();
+		new HeartbeatThread();
 		
 		loggedIn = true;
 

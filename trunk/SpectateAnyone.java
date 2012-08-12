@@ -23,7 +23,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Semaphore;
 
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
@@ -355,7 +354,7 @@ public class SpectateAnyone
                     "Login Information",
                     JOptionPane.QUESTION_MESSAGE,
                     null,
-                    new Object[] { "NA", "EUW", "EUN", "KR", "PBE" },
+                    new Object[] { "NA", "EUW", "EUN", "KR", "BR", "PBE" },
                     "NA");
 			
 			params.put("region", res);
@@ -427,6 +426,8 @@ public class SpectateAnyone
 			params.put("region2", "EUN1");
 		else if (region.equals("KR"))
 			params.put("region2", "KR");
+		else if (region.equals("BR"))
+			params.put("region2", "BR1");
 		else if (region.equals("PBE"))
 			params.put("region2", "PBE1");
 		
@@ -740,37 +741,5 @@ public class SpectateAnyone
 		
 		// Wait for all requests to finish;
 		client.join();
-	}
-}
-
-class StreamGobbler extends Thread
-{
-	private InputStream in;
-	private StringBuilder buffer = new StringBuilder();
-	
-	public StreamGobbler(InputStream in)
-	{
-		this.in = in;
-		this.start();
-	}
-	
-	public void run()
-	{
-		try
-		{
-			int c;
-			
-			while ((c = in.read()) != -1)
-				buffer.append((char)c);
-		}
-		catch (IOException e)
-		{
-			// Ignored
-		}
-	}
-	
-	public String getData()
-	{
-		return buffer.toString();
 	}
 }
