@@ -1,14 +1,11 @@
 import java.io.BufferedInputStream;
 import java.io.DataOutputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -557,9 +554,9 @@ public class RTMPSClient
 		{
 			try
 			{
-				DataOutputStream out = null;
-				if (debug)
-					out = new DataOutputStream(new FileOutputStream("debug.dmp"));
+				//DataOutputStream out = null;
+				//if (debug)
+				//	out = new DataOutputStream(new FileOutputStream("debug.dmp"));
 
 				Map<Integer, Packet> packets = new HashMap<Integer, Packet>();
 
@@ -567,11 +564,11 @@ public class RTMPSClient
 				{
 					// Parse the basic header
 					byte basicHeader = (byte)in.read();
-					if (debug)
-					{
-						out.write(basicHeader & 0xFF);
-						out.flush();
-					}
+					//if (debug)
+					//{
+					//	out.write(basicHeader & 0xFF);
+					//	out.flush();
+					//}
 
 					int channel = basicHeader & 0x2F;
 					int headerType = basicHeader & 0xC0;
@@ -597,12 +594,12 @@ public class RTMPSClient
 						byte[] header = new byte[headerSize - 1];
 						for (int i = 0; i < header.length; i++)
 							header[i] = (byte)in.read();
-						if (debug)
-						{
-							for (int i = 0; i < header.length; i++)
-								out.write(header[i] & 0xFF);
-							out.flush();
-						}
+						//if (debug)
+						//{
+						//	for (int i = 0; i < header.length; i++)
+						//		out.write(header[i] & 0xFF);
+						//	out.flush();
+						//}
 
 						if (headerSize >= 8)
 						{
