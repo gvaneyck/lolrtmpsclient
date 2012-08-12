@@ -100,6 +100,8 @@ public class LoLRTMPSClient extends RTMPSClient
 	 */
 	public LoLRTMPSClient(String region, String clientVersion, String user, String pass)
 	{
+		region = region.toUpperCase();
+		
 		this.region = region;
 		this.clientVersion = clientVersion;
 		this.user = user;
@@ -132,7 +134,7 @@ public class LoLRTMPSClient extends RTMPSClient
 		else if (region.equals("BR"))
 		{
 			this.server = "prod.br.lol.riotgames.com";
-			this.loginQueue = "https://lq.br.lol.riotgames.com/login-queue/rest/queue";
+			this.loginQueue = "https://lq.br.lol.riotgames.com/";
 			this.locale = "pt_BR";
 		}
 		else if (region.equals("PBE"))
@@ -144,7 +146,7 @@ public class LoLRTMPSClient extends RTMPSClient
 		else
 		{
 			System.out.println("Invalid region: " + region);
-			System.out.println("Valid region are: NA, EUW, EUN, KR, PBE");
+			System.out.println("Valid region are: NA, EUW, EUN, KR, BR, PBE");
 			System.exit(0);
 		}
 
