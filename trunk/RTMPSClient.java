@@ -1,8 +1,14 @@
 import java.io.BufferedInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.Socket;
+import java.io.OutputStream;
+import java.security.KeyStore;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -10,7 +16,13 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 
 /**
  * A very basic RTMPS client
@@ -32,7 +44,7 @@ public class RTMPSClient
 	protected String DSId;
 
 	/** Socket and streams */
-	protected Socket sslsocket;
+	protected SSLSocket sslsocket;
 	protected InputStream in;
 	protected DataOutputStream out;
 	protected RTMPPacketReader pr;
@@ -209,6 +221,87 @@ public class RTMPSClient
 		
 		reconnecting = false;
 	}
+	
+	/**
+	 * Downloads and installs a certificate if necessary, then sets up the socket
+	 * @throws IOException
+	 */
+	private void setupSocket() throws IOException
+	{
+		char[] passphrase = "changeit".toCharArray();
+		sslsocket = null;
+		while (sslsocket == null)
+		{
+			try
+			{
+				// Set up the directory if needed
+				File dir = new File("certs");
+				if (!dir.isDirectory())
+				{
+					dir.delete();
+					dir.mkdir();
+				}
+				
+				// Load the default keystore or a saved one
+				KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+				File file = new File("certs/" + server + ".cert");
+				if (!file.exists() || !file.isFile())
+					file = new File(System.getProperty("java.home") + "/lib/security/cacerts");
+				
+				InputStream in = new FileInputStream(file);
+				ks.load(in, passphrase);
+				
+				// Set up the socket factory with the keystore
+				SSLContext context = SSLContext.getInstance("TLS");
+				TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+				tmf.init(ks);
+				X509TrustManager defaultTrustManager = (X509TrustManager)tmf.getTrustManagers()[0];
+				SavingTrustManager tm = new SavingTrustManager(defaultTrustManager);
+				context.init(null, new TrustManager[] { tm }, null);
+				SSLSocketFactory factory = context.getSocketFactory();
+				
+				// Try to handshake the socket
+				sslsocket = (SSLSocket)factory.createSocket(server, port);
+				try
+				{
+					sslsocket.startHandshake();
+				}
+				catch (SSLException e)
+				{
+					sslsocket.close();
+					sslsocket = null;
+				}
+				
+				// If we failed to handshake, save the certificate we got
+				if (sslsocket == null)
+				{
+					X509Certificate[] chain = tm.chain;
+					if (chain == null)
+						throw new Exception("Failed to obtain server certificate chain");
+					
+					X509Certificate cert = chain[0];
+					String alias = server + "-1";
+					ks.setCertificateEntry(alias, cert);
+					
+					OutputStream out = new FileOutputStream("certs/" + server + ".cert");
+					ks.store(out, passphrase);
+					out.close();
+					System.out.println("Installed cert for " + server);
+				}
+			}
+			catch (Exception e)
+			{
+				// Hitting an exception here is very bad since we probably won't recover
+				// (unless it's a connectivity issue)
+
+				// Rethrow as an IOException
+				throw new IOException(e);
+			}
+			
+			// Sleep to avoid spamming?
+			//sleep(1000);
+		}
+	}
 
 	/**
 	 * Attempts to connect given the previous connection information
@@ -217,7 +310,8 @@ public class RTMPSClient
 	 */
 	public void connect() throws IOException
 	{
-		sslsocket = SSLSocketFactory.getDefault().createSocket(server, port);
+		setupSocket();
+		
 		in = new BufferedInputStream(sslsocket.getInputStream());
 		out = new DataOutputStream(sslsocket.getOutputStream());
 
@@ -763,6 +857,38 @@ public class RTMPSClient
 		public byte[] getData()
 		{
 			return dataBuffer;
+		}
+	}
+	
+	/**
+	 * Used to save certificates
+	 */
+	private static class SavingTrustManager implements X509TrustManager
+	{
+		private final X509TrustManager tm;
+		private X509Certificate[] chain;
+
+		SavingTrustManager(X509TrustManager tm)
+		{
+			this.tm = tm;
+		}
+
+		public X509Certificate[] getAcceptedIssuers()
+		{
+			throw new UnsupportedOperationException();
+		}
+
+		public void checkClientTrusted(X509Certificate[] chain, String authType)
+				throws CertificateException
+		{
+			throw new UnsupportedOperationException();	
+		}
+
+		public void checkServerTrusted(X509Certificate[] chain, String authType)
+				throws CertificateException
+		{
+			this.chain = chain;
+			tm.checkServerTrusted(chain, authType);
 		}
 	}
 }
