@@ -295,7 +295,7 @@ public class RTMPSClient
 				// (unless it's a connectivity issue)
 
 				// Rethrow as an IOException
-				throw new IOException(e);
+				throw new IOException(e.getMessage());
 			}
 			
 			// Sleep to avoid spamming?
