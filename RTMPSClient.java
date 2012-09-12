@@ -32,6 +32,7 @@ import javax.net.ssl.X509TrustManager;
 public class RTMPSClient
 {
 	public boolean debug = false;
+	private static char[] passphrase = "changeit".toCharArray();
 
 	/** Server information */
 	protected String server;
@@ -223,16 +224,70 @@ public class RTMPSClient
 	}
 	
 	/**
-	 * Downloads and installs a certificate if necessary, then sets up the socket
+	 * Opens the socket with the default or a previously saved certificate
+	 * @return A special TrustManager to save the certificate if necessary
 	 * @throws IOException
 	 */
-	private void setupSocket() throws IOException
+	private SavingTrustManager openSocketWithCert() throws IOException
 	{
-		char[] passphrase = "changeit".toCharArray();
-		sslsocket = null;
-		while (sslsocket == null)
+		try
 		{
+			// Load the default KeyStore or a saved one
+			KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+			File file = new File("certs/" + server + ".cert");
+			if (!file.exists() || !file.isFile())
+				file = new File(System.getProperty("java.home") + "/lib/security/cacerts");
+			
+			InputStream in = new FileInputStream(file);
+			ks.load(in, passphrase);
+			
+			// Set up the socket factory with the KeyStore
+			SSLContext context = SSLContext.getInstance("TLS");
+			TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+			tmf.init(ks);
+			X509TrustManager defaultTrustManager = (X509TrustManager)tmf.getTrustManagers()[0];
+			SavingTrustManager tm = new SavingTrustManager(defaultTrustManager);
+			context.init(null, new TrustManager[] { tm }, null);
+			SSLSocketFactory factory = context.getSocketFactory();
+			
+			sslsocket = (SSLSocket)factory.createSocket(server, port);
+			
+			return tm;
+		}
+		catch (Exception e)
+		{
+			// Hitting an exception here is very bad since we probably won't recover
+			// (unless it's a connectivity issue)
+
+			// Rethrow as an IOException
+			throw new IOException(e.getMessage());
+		}
+	}
+	
+	/**
+	 * Downloads and installs a certificate if necessary
+	 * @throws IOException
+	 */
+	private void getCertificate() throws IOException
+	{
+		try
+		{
+			SavingTrustManager tm = openSocketWithCert();
+			
+			// Try to handshake the socket
+			boolean success = false;
 			try
+			{
+				sslsocket.startHandshake();
+				success = true;
+			}
+			catch (SSLException e)
+			{
+				sslsocket.close();
+			}
+			
+			// If we failed to handshake, save the certificate we got and try again
+			if (!success)
 			{
 				// Set up the directory if needed
 				File dir = new File("certs");
@@ -242,64 +297,36 @@ public class RTMPSClient
 					dir.mkdir();
 				}
 				
-				// Load the default keystore or a saved one
+				// Reload (default) KeyStore
 				KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-				File file = new File("certs/" + server + ".cert");
-				if (!file.exists() || !file.isFile())
-					file = new File(System.getProperty("java.home") + "/lib/security/cacerts");
+				File file = new File(System.getProperty("java.home") + "/lib/security/cacerts");
 				
 				InputStream in = new FileInputStream(file);
 				ks.load(in, passphrase);
 				
-				// Set up the socket factory with the keystore
-				SSLContext context = SSLContext.getInstance("TLS");
-				TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-				tmf.init(ks);
-				X509TrustManager defaultTrustManager = (X509TrustManager)tmf.getTrustManagers()[0];
-				SavingTrustManager tm = new SavingTrustManager(defaultTrustManager);
-				context.init(null, new TrustManager[] { tm }, null);
-				SSLSocketFactory factory = context.getSocketFactory();
+				// Add certificate
+				X509Certificate[] chain = tm.chain;
+				if (chain == null)
+					throw new Exception("Failed to obtain server certificate chain");
 				
-				// Try to handshake the socket
-				sslsocket = (SSLSocket)factory.createSocket(server, port);
-				try
-				{
-					sslsocket.startHandshake();
-				}
-				catch (SSLException e)
-				{
-					sslsocket.close();
-					sslsocket = null;
-				}
+				X509Certificate cert = chain[0];
+				String alias = server + "-1";
+				ks.setCertificateEntry(alias, cert);
 				
-				// If we failed to handshake, save the certificate we got
-				if (sslsocket == null)
-				{
-					X509Certificate[] chain = tm.chain;
-					if (chain == null)
-						throw new Exception("Failed to obtain server certificate chain");
-					
-					X509Certificate cert = chain[0];
-					String alias = server + "-1";
-					ks.setCertificateEntry(alias, cert);
-					
-					OutputStream out = new FileOutputStream("certs/" + server + ".cert");
-					ks.store(out, passphrase);
-					out.close();
-					System.out.println("Installed cert for " + server);
-				}
+				// Save certificate
+				OutputStream out = new FileOutputStream("certs/" + server + ".cert");
+				ks.store(out, passphrase);
+				out.close();
+				System.out.println("Installed cert for " + server);
 			}
-			catch (Exception e)
-			{
-				// Hitting an exception here is very bad since we probably won't recover
-				// (unless it's a connectivity issue)
+		}
+		catch (Exception e)
+		{
+			// Hitting an exception here is very bad since we probably won't recover
+			// (unless it's a connectivity issue)
 
-				// Rethrow as an IOException
-				throw new IOException(e.getMessage());
-			}
-			
-			// Sleep to avoid spamming?
-			//sleep(1000);
+			// Rethrow as an IOException
+			throw new IOException(e.getMessage());
 		}
 	}
 
@@ -310,12 +337,27 @@ public class RTMPSClient
 	 */
 	public void connect() throws IOException
 	{
-		setupSocket();
-		
-		in = new BufferedInputStream(sslsocket.getInputStream());
-		out = new DataOutputStream(sslsocket.getOutputStream());
+		try
+		{
+			sslsocket = (SSLSocket)SSLSocketFactory.getDefault().createSocket(server, port);
+			in = new BufferedInputStream(sslsocket.getInputStream());
+			out = new DataOutputStream(sslsocket.getOutputStream());
 
-		doHandshake();
+			doHandshake();
+		}
+		catch (IOException e)
+		{
+			// If we failed to set up the socket, assume it's because we needed a certificate
+			getCertificate();
+			// And use the certificate
+			openSocketWithCert();
+
+			// And try to handshake again
+			in = new BufferedInputStream(sslsocket.getInputStream());
+			out = new DataOutputStream(sslsocket.getOutputStream());
+
+			doHandshake();
+		}
 
 		// Start reading responses
 		pr = new RTMPPacketReader(in);
