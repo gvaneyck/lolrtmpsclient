@@ -8,6 +8,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
 
 /**
  * A very basic RTMPS client for connecting to League of Legends
@@ -178,16 +180,17 @@ public class LoLRTMPSClient extends RTMPSClient
 
 		// Login 1
 		body = new TypedObject("com.riotgames.platform.login.AuthenticationCredentials");
+		body.put("username", user);
 		body.put("password", pass);
+		body.put("authToken", authToken);
 		body.put("clientVersion", clientVersion);
 		body.put("ipAddress", ipAddress);
-		body.put("securityAnswer", null);
-		body.put("partnerCredentials", null);
 		body.put("locale", locale);
 		body.put("domain", "lolclient.lol.riotgames.com");
+		body.put("operatingSystem", "LoLRTMPSClient");
+		body.put("securityAnswer", null);
+		body.put("partnerCredentials", null);
 		body.put("oldPassword", null);
-		body.put("username", user);
-		body.put("authToken", authToken);
 		int id = invoke("loginService", "login", new Object[] { body });
 
 		// Read relevant data
@@ -326,6 +329,13 @@ public class LoLRTMPSClient extends RTMPSClient
 			return;
 		
 		String response = readURL("http://ll.leagueoflegends.com/services/connection_info");
+		
+		// If we can't get an IP address for whatever reason (site's down, etc.) use localhost
+		if (response == null) {
+			ipAddress = "127.0.0.1";
+			return;
+		}
+		
 		TypedObject result = (TypedObject)JSON.parse(response);
 		ipAddress = result.getString("ip_address");
 	}
@@ -365,6 +375,9 @@ public class LoLRTMPSClient extends RTMPSClient
 		String query = "payload=" + URLEncoder.encode(payload, "ISO-8859-1");
 
 		URL url = new URL(loginQueue + "login-queue/rest/queue/authenticate");
+		
+		// Need to ignore certs (or use the one retrieved by RTMPSClient?)
+		HttpsURLConnection.setDefaultSSLSocketFactory((SSLSocketFactory)DummySSLSocketFactory.getDefault());
 		HttpsURLConnection connection = (HttpsURLConnection)url.openConnection();
 
 		connection.setDoOutput(true);
