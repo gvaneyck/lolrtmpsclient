@@ -703,6 +703,9 @@ public class SpectateAnyone
 				if (line.length() == 0)
 					continue;
 				
+				if (line.startsWith("#"))
+					continue;
+				
 				// Handle notepad saving extra bytes for UTF8
 				if (line.charAt(0) == 65279)
 					line = line.substring(1);
