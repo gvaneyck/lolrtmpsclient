@@ -1,3 +1,4 @@
+import java.util.Date;
 import java.util.HashMap;
 
 /**
@@ -100,6 +101,12 @@ public class TypedObject extends HashMap<String, Object>
 			return ((Integer)val).doubleValue();
 	}
 	
+	/**
+	 * Convenience for retrieving booleans
+	 * 
+	 * @param key The key of the boolean
+	 * @return The boolean
+	 */
 	public Boolean getBool(String key)
 	{
 		return (Boolean)get(key);
@@ -118,6 +125,17 @@ public class TypedObject extends HashMap<String, Object>
 			return (Object[])getTO(key).get("array");
 		else
 			return (Object[])get(key);
+	}
+	
+	/**
+	 * Convenience for retrieving Date objects
+	 * 
+	 * @param key The key of the Date object
+	 * @return The Date object
+	 */
+	public Date getDate(String key)
+	{
+		return (Date)get(key);
 	}
 
 	public String toString()
