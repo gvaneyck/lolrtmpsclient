@@ -436,7 +436,8 @@ public class AMF3Decoder
 					for (int i = 0; i < 4; i++)
 						size = size * 256 + readByteAsInt();
 
-					String json = new String(readBytes(size));
+					String json;
+					try { json = new String(readBytes(size), "UTF-8"); } catch (UnsupportedEncodingException e) { throw new EncodingException(e.toString()); }
 					ret = (TypedObject)JSON.parse(json);
 					ret.type = cd.type;
 				}
