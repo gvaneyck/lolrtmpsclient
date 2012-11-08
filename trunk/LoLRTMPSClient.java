@@ -500,7 +500,7 @@ public class LoLRTMPSClient extends RTMPSClient
 		}
 		catch (NoSuchAlgorithmException e)
 		{
-			e.printStackTrace();
+			throw new IOException(e.getMessage());
 		}
 	}
 
