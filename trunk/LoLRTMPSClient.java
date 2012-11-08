@@ -1,9 +1,14 @@
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.Socket;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -28,6 +33,11 @@ public class LoLRTMPSClient extends RTMPSClient
 	private String loginQueue;
 	private String user;
 	private String pass;
+	
+	/** Garena information */
+	private boolean useGarena = false;
+	private String garenaToken;
+	private String userID;
 
 	/** Secondary login information */
 	private String clientVersion;
@@ -46,26 +56,21 @@ public class LoLRTMPSClient extends RTMPSClient
 	 */
 	public static void main(String[] args)
 	{
-		String user = "qweasm";
-		String pass = "123qwe";
-
-		String summoner = "Jabe";
-
-		LoLRTMPSClient client = new LoLRTMPSClient("NA", "1.62.FOOBAR", user, pass);
+		LoLRTMPSClient client = new LoLRTMPSClient("VN", "1.70.FOOBAR", "jabetest1", "jabetest1");
 		//client.debug = true;
 
 		try
 		{
 			int id;
 			client.connectAndLogin();
-			client.reconnect();
+			//client.reconnect();
 
 			// Synchronous invoke
-			id = client.invoke("summonerService", "getSummonerByName", new Object[] { summoner });
+			id = client.invoke("summonerService", "getSummonerByName", new Object[] { "Jabe" });
 			System.out.println(client.getResult(id));
 
 			// Asynchronous invoke
-			client.invokeWithCallback("summonerService", "getSummonerByName", new Object[] { summoner },
+			client.invokeWithCallback("summonerService", "getSummonerByName", new Object[] { "Jabe" },
 					new Callback()
 					{
 						public void callback(TypedObject result)
@@ -139,16 +144,57 @@ public class LoLRTMPSClient extends RTMPSClient
 			this.loginQueue = "https://lq.br.lol.riotgames.com/";
 			this.locale = "pt_BR";
 		}
+		else if (region.equals("TR"))
+		{
+			this.server = "prod.tr.lol.riotgames.com";
+			this.loginQueue = "https://lq.tr.lol.riotgames.com/";
+			this.locale = "pt_BR";
+		}
 		else if (region.equals("PBE"))
 		{
 			this.server = "prod.pbe1.lol.riotgames.com";
 			this.loginQueue = "https://lq.pbe1.lol.riotgames.com/";
 			this.locale = "en_US";
 		}
+		else if (region.equals("SG") || region.equals("MY") || region.equals("SG/MY"))
+		{
+			this.server = "prod.lol.garenanow.com";
+			this.loginQueue = "https://lq.lol.garenanow.com/";
+			this.locale = "en_US";
+			this.useGarena = true;
+		}
+		else if (region.equals("TW"))
+		{
+			this.server = "prodtw.lol.garenanow.com";
+			this.loginQueue = "https://loginqueuetw.lol.garenanow.com/";
+			this.locale = "en_US";
+			this.useGarena = true;
+		}
+		else if (region.equals("TH"))
+		{
+			this.server = "prodth.lol.garenanow.com";
+			this.loginQueue = "https://lqth.lol.garenanow.com/";
+			this.locale = "en_US";
+			this.useGarena = true;
+		}
+		else if (region.equals("PH"))
+		{
+			this.server = "prodph.lol.garenanow.com";
+			this.loginQueue = "https://storeph.lol.garenanow.com/";
+			this.locale = "en_US";
+			this.useGarena = true;
+		}
+		else if (region.equals("VN"))
+		{
+			this.server = "prodvn.lol.garenanow.com";
+			this.loginQueue = "https://lqvn.lol.garenanow.com/";
+			this.locale = "en_US";
+			this.useGarena = true;
+		}
 		else
 		{
 			System.out.println("Invalid region: " + region);
-			System.out.println("Valid region are: NA, EUW, EUN, KR, BR, PBE");
+			System.out.println("Valid region are: NA, EUW, EUN, KR, BR, TR, PBE, SG/MY, TW, TH, PH, VN");
 			System.exit(0);
 		}
 
@@ -173,6 +219,9 @@ public class LoLRTMPSClient extends RTMPSClient
 	 */
 	public void login() throws IOException
 	{
+		if (useGarena)
+			getGarenaToken();
+		
 		getIPAddress();
 		getAuthToken();
 
@@ -180,8 +229,11 @@ public class LoLRTMPSClient extends RTMPSClient
 
 		// Login 1
 		body = new TypedObject("com.riotgames.platform.login.AuthenticationCredentials");
-		body.put("username", user);
-		body.put("password", pass);
+		if (useGarena)
+			body.put("username", userID);
+		else
+			body.put("username", user);
+		body.put("password", pass); // Garena doesn't actually care about password here
 		body.put("authToken", authToken);
 		body.put("clientVersion", clientVersion);
 		body.put("ipAddress", ipAddress);
@@ -189,8 +241,11 @@ public class LoLRTMPSClient extends RTMPSClient
 		body.put("domain", "lolclient.lol.riotgames.com");
 		body.put("operatingSystem", "LoLRTMPSClient");
 		body.put("securityAnswer", null);
-		body.put("partnerCredentials", null);
 		body.put("oldPassword", null);
+		if (useGarena)
+			body.put("partnerCredentials", "8393 " + garenaToken);
+		else
+			body.put("partnerCredentials", null);
 		int id = invoke("loginService", "login", new Object[] { body });
 
 		// Read relevant data
@@ -203,8 +258,11 @@ public class LoLRTMPSClient extends RTMPSClient
 		accountID = body.getTO("accountSummary").getInt("accountId");
 		
 		// Login 2
-		byte[] encbuff = null;
-		encbuff = (user.toLowerCase() + ":" + sessionToken).getBytes("UTF-8");
+		byte[] encbuff = null;//user.toLowerCase()
+		if (useGarena)
+			encbuff = (userID + ":" + sessionToken).getBytes("UTF-8");
+		else
+			encbuff = (user + ":" + sessionToken).getBytes("UTF-8");
 
 		body = wrapBody(Base64.encodeBytes(encbuff), "auth", 8);
 		body.type = "flex.messaging.messages.CommandMessage";
@@ -339,6 +397,112 @@ public class LoLRTMPSClient extends RTMPSClient
 		TypedObject result = (TypedObject)JSON.parse(response);
 		ipAddress = result.getString("ip_address");
 	}
+	
+	/**
+	 * Gets an authentication token from Garena to log in
+	 * 
+	 * @throws IOException
+	 */
+	private void getGarenaToken() throws IOException
+	{
+		try
+		{
+			byte[] md5 = MessageDigest.getInstance("MD5").digest(pass.getBytes("UTF-8"));
+			int[] junk;
+			Socket sock;
+			OutputStream out;
+			InputStream in;
+			int c;
+			
+			// Find our user ID
+			sock = new Socket("203.117.158.170", 9100);
+			out = sock.getOutputStream();
+			junk = new int[] { 0x49, 0x00, 0x00, 0x00, 0x10, 0x01, 0x00, 0x79, 0x2f };
+			for (int j : junk)
+				out.write(j);
+			
+			out.write(user.getBytes());
+			for (int i = 0; i < 16 - user.length(); i++)
+				out.write(0x00);
+			
+			for (byte b : md5)
+				out.write(String.format("%02x", b).getBytes());
+			out.write(0x00);
+			
+			out.write(0x01);
+			junk = new int[] { 0xD4, 0xAE, 0x52, 0xC0, 0x2E, 0xBA, 0x72, 0x03 };
+			for (int j : junk)
+				out.write(j);
+			int timestamp = (int)(System.currentTimeMillis() / 1000);
+			for (int i = 0; i < 4; i++)
+				out.write((timestamp >> (8 * i)) & 0xFF);
+			out.write(0x00);
+			
+			out.write("intl".getBytes());
+			out.write(0x00);
+			
+			out.flush();
+			
+			// Read the result
+			in = sock.getInputStream();
+			
+			// Skip the first 5 bytes
+			for (int i = 0; i < 5; i++)
+				in.read();
+			
+			// Get our ID
+			int id = 0;
+			for (int i = 0; i < 4; i++)
+				id += in.read() * (1 << (8 * i));
+			userID = String.valueOf(id);
+
+			// Don't care about the rest
+			sock.close();
+			
+			
+			// Get our token
+			sock = new Socket("lol.auth.garenanow.com", 12000);
+			
+			// Write our login info
+			out = sock.getOutputStream();
+			junk = new int[] { 0x32, 0x00, 0x00, 0x00, 0x01, 0x03, 0x80, 0x00, 0x00 };
+			for (int j : junk)
+				out.write(j);
+
+			out.write(user.getBytes());
+			out.write(0x00);
+			
+			md5 = MessageDigest.getInstance("MD5").digest(pass.getBytes("UTF-8"));
+			for (byte b : md5)
+				out.write(String.format("%02x", b).getBytes());
+			out.write(0x00);
+			
+			out.write(0x00);
+			out.write(0x00);
+			
+			out.flush();
+
+			// Read our token
+			in = sock.getInputStream();
+			StringBuilder buff = new StringBuilder();
+			
+			// Skip the first 5 bytes
+			for (int i = 0; i < 5; i++)
+				in.read();
+			
+			// Read the result
+			while ((c = in.read()) != 0)
+				buff.append((char)c);
+			
+			garenaToken = buff.toString();
+
+			sock.close();
+		}
+		catch (NoSuchAlgorithmException e)
+		{
+			e.printStackTrace();
+		}
+	}
 
 	/**
 	 * Gets an authentication token for logging into Riot's servers
@@ -371,14 +535,26 @@ public class LoLRTMPSClient extends RTMPSClient
 		// login-queue/rest/queue/cancelQueue/USERHERE
 
 		// Initial authToken request
-		String payload = "user=" + user + ",password=" + pass;
+		String payload;
+		if (useGarena)
+			payload = garenaToken;
+		else
+			payload = "user=" + user + ",password=" + pass;
 		String query = "payload=" + URLEncoder.encode(payload, "ISO-8859-1");
 
 		URL url = new URL(loginQueue + "login-queue/rest/queue/authenticate");
 		
-		// Need to ignore certs (or use the one retrieved by RTMPSClient?)
-		HttpsURLConnection.setDefaultSSLSocketFactory((SSLSocketFactory)DummySSLSocketFactory.getDefault());
-		HttpsURLConnection connection = (HttpsURLConnection)url.openConnection();
+		HttpURLConnection connection;
+		if (loginQueue.startsWith("https:"))
+		{
+			// Need to ignore certs (or use the one retrieved by RTMPSClient?)
+			HttpsURLConnection.setDefaultSSLSocketFactory((SSLSocketFactory)DummySSLSocketFactory.getDefault());
+			connection = (HttpsURLConnection)url.openConnection();
+		}
+		else
+		{
+			connection = (HttpURLConnection)url.openConnection();			
+		}
 
 		connection.setDoOutput(true);
 		connection.setRequestMethod("POST");

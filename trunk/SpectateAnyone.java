@@ -354,7 +354,7 @@ public class SpectateAnyone
                     "Login Information",
                     JOptionPane.QUESTION_MESSAGE,
                     null,
-                    new Object[] { "NA", "EUW", "EUN", "KR", "BR", "PBE" },
+                    new Object[] { "NA", "EUW", "EUN", "KR", "BR", "TR", "PBE", "SG/MY", "TW", "TH", "PH", "VN" },
                     "NA");
 			
 			params.put("region", res);
