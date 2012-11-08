@@ -70,11 +70,31 @@ public class SpectateAnyone
 	
 	public static LoLRTMPSClient client;
 	public static Map<String, String> params;
+	
+	public static Map<String, String> regionMap;
 
 	public static void main(String[] args)
 	{
+		initRegionMap();
 		setupFrame();
 		setupClient();
+	}
+	
+	public static void initRegionMap()
+	{
+		regionMap = new HashMap<String, String>();
+		regionMap.put("NORTH AMERICA", "NA");
+		regionMap.put("EUROPE WEST", "EUW");
+		regionMap.put("EUROPE NORDIC & EAST", "EUN");
+		regionMap.put("KOREA", "KR");
+		regionMap.put("BRAZIL", "BR");
+		regionMap.put("TURKEY", "TR");
+		regionMap.put("PUBLIC BETA ENVIRONMENT", "PBE");
+		regionMap.put("SINGAPORE/MALAYSIA", "SG");
+		regionMap.put("TAIWAN", "TW");
+		regionMap.put("THAILAND", "TH");
+		regionMap.put("PHILLIPINES", "PH");
+		regionMap.put("VIETNAM", "VN");
 	}
 	
 	public static void setupFrame()
@@ -354,8 +374,20 @@ public class SpectateAnyone
                     "Login Information",
                     JOptionPane.QUESTION_MESSAGE,
                     null,
-                    new Object[] { "NA", "EUW", "EUN", "KR", "BR", "TR", "PBE", "SG/MY", "TW", "TH", "PH", "VN" },
-                    "NA");
+                    new Object[] {
+							"North America",
+							"Europe West",
+							"Europe Nordic & East",
+							"Korea",
+							"Brazil",
+							"Turkey",
+							"Public Beta Environment",
+							"Singapore/Malaysia",
+							"Taiwan",
+							"Thailand",
+							"Phillipines",
+							"Vietnam" },
+                    "North America");
 			
 			params.put("region", res);
 			newinfo = true;
@@ -417,6 +449,7 @@ public class SpectateAnyone
 		}
 		
 		// Set the region used for the game executable
+		params.put("region", regionMap.get(params.get("region").toUpperCase()));
 		String region = params.get("region");
 		if (region.equals("NA"))
 			params.put("region2", "NA1");
