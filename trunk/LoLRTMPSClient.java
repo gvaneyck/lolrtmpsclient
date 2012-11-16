@@ -258,11 +258,11 @@ public class LoLRTMPSClient extends RTMPSClient
 		accountID = body.getTO("accountSummary").getInt("accountId");
 		
 		// Login 2
-		byte[] encbuff = null;//user.toLowerCase()
+		byte[] encbuff = null;
 		if (useGarena)
 			encbuff = (userID + ":" + sessionToken).getBytes("UTF-8");
 		else
-			encbuff = (user + ":" + sessionToken).getBytes("UTF-8");
+			encbuff = (user.toLowerCase() + ":" + sessionToken).getBytes("UTF-8");
 
 		body = wrapBody(Base64.encodeBytes(encbuff), "auth", 8);
 		body.type = "flex.messaging.messages.CommandMessage";
