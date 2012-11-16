@@ -366,7 +366,7 @@ public class SpectateAnyone
 			newinfo = true;
 		}
 
-		if (!params.containsKey("region"))
+		if (!params.containsKey("region") || !regionMap.containsKey(params.get("region")))
 		{
 			String res = (String)JOptionPane.showInputDialog(
 					f,
