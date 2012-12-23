@@ -1,3 +1,4 @@
+package com.gvaneyck.rtmp;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
