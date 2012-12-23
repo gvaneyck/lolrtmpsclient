@@ -1,4 +1,5 @@
 package com.gvaneyck.spectate;
+
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Insets;
@@ -21,10 +22,15 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
-import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -331,6 +337,12 @@ public class SpectateAnyone
                     "Login Information",
                     JOptionPane.QUESTION_MESSAGE);
 			
+			// Fix location if necessary
+			res.replace("/", File.separator);
+			res.replace("\\", File.separator);
+			if (!res.endsWith(File.separator))
+				res = res + File.separator;
+
 			params.put("lollocation", res);
 			newinfo = true;
 		}
@@ -362,6 +374,35 @@ public class SpectateAnyone
 			newinfo = true;
 		}
 
+		if (!params.containsKey("locale"))
+		{
+			// Let the user select their language
+			Set<String> langCodes = findValidLangs(new File(params.get("lollocation")));
+			List<String> langs = new ArrayList<String>();
+			for (String lang : langCodes)
+			{
+				String[] parts = lang.split("_");
+				Locale l = new Locale(parts[0], parts[1]);
+				langs.add(lang + " (" + l.getDisplayLanguage() + ")");
+			}
+			Collections.sort(langs);
+			String[] langNames = new String[langs.size()];
+			for (int i = 0; i < langs.size(); i++)
+				langNames[i] = langs.get(i);
+			
+			String res = (String)JOptionPane.showInputDialog(
+					f,
+	                "Select a language",
+	                "Login Information",
+	                JOptionPane.QUESTION_MESSAGE,
+	                null,
+	                langNames,
+	                null);
+			
+			params.put("locale", res.substring(0, 5));
+			newinfo = true;
+		}
+		
 		if (!params.containsKey("version"))
 		{
 			String res = (String)JOptionPane.showInputDialog(
@@ -408,6 +449,7 @@ public class SpectateAnyone
 				//out.write("pass=" + params.get("pass") + "\r\n"); // Don't save password by default
 				out.write("version=" + params.get("version") + "\r\n");
 				out.write("region=" + params.get("region") + "\r\n");
+				out.write("locale=" + params.get("locale") + "\r\n");
 				out.close();
 			}
 			catch (IOException e)
@@ -433,17 +475,15 @@ public class SpectateAnyone
 		else if (region.equals("PBE"))
 			params.put("region2", "PBE1");
 		
-		// Fix location if necessary
-		String loc = params.get("lollocation");
-		loc.replace("/", "\\");
-		if (!loc.endsWith("\\"))
-			loc = loc + "\\";
-		params.put("lollocation", loc);
+		// Figure out the path to executables
+		// I'm not sure what the difference is, but using the executable in lol_game_client (rather than lol_game_client_sln)
+		// gives the missing language file error
+		System.out.println("Finding most recent installation...");
+		File base = new File(params.get("lollocation"));
+		File lol = findMostRecent(base, "League of Legends.exe", "lol_game_client");
+		File air = findMostRecent(base, "LolClient.exe");
 		
-		// Figure out the right version of the client to run
-		File gameDir = new File(loc + "RADS\\solutions\\lol_game_client_sln\\releases\\");
-		File clientDir = new File(loc + "RADS\\projects\\lol_air_client\\releases\\");
-		if (!gameDir.exists() || !clientDir.exists())
+		if (lol == null || air == null)
 		{
 			JOptionPane.showMessageDialog(
 					f,
@@ -453,34 +493,14 @@ public class SpectateAnyone
 			System.exit(0);
 		}
 		
-		int maxGame = 0;
-		for (File f : gameDir.listFiles())
-		{
-			String[] parts = f.getName().split("\\.");
-			if (parts.length != 4)
-				continue;
-			
-			int ver = Integer.parseInt(parts[3]);
-			if (ver > maxGame)
-				maxGame = ver;
-		}
-		params.put("maxGame", "" + maxGame);
-		
-		int maxClient = 0;
-		for (File f : clientDir.listFiles())
-		{
-			String[] parts = f.getName().split("\\.");
-			if (parts.length != 4)
-				continue;
-			
-			int ver = Integer.parseInt(parts[3]);
-			if (ver > maxClient)
-				maxClient = ver;
-		}
-		params.put("maxClient", "" + maxClient);
+		// Save path information
+		String lolPath = lol.getAbsolutePath();
+		params.put("gameDir", lolPath.substring(0, lolPath.lastIndexOf(File.separator)));
+		params.put("airExe", air.getAbsolutePath());		
 		
 		// Connect
 		client = new LoLRTMPSClient(params.get("region"), params.get("version"), params.get("user"), params.get("pass"));
+		client.setLocale(params.get("locale"));
 		client.debug = debug;
 		client.reconnect();
 		
@@ -488,6 +508,59 @@ public class SpectateAnyone
 		btnName.setText("Spectate!");
 		btnName.setEnabled(true);
 		btnFile.setEnabled(true);
+	}
+	
+	public static Set<String> findValidLangs(File base)
+	{
+		Set<String> result = new HashSet<String>();
+		if (base.isFile())
+		{
+			String name = base.getName();
+			if (name.startsWith("fontconfig_"))
+				result.add(name.substring(11, 16));
+			return result;
+		}
+		
+		File[] contents = base.listFiles();
+		for (File f : contents)
+			result.addAll(findValidLangs(f));
+		
+		return result;
+	}
+	
+	public static File findMostRecent(File base, String name)
+	{
+		return findMostRecent(base, name, null);
+	}
+	
+	public static File findMostRecent(File base, String name, String ignore)
+	{
+		if (base.isFile())
+		{
+			if (base.getName().matches(name))
+				return base;
+			else
+				return null;
+		}
+		
+		if (base.getName().equals(ignore))
+			return null;
+		
+		File[] contents = base.listFiles();
+		File mostRecent = null;
+		for (File f : contents)
+		{
+			File result = findMostRecent(f, name, ignore);
+			if (result == null)
+				continue;
+			
+			if (mostRecent == null)
+				mostRecent = result;
+			else if (mostRecent.lastModified() < result.lastModified())
+				mostRecent = result;
+		}
+		
+		return mostRecent;
 	}
 
 	public static void doLayout()
@@ -630,13 +703,12 @@ public class SpectateAnyone
 	public static void doSpectate(String ip, int port, String key, int gameID) 
 	{
 		// Set up the command line
-		String loc = params.get("lollocation");
-		File dir = new File(loc + "RADS\\solutions\\lol_game_client_sln\\releases\\0.0.0." + params.get("maxGame") + "\\deploy\\");
+		File dir = new File(params.get("gameDir"));
 		String[] cmd = new String[] {
-				loc + "RADS\\solutions\\lol_game_client_sln\\releases\\0.0.0." + params.get("maxGame") + "\\deploy\\League of Legends.exe",
+				params.get("gameDir") + File.separator + "League of Legends.exe",
 				"8394",
 				"LoLLauncher.exe",
-				loc + "RADS\\projects\\lol_air_client\\releases\\0.0.0." + params.get("maxGame") + "\\deploy\\LolClient.exe",
+				params.get("airExe"),
 				"spectator " + ip + ":" + port + " " + key + " " + gameID + " " + params.get("region2")
 			};
 		
@@ -655,10 +727,9 @@ public class SpectateAnyone
 				    "Error",
 				    JOptionPane.ERROR_MESSAGE);
 
-			System.err.println("loc=" + loc);
-			System.err.println("dir=" + dir.getAbsolutePath());
+			System.err.println("LoL location = " + params.get("lollocation"));
 			for (String s : cmd)
-				System.out.println("cmd=" + s);
+				System.out.println("Args = " + s);
 			e.printStackTrace();
 		}
 	}
