@@ -1,3 +1,4 @@
+package com.gvaneyck.spectate;
 import java.io.IOException;
 import java.io.InputStream;
 

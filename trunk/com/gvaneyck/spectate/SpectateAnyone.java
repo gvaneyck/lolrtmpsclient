@@ -1,3 +1,4 @@
+package com.gvaneyck.spectate;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Insets;
@@ -18,7 +19,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.HashMap;
@@ -36,6 +36,11 @@ import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+
+import com.gvaneyck.rtmp.Callback;
+import com.gvaneyck.rtmp.LoLRTMPSClient;
+import com.gvaneyck.rtmp.TypedObject;
+
 
 /**
  * A simple program that allows a player to spectate anyone playing a game
@@ -59,7 +64,7 @@ public class SpectateAnyone
 	public static final JTextField txtFile = new JTextField();
 	public static final JButton btnFile = new JButton("Check");
 
-	public static final DefaultListModel lstModel = new DefaultListModel();
+	public static final GameListModel lstModel = new GameListModel();
 	public static final JList lstInGame = new JList(lstModel);
 	public static final JScrollPane lstScroll = new JScrollPane(lstInGame);
 
@@ -75,8 +80,11 @@ public class SpectateAnyone
 
 	public static void main(String[] args)
 	{
+		new ConsoleWindow();
+		
 		initRegionMap();
 		setupFrame();
+
 		setupClient();
 	}
 	
@@ -129,43 +137,6 @@ public class SpectateAnyone
 
 		// Layout everything
 		doLayout();
-		
-		// Setup delay updater
-		Thread t = new Thread()
-				{
-					public void run()
-					{
-						while (true)
-						{
-							try
-							{
-								for (int i = 0; i < lstModel.size(); i++)
-								{
-									String val = (String)lstModel.get(i);
-									if (val.contains("("))
-									{
-										int idx = val.indexOf("(");
-										int time = Integer.parseInt(val.substring(idx + 1, val.indexOf("s", idx))) - 1;
-										String name = val.substring(0, idx - 1);
-										
-										if (time == 0)
-											lstModel.set(i, name);
-										else
-											lstModel.set(i, name + " (" + time + "s)");
-									}
-								}
-								
-								Thread.sleep(1000);
-							}
-							catch (InterruptedException e)
-							{
-							}
-						}
-					}
-				};
-		t.setName("SpectateAnyone (ListUpdater)");
-		t.setDaemon(true);
-		t.start();
 		
 		// Listeners
 		txtName.addKeyListener(new KeyListener()
@@ -270,13 +241,11 @@ public class SpectateAnyone
 				{
 					public void valueChanged(ListSelectionEvent e)
 					{
-						String name = (String)lstInGame.getSelectedValue();
-						if (name == null)
+						GameInfo game = (GameInfo)lstInGame.getSelectedValue();
+						if (game == null)
 							return;
 						
-						if (name.contains("("))
-							name = name.substring(0, name.indexOf("(") - 1);
-						txtName.setText(name);
+						txtName.setText(game.targetSummoner);
 					}
 				});
 		
@@ -366,7 +335,7 @@ public class SpectateAnyone
 			newinfo = true;
 		}
 
-		if (!params.containsKey("region") || !regionMap.containsKey(params.get("region")))
+		if (!params.containsKey("region") || !regionMap.containsKey(params.get("region").toUpperCase()))
 		{
 			String res = (String)JOptionPane.showInputDialog(
 					f,
@@ -751,16 +720,7 @@ public class SpectateAnyone
 							public void callback(TypedObject result)
 							{
 								if (result.get("result").equals("_result"))
-								{
-									// Check delay
-									final int delay = result.getTO("data").getTO("body").getInt("reconnectDelay") - 5;
-
-									// If long enough delay, show it in parens
-									if (delay > 0)
-										lstModel.addElement(name + " (" + delay + "s)");
-									else
-										lstModel.addElement(name);
-								}
+									lstModel.add(new GameInfo(name, result));
 							}
 						});
 			}
@@ -777,5 +737,8 @@ public class SpectateAnyone
 		
 		// Wait for all requests to finish;
 		client.join();
+		
+		// Update the list
+		lstModel.update();
 	}
 }

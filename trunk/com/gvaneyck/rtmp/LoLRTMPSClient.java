@@ -1,3 +1,4 @@
+package com.gvaneyck.rtmp;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,7 +14,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 
 /**
@@ -114,91 +114,91 @@ public class LoLRTMPSClient extends RTMPSClient
 		this.user = user;
 		this.pass = pass;
 
+		// I believe this matters for running the game client
+		this.locale = "en_US";
+		
 		if (region.equals("NA"))
 		{
 			this.server = "prod.na1.lol.riotgames.com";
 			this.loginQueue = "https://lq.na1.lol.riotgames.com/";
-			this.locale = "en_US";
 		}
 		else if (region.equals("EUW"))
 		{
 			this.server = "prod.eu.lol.riotgames.com";
 			this.loginQueue = "https://lq.eu.lol.riotgames.com/";
-			this.locale = "en_GB";
 		}
-		else if (region.equals("EUN"))
+		else if (region.equals("EUN") || region.equals("EUNE"))
 		{
 			this.server = "prod.eun1.lol.riotgames.com";
 			this.loginQueue = "https://lq.eun1.lol.riotgames.com/";
-			this.locale = "en_GB";
 		}
 		else if (region.equals("KR"))
 		{
 			this.server = "prod.kr.lol.riotgames.com";
 			this.loginQueue = "https://lq.kr.lol.riotgames.com/";
-			this.locale = "ko_KR";
 		}
 		else if (region.equals("BR"))
 		{
 			this.server = "prod.br.lol.riotgames.com";
 			this.loginQueue = "https://lq.br.lol.riotgames.com/";
-			this.locale = "pt_BR";
 		}
 		else if (region.equals("TR"))
 		{
 			this.server = "prod.tr.lol.riotgames.com";
 			this.loginQueue = "https://lq.tr.lol.riotgames.com/";
-			this.locale = "pt_BR";
 		}
 		else if (region.equals("PBE"))
 		{
 			this.server = "prod.pbe1.lol.riotgames.com";
 			this.loginQueue = "https://lq.pbe1.lol.riotgames.com/";
-			this.locale = "en_US";
 		}
 		else if (region.equals("SG") || region.equals("MY") || region.equals("SG/MY"))
 		{
 			this.server = "prod.lol.garenanow.com";
 			this.loginQueue = "https://lq.lol.garenanow.com/";
-			this.locale = "en_US";
 			this.useGarena = true;
 		}
 		else if (region.equals("TW"))
 		{
 			this.server = "prodtw.lol.garenanow.com";
 			this.loginQueue = "https://loginqueuetw.lol.garenanow.com/";
-			this.locale = "en_US";
 			this.useGarena = true;
 		}
 		else if (region.equals("TH"))
 		{
 			this.server = "prodth.lol.garenanow.com";
 			this.loginQueue = "https://lqth.lol.garenanow.com/";
-			this.locale = "en_US";
 			this.useGarena = true;
 		}
 		else if (region.equals("PH"))
 		{
 			this.server = "prodph.lol.garenanow.com";
 			this.loginQueue = "https://storeph.lol.garenanow.com/";
-			this.locale = "en_US";
 			this.useGarena = true;
 		}
 		else if (region.equals("VN"))
 		{
 			this.server = "prodvn.lol.garenanow.com";
 			this.loginQueue = "https://lqvn.lol.garenanow.com/";
-			this.locale = "en_US";
 			this.useGarena = true;
 		}
 		else
 		{
 			System.out.println("Invalid region: " + region);
-			System.out.println("Valid region are: NA, EUW, EUN, KR, BR, TR, PBE, SG/MY, TW, TH, PH, VN");
+			System.out.println("Valid region are: NA, EUW, EUN/EUNE, KR, BR, TR, PBE, SG/MY, TW, TH, PH, VN");
 			System.exit(0);
 		}
 
 		setConnectionInfo(this.server, port, "", "app:/mod_ser.dat", null);
+	}
+	
+	/**
+	 * Sets the locale.  I believe this matters for starting the game (looks for fontconfig_locale.txt)
+	 * @param locale The locale to use
+	 */
+	public void setLocale(String locale)
+	{
+		this.locale = locale;
 	}
 
 	/**
@@ -389,7 +389,8 @@ public class LoLRTMPSClient extends RTMPSClient
 		String response = readURL("http://ll.leagueoflegends.com/services/connection_info");
 		
 		// If we can't get an IP address for whatever reason (site's down, etc.) use localhost
-		if (response == null) {
+		if (response == null)
+		{
 			ipAddress = "127.0.0.1";
 			return;
 		}
@@ -407,6 +408,7 @@ public class LoLRTMPSClient extends RTMPSClient
 	{
 		try
 		{
+			// This is sloppy reverse engineered (via Wireshark) code
 			byte[] md5 = MessageDigest.getInstance("MD5").digest(pass.getBytes("UTF-8"));
 			int[] junk;
 			Socket sock;
@@ -571,7 +573,6 @@ public class LoLRTMPSClient extends RTMPSClient
 		TypedObject result;
 		try
 		{
-			//{"rate":0,"reason":"account_banned","status":"FAILED","delay":10000,"banned":7647952951000}
 			response = readAll(connection.getInputStream());
 			result = (TypedObject)JSON.parse(response);
 		}
@@ -580,6 +581,11 @@ public class LoLRTMPSClient extends RTMPSClient
 			System.err.println("Incorrect username or password");
 			throw e;
 		}
+		
+		// Check for banned or other failures
+		//{"rate":0,"reason":"account_banned","status":"FAILED","delay":10000,"banned":7647952951000}
+		if (result.get("status").equals("FAILED"))
+			throw new IOException("Error logging in: " + result.get("reason"));
 
 		// Handle login queue
 		if (!result.containsKey("token"))

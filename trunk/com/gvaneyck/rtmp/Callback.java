@@ -1,3 +1,4 @@
+package com.gvaneyck.rtmp;
 /**
  * Provides callback functionality
  * 
