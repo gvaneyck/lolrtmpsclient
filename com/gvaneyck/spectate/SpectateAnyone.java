@@ -46,6 +46,7 @@ import javax.swing.event.ListSelectionListener;
 import com.gvaneyck.rtmp.Callback;
 import com.gvaneyck.rtmp.LoLRTMPSClient;
 import com.gvaneyck.rtmp.TypedObject;
+import com.gvaneyck.util.ConsoleWindow;
 
 
 /**
@@ -86,7 +87,7 @@ public class SpectateAnyone
 
 	public static void main(String[] args)
 	{
-		new ConsoleWindow();
+		new ConsoleWindow(width, 0);
 		
 		initRegionMap();
 		setupFrame();

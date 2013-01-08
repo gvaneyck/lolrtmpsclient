@@ -1,4 +1,4 @@
-package com.gvaneyck.spectate;
+package com.gvaneyck.util;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Insets;
@@ -7,6 +7,7 @@ import java.awt.event.HierarchyEvent;
 import java.io.PrintStream;
 
 import javax.swing.JFrame;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
 public class ConsoleWindow
@@ -19,6 +20,7 @@ public class ConsoleWindow
 	
 	private static final JFrame f = new JFrame("Console");
 	private static final JTextArea txtConsole = new JTextArea();
+	private static final JScrollPane scrollArea = new JScrollPane(txtConsole);
 	
 	public static void main(String[] args)
 	{
@@ -26,6 +28,11 @@ public class ConsoleWindow
 	}
 
 	public ConsoleWindow()
+	{
+		this(0, 0);
+	}
+	
+	public ConsoleWindow(int xpos, int ypos)
 	{
 		// Redirect output
 		System.setOut(new PrintStream(sos));
@@ -55,10 +62,12 @@ public class ConsoleWindow
 		
 		// Set up the window
 		txtConsole.setEditable(false);
+		scrollArea.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+		scrollArea.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		
 		Container pane = f.getContentPane();
 		pane.setLayout(null);
-		pane.add(txtConsole);
+		pane.add(scrollArea);
 		
 		pane.addHierarchyBoundsListener(new HierarchyBoundsListener()
 				{
@@ -75,7 +84,7 @@ public class ConsoleWindow
 		
 		// Window settings
 		f.setSize(width, height);
-		f.setLocation(350, 0);
+		f.setLocation(xpos, ypos);
 		f.setMinimumSize(new Dimension(width, height));
 		f.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		f.setVisible(true);
@@ -87,6 +96,6 @@ public class ConsoleWindow
 		int twidth = width - i.left - i.right;
 		int theight = height - i.top - i.bottom;
 
-		txtConsole.setBounds(5, 5, twidth - 10, theight - 10);
+		scrollArea.setBounds(5, 5, twidth - 10, theight - 10);
 	}
 }
