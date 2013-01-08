@@ -32,7 +32,7 @@ public class RunePage implements Comparable
 		current = tempCurrent;
 	}
 	
-	public TypedObject getSavePage()
+	public TypedObject getSavePage(int summId)
 	{
 		TypedObject ret = new TypedObject("com.riotgames.platform.summoner.spellbook.SpellBookPageDTO");
 		
@@ -53,7 +53,7 @@ public class RunePage implements Comparable
 		ret.put("pageId", pageId);
 		ret.put("name", name);
 		ret.put("current", current);
-		ret.put("summonerId", 14376);
+		ret.put("summonerId", summId);
 		ret.put("createDate", null);
 		ret.put("futureData", null);
 		ret.put("dataVersion", null);

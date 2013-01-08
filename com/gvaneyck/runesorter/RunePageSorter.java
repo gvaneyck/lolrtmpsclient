@@ -64,6 +64,8 @@ public class RunePageSorter {
 	
 	public static List<RunePage> pages = new ArrayList<RunePage>();
 	public static int lastSelectedPage = -1;
+	public static int acctId = 0;
+	public static int summId = 0;
 
 	public static void main(String[] args)
 	{
@@ -355,7 +357,9 @@ public class RunePageSorter {
 		{
 			// Get the account ID
 			int id = client.invoke("clientFacadeService", "getLoginDataPacketForUser", new Object[] {});
-			int acctId = client.getResult(id).getTO("data").getTO("body").getTO("allSummonerData").getTO("summoner").getInt("acctId");
+			TypedObject summoner = client.getResult(id).getTO("data").getTO("body").getTO("allSummonerData").getTO("summoner");
+			acctId = summoner.getInt("acctId");
+			summId = summoner.getInt("sumId");
 			
 			// Get our rune pages
 			id = client.invoke("summonerService", "getAllSummonerDataByAccount", new Object[] { acctId });
@@ -400,7 +404,7 @@ public class RunePageSorter {
 			for (int i = 0; i < pages.size(); i++)
 			{
 				//if (i == 0)
-					pages2[i] = pages.get(i).getSavePage();
+					pages2[i] = pages.get(i).getSavePage(summId);
 				if (pages.get(i).current)
 					currentPage = pages2[i];
 			}
@@ -423,7 +427,7 @@ public class RunePageSorter {
 			sort.put("fields", new Object[] { fields });
 			args.put("sortByPageId", sort);
 			
-			args.put("summonerId", 14376);
+			args.put("summonerId", summId);
 			args.put("dateString", null);
 			args.put("futureData", null);
 			args.put("dataVersion", null);
