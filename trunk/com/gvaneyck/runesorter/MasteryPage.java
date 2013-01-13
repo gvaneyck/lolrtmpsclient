@@ -3,34 +3,34 @@ package com.gvaneyck.runesorter;
 import com.gvaneyck.rtmp.TypedObject;
 
 /**
- * Stores rune page info
+ * Stores mastery page info
  * 
  * @author Gvaneyck
  */
-public class RunePage implements Comparable
+public class MasteryPage implements Comparable
 {
 	public Integer pageId;
 	public String name;
 	public Boolean current;
-	public TypedObject page;
+	public Object[] talents;
 
-	public RunePage(TypedObject page)
+	public MasteryPage(TypedObject page)
 	{
 		name = page.getString("name");
 		pageId = page.getInt("pageId");
 		current = page.getBool("current");
-		this.page = page;
+		talents = page.getArray("talentEntries");
 	}
 	
-	public void swap(RunePage target)
+	public void swap(MasteryPage target)
 	{
 		String tempName = target.name;
 		target.name = name;
 		name = tempName;
 
-		TypedObject tempPage = target.page;
-		target.page = page;
-		page = tempPage;
+		Object[] tempTalents = target.talents;
+		target.talents = talents;
+		talents = tempTalents;
 
 		Boolean tempCurrent = target.current;
 		target.current = current;
@@ -39,21 +39,20 @@ public class RunePage implements Comparable
 	
 	public TypedObject getSavePage(int summId)
 	{
-		TypedObject ret = new TypedObject("com.riotgames.platform.summoner.spellbook.SpellBookPageDTO");
+		TypedObject ret = new TypedObject("com.riotgames.platform.summoner.masterybook.MasteryBookPageDTO");
 		
-		Object[] slots = page.getArray("slotEntries");
-		Object[] saveSlots = new Object[slots.length];
-		for (int i = 0; i < slots.length; i++)
+		Object[] saveTalents = new Object[talents.length];
+		for (int i = 0; i < talents.length; i++)
 		{
-			TypedObject temp = (TypedObject)slots[i];
-			TypedObject slot = new TypedObject("com.riotgames.platform.summoner.spellbook.SlotEntry");
-			slot.put("runeSlotId", temp.get("runeSlotId"));
-			slot.put("runeId", temp.get("runeId"));
+			TypedObject temp = (TypedObject)talents[i];
+			TypedObject slot = new TypedObject("com.riotgames.platform.summoner.masterybook.TalentEntry");
+			slot.put("talentId", temp.get("talentId"));
+			slot.put("rank", temp.get("rank"));
 			slot.put("futureData", null);
 			slot.put("dataVersion", null);
-			saveSlots[i] = slot;
+			saveTalents[i] = slot;
 		}
-		ret.put("slotEntries", TypedObject.makeArrayCollection(saveSlots));
+		ret.put("talentEntries", TypedObject.makeArrayCollection(saveTalents));
 		
 		ret.put("pageId", pageId);
 		ret.put("name", name);
@@ -68,9 +67,9 @@ public class RunePage implements Comparable
 	
 	public int compareTo(Object o)
 	{
-		if (o instanceof RunePage)
+		if (o instanceof MasteryPage)
 		{
-			RunePage temp = (RunePage)o;
+			MasteryPage temp = (MasteryPage)o;
 			return pageId.compareTo(temp.pageId);
 		}
 		return 0;
