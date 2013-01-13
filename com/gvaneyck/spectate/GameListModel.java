@@ -9,7 +9,7 @@ import javax.swing.event.ListDataEvent;
 import javax.swing.event.ListDataListener;
 
 /**
- * Stores
+ * A list model for LoL game info
  * 
  * @author Gvaneyck
  */

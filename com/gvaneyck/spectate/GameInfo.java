@@ -7,6 +7,11 @@ import java.util.Map;
 
 import com.gvaneyck.rtmp.TypedObject;
 
+/**
+ * Stores info for a LoL game
+ * 
+ * @author Gvaneyck
+ */
 public class GameInfo implements Comparable
 {
 	public int delay;

@@ -8,16 +8,16 @@ import javax.swing.event.ListDataEvent;
 import javax.swing.event.ListDataListener;
 
 /**
- * A list model for LoL rune pages
+ * A list model for LoL mastery pages
  * 
  * @author Gvaneyck
  */
-public class RunePageListModel implements ListModel
+public class MasteryPageListModel implements ListModel
 {
 	List<ListDataListener> listeners = new ArrayList<ListDataListener>();
-	List<RunePage> data = new ArrayList<RunePage>();
+	List<MasteryPage> data = new ArrayList<MasteryPage>();
 	
-	public RunePageListModel()
+	public MasteryPageListModel()
 	{
 	}
 	
@@ -26,7 +26,7 @@ public class RunePageListModel implements ListModel
 		data.clear();
 	}
 	
-	public void add(RunePage page)
+	public void add(MasteryPage page)
 	{
 		data.add(page);
 	}
