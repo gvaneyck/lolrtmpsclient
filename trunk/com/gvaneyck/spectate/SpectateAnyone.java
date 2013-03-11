@@ -57,8 +57,6 @@ import com.gvaneyck.util.ConsoleWindow;
  */
 public class SpectateAnyone
 {
-	public static final boolean debug = false;
-	
 	public static final JFrame f = new JFrame("Spectate Anyone!");
 	
 	public static final Label lblName = new Label("Name:");
@@ -502,7 +500,6 @@ public class SpectateAnyone
 		// Connect
 		client = new LoLRTMPSClient(params.get("region"), params.get("version"), params.get("user"), params.get("pass"));
 		client.setLocale(params.get("locale"));
-		client.debug = debug;
 		client.reconnect();
 		
 		// Enable the buttons

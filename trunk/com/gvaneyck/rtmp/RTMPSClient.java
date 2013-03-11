@@ -32,7 +32,6 @@ import javax.net.ssl.X509TrustManager;
  */
 public class RTMPSClient
 {
-	public boolean debug = false;
 	private static char[] passphrase = "changeit".toCharArray();
 
 	/** Server information */
@@ -184,6 +183,9 @@ public class RTMPSClient
 	 */
 	public void doReconnect()
 	{
+		if (reconnecting || !connected)
+			return;
+		
 		Thread t = new Thread()
 				{
 					public void run()
@@ -327,6 +329,7 @@ public class RTMPSClient
 			// (unless it's a connectivity issue)
 
 			// Rethrow as an IOException
+			e.printStackTrace();
 			throw new IOException(e.getMessage());
 		}
 	}
@@ -432,7 +435,9 @@ public class RTMPSClient
 
 		// S2
 		byte[] S2 = new byte[1536];
-		in.read(S2, 0, 1536);
+		for (int i = 0; i < S2.length; i++)
+			S2[i] = (byte)in.read();
+		//in.read(S2, 0, 1536);
 
 		// Validate handshake
 		boolean valid = true;
@@ -683,6 +688,13 @@ public class RTMPSClient
 			curThread.setDaemon(true);
 			curThread.start();
 		}
+		
+		private byte readByte(InputStream in) throws IOException
+		{
+			byte ret = (byte)in.read();
+			//System.out.println(String.format("%02X", ret));
+			return ret;
+		}
 
 		/**
 		 * The main loop for the packet reader
@@ -691,21 +703,12 @@ public class RTMPSClient
 		{
 			try
 			{
-				//DataOutputStream out = null;
-				//if (debug)
-				//	out = new DataOutputStream(new FileOutputStream("debug.dmp"));
-
 				Map<Integer, Packet> packets = new HashMap<Integer, Packet>();
 
 				while (true)
 				{
 					// Parse the basic header
-					byte basicHeader = (byte)in.read();
-					//if (debug)
-					//{
-					//	out.write(basicHeader & 0xFF);
-					//	out.flush();
-					//}
+					byte basicHeader = readByte(in);
 
 					int channel = basicHeader & 0x2F;
 					int headerType = basicHeader & 0xC0;
@@ -730,13 +733,7 @@ public class RTMPSClient
 					{
 						byte[] header = new byte[headerSize - 1];
 						for (int i = 0; i < header.length; i++)
-							header[i] = (byte)in.read();
-						//if (debug)
-						//{
-						//	for (int i = 0; i < header.length; i++)
-						//		out.write(header[i] & 0xFF);
-						//	out.flush();
-						//}
+							header[i] = readByte(in);
 
 						if (headerSize >= 8)
 						{
@@ -752,7 +749,7 @@ public class RTMPSClient
 					// Read rest of packet
 					for (int i = 0; i < 128; i++)
 					{
-						byte b = (byte)in.read();
+						byte b = readByte(in);
 						p.add(b);
 
 						if (p.isComplete())
@@ -792,18 +789,13 @@ public class RTMPSClient
 					else
 					// Skip most messages
 					{
-						if (debug)
-						{
-							System.out.print(String.format("%02X ", p.getType()));
-							for (byte b : p.getData())
-								System.out.print(String.format("%02X", b & 0xff));
-							System.out.println();
-						}
+						System.out.println("Unrecognized message type");
+						System.out.print(String.format("%02X ", p.getType()));
+						for (byte b : p.getData())
+							System.out.print(String.format("%02X", b & 0xff));
+						System.out.println();
 						continue;
 					}
-
-					if (debug)
-						System.out.println(result);
 
 					// Store result
 					Integer id = result.getInt("invokeId");
@@ -853,85 +845,6 @@ public class RTMPSClient
 			{
 				doReconnect();
 			}
-		}
-	}
-
-	/**
-	 * A simple packet structure for PacketReader
-	 */
-	class Packet
-	{
-		private byte[] dataBuffer;
-		private int dataPos;
-		private int dataSize;
-		private int messageType;
-
-		public void setSize(int size)
-		{
-			dataSize = size;
-			dataBuffer = new byte[dataSize];
-		}
-
-		public void setType(int type)
-		{
-			messageType = type;
-		}
-
-		public void add(byte b)
-		{
-			dataBuffer[dataPos++] = b;
-		}
-
-		public boolean isComplete()
-		{
-			return (dataPos == dataSize);
-		}
-
-		public int getSize()
-		{
-			return dataSize;
-		}
-
-		public int getType()
-		{
-			return messageType;
-		}
-
-		public byte[] getData()
-		{
-			return dataBuffer;
-		}
-	}
-	
-	/**
-	 * Used to save certificates
-	 */
-	private static class SavingTrustManager implements X509TrustManager
-	{
-		private final X509TrustManager tm;
-		private X509Certificate[] chain;
-
-		SavingTrustManager(X509TrustManager tm)
-		{
-			this.tm = tm;
-		}
-
-		public X509Certificate[] getAcceptedIssuers()
-		{
-			return new X509Certificate[0];
-		}
-
-		public void checkClientTrusted(X509Certificate[] chain, String authType)
-				throws CertificateException
-		{
-			throw new UnsupportedOperationException();	
-		}
-
-		public void checkServerTrusted(X509Certificate[] chain, String authType)
-				throws CertificateException
-		{
-			this.chain = chain;
-			tm.checkServerTrusted(chain, authType);
 		}
 	}
 }
