@@ -10,8 +10,8 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
@@ -48,7 +48,7 @@ public class LoLRTMPSClient extends RTMPSClient
 	private String authToken;
 	private String sessionToken;
 	private int accountID;
-
+	
 	/**
 	 * A basic test for LoLRTMPSClient
 	 * 
@@ -56,8 +56,7 @@ public class LoLRTMPSClient extends RTMPSClient
 	 */
 	public static void main(String[] args)
 	{
-		LoLRTMPSClient client = new LoLRTMPSClient("VN", "1.70.FOOBAR", "jabetest1", "jabetest1");
-		//client.debug = true;
+		LoLRTMPSClient client = new LoLRTMPSClient(ServerInfo.NA, "3.03.FOOBAR", "user", "pass");
 
 		try
 		{
@@ -105,11 +104,13 @@ public class LoLRTMPSClient extends RTMPSClient
 	 * @param user The user to login as
 	 * @param pass The user's password
 	 */
-	public LoLRTMPSClient(String region, String clientVersion, String user, String pass)
+	public LoLRTMPSClient(ServerInfo serverInfo, String clientVersion, String user, String pass)
 	{
-		region = region.toUpperCase();
+		this.region = serverInfo.region;
+		this.server = serverInfo.server;
+		this.loginQueue = serverInfo.loginQueue;
+		this.useGarena = serverInfo.useGarena;
 		
-		this.region = region;
 		this.clientVersion = clientVersion;
 		this.user = user;
 		this.pass = pass;
@@ -117,78 +118,6 @@ public class LoLRTMPSClient extends RTMPSClient
 		// I believe this matters for running the game client
 		this.locale = "en_US";
 		
-		if (region.equals("NA"))
-		{
-			this.server = "prod.na1.lol.riotgames.com";
-			this.loginQueue = "https://lq.na1.lol.riotgames.com/";
-		}
-		else if (region.equals("EUW"))
-		{
-			this.server = "prod.eu.lol.riotgames.com";
-			this.loginQueue = "https://lq.eu.lol.riotgames.com/";
-		}
-		else if (region.equals("EUN") || region.equals("EUNE"))
-		{
-			this.server = "prod.eun1.lol.riotgames.com";
-			this.loginQueue = "https://lq.eun1.lol.riotgames.com/";
-		}
-		else if (region.equals("KR"))
-		{
-			this.server = "prod.kr.lol.riotgames.com";
-			this.loginQueue = "https://lq.kr.lol.riotgames.com/";
-		}
-		else if (region.equals("BR"))
-		{
-			this.server = "prod.br.lol.riotgames.com";
-			this.loginQueue = "https://lq.br.lol.riotgames.com/";
-		}
-		else if (region.equals("TR"))
-		{
-			this.server = "prod.tr.lol.riotgames.com";
-			this.loginQueue = "https://lq.tr.lol.riotgames.com/";
-		}
-		else if (region.equals("PBE"))
-		{
-			this.server = "prod.pbe1.lol.riotgames.com";
-			this.loginQueue = "https://lq.pbe1.lol.riotgames.com/";
-		}
-		else if (region.equals("SG") || region.equals("MY") || region.equals("SG/MY"))
-		{
-			this.server = "prod.lol.garenanow.com";
-			this.loginQueue = "https://lq.lol.garenanow.com/";
-			this.useGarena = true;
-		}
-		else if (region.equals("TW"))
-		{
-			this.server = "prodtw.lol.garenanow.com";
-			this.loginQueue = "https://loginqueuetw.lol.garenanow.com/";
-			this.useGarena = true;
-		}
-		else if (region.equals("TH"))
-		{
-			this.server = "prodth.lol.garenanow.com";
-			this.loginQueue = "https://lqth.lol.garenanow.com/";
-			this.useGarena = true;
-		}
-		else if (region.equals("PH"))
-		{
-			this.server = "prodph.lol.garenanow.com";
-			this.loginQueue = "https://storeph.lol.garenanow.com/";
-			this.useGarena = true;
-		}
-		else if (region.equals("VN"))
-		{
-			this.server = "prodvn.lol.garenanow.com";
-			this.loginQueue = "https://lqvn.lol.garenanow.com/";
-			this.useGarena = true;
-		}
-		else
-		{
-			System.out.println("Invalid region: " + region);
-			System.out.println("Valid region are: NA, EUW, EUN/EUNE, KR, BR, TR, PBE, SG/MY, TW, TH, PH, VN");
-			System.exit(0);
-		}
-
 		setConnectionInfo(this.server, port, "", "app:/mod_ser.dat", null);
 	}
 	
@@ -296,7 +225,7 @@ public class LoLRTMPSClient extends RTMPSClient
 		result = getResult(id); // Read result and discard
 
 		// Start the heartbeat
-		new HeartbeatThread();
+		new LCDSHeartbeat(this);
 		
 		loggedIn = true;
 
@@ -372,7 +301,7 @@ public class LoLRTMPSClient extends RTMPSClient
 	public String getErrorMessage(TypedObject message)
 	{
 		// Works for clientVersion
-		return (debug ? message.toString() : message.getTO("data").getTO("rootCause").getString("message"));
+		return message.getTO("data").getTO("rootCause").getString("message");
 	}
 
 	/**
@@ -711,50 +640,22 @@ public class LoLRTMPSClient extends RTMPSClient
 	}
 
 	/**
-	 * Executes a LCDSHeartBeat every 2 minutes
+	 * Returns the account ID for this connection
+	 * 
+	 * @return The account ID
 	 */
-	class HeartbeatThread
+	public int getAccountID()
 	{
-		private Thread curThread;
-		private int heartbeat;
-		private SimpleDateFormat sdf = new SimpleDateFormat("ddd MMM d yyyy HH:mm:ss 'GMTZ'");
+		return accountID;
+	}
 
-		public HeartbeatThread()
-		{
-			this.heartbeat = 1;
-			curThread = new Thread() {
-	            public void run() {
-	            	beatHeart(this);
-	            }
-	        };
-	        curThread.setName("LoLRTMPSClient (HeartbeatThread)");
-	        curThread.setDaemon(true);
-	        curThread.start();
-		}
-
-		private void beatHeart(Thread thread)
-		{
-			while (curThread == thread)
-			{
-				try
-				{
-					long hbTime = System.currentTimeMillis();
-					
-					int id = invoke("loginService", "performLCDSHeartBeat", new Object[] { accountID, sessionToken, heartbeat, sdf.format(new Date()) });
-					cancel(id); // Ignore result for now
-
-					heartbeat++;
-
-					// Quick sleeps to shutdown the heartbeat quickly on a reconnect
-					while (curThread == thread && System.currentTimeMillis() - hbTime < 120000)
-						sleep(100);
-				}
-				catch (Exception e)
-				{
-					if (!reconnecting)
-						doReconnect();
-				}
-			}
-		}
+	/**
+	 * Returns the session token for this connection
+	 * 
+	 * @return The session token
+	 */
+	public String getSessionToken()
+	{
+		return sessionToken;
 	}
 }
