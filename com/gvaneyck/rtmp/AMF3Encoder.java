@@ -121,7 +121,7 @@ public class AMF3Encoder
 
 		ret = addHeaders(ret);
 		ret[7] = (byte)0x14; // Change message type
-
+		
 		return ret;
 	}
 

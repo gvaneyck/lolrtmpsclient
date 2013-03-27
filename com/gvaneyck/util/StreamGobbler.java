@@ -1,8 +1,8 @@
-package com.gvaneyck.spectate;
+package com.gvaneyck.util;
 import java.io.IOException;
 import java.io.InputStream;
 
-class StreamGobbler extends Thread
+public class StreamGobbler extends Thread
 {
 	private InputStream in;
 	private StringBuilder buffer = new StringBuilder();

@@ -1,6 +1,8 @@
-package com.gvaneyck.rtmp;
+package com.gvaneyck.util.encoding;
 import java.util.ArrayList;
 import java.util.LinkedList;
+
+import com.gvaneyck.rtmp.TypedObject;
 
 /**
  * Simple JSON parser

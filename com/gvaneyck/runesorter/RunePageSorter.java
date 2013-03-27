@@ -1,6 +1,5 @@
 package com.gvaneyck.runesorter;
 
-
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Insets;
@@ -37,6 +36,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import com.gvaneyck.rtmp.LoLRTMPSClient;
+import com.gvaneyck.rtmp.ServerInfo;
 import com.gvaneyck.rtmp.TypedObject;
 import com.gvaneyck.util.ConsoleWindow;
 
@@ -67,7 +67,7 @@ public class RunePageSorter {
 	public static LoLRTMPSClient client;
 	public static Map<String, String> params;
 	
-	public static Map<String, String> regionMap;
+	public static Map<String, ServerInfo> regionMap;
 	
 	public static List<RunePage> pages = new ArrayList<RunePage>();
 	public static int lastSelectedPage = -1;
@@ -90,19 +90,19 @@ public class RunePageSorter {
 	
 	public static void initRegionMap()
 	{
-		regionMap = new HashMap<String, String>();
-		regionMap.put("NORTH AMERICA", "NA");
-		regionMap.put("EUROPE WEST", "EUW");
-		regionMap.put("EUROPE NORDIC & EAST", "EUN");
-		regionMap.put("KOREA", "KR");
-		regionMap.put("BRAZIL", "BR");
-		regionMap.put("TURKEY", "TR");
-		regionMap.put("PUBLIC BETA ENVIRONMENT", "PBE");
-		regionMap.put("SINGAPORE/MALAYSIA", "SG");
-		regionMap.put("TAIWAN", "TW");
-		regionMap.put("THAILAND", "TH");
-		regionMap.put("PHILLIPINES", "PH");
-		regionMap.put("VIETNAM", "VN");
+		regionMap = new HashMap<String, ServerInfo>();
+		regionMap.put("NORTH AMERICA", ServerInfo.NA);
+		regionMap.put("EUROPE WEST", ServerInfo.EUW);
+		regionMap.put("EUROPE NORDIC & EAST", ServerInfo.EUNE);
+		regionMap.put("KOREA", ServerInfo.KR);
+		regionMap.put("BRAZIL", ServerInfo.BR);
+		regionMap.put("TURKEY", ServerInfo.TR);
+		regionMap.put("PUBLIC BETA ENVIRONMENT", ServerInfo.PBE);
+		regionMap.put("SINGAPORE/MALAYSIA", ServerInfo.SG);
+		regionMap.put("TAIWAN", ServerInfo.TW);
+		regionMap.put("THAILAND", ServerInfo.TH);
+		regionMap.put("PHILLIPINES", ServerInfo.PH);
+		regionMap.put("VIETNAM", ServerInfo.VN);
 	}
 	
 	public static void setupFrame()
@@ -417,11 +417,9 @@ public class RunePageSorter {
 			}
 		}
 		
-		// Set the region code used by LoLRTMPSClient
-		params.put("region", regionMap.get(params.get("region").toUpperCase()));
-		
 		// Connect
-		client = new LoLRTMPSClient(params.get("region"), params.get("version"), params.get("user"), params.get("pass"));
+		ServerInfo serverInfo = regionMap.get(params.get("region").toUpperCase());
+		client = new LoLRTMPSClient(serverInfo, params.get("version"), params.get("user"), params.get("pass"));
 		client.setLocale(params.get("locale"));
 		client.reconnect();
 		
