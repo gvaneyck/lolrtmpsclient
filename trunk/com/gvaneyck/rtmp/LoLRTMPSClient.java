@@ -1,4 +1,5 @@
 package com.gvaneyck.rtmp;
+
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,11 +11,12 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
-import java.util.Map;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
+
+import com.gvaneyck.util.encoding.Base64;
+import com.gvaneyck.util.encoding.JSON;
 
 /**
  * A very basic RTMPS client for connecting to League of Legends
@@ -25,6 +27,7 @@ public class LoLRTMPSClient extends RTMPSClient
 {
 	/** Server information */
 	private static final int port = 2099; // Must be 2099
+	private ServerInfo serverInfo;
 	private String server;
 	private String region;
 
@@ -106,6 +109,7 @@ public class LoLRTMPSClient extends RTMPSClient
 	 */
 	public LoLRTMPSClient(ServerInfo serverInfo, String clientVersion, String user, String pass)
 	{
+		this.serverInfo = serverInfo;
 		this.region = serverInfo.region;
 		this.server = serverInfo.server;
 		this.loginQueue = serverInfo.loginQueue;
@@ -128,6 +132,14 @@ public class LoLRTMPSClient extends RTMPSClient
 	public void setLocale(String locale)
 	{
 		this.locale = locale;
+	}
+
+	/**
+	 * Retrieves the server info used to create this client
+	 * @return The client's server info
+	 */
+	public ServerInfo getServerInfo() {
+		return serverInfo;
 	}
 
 	/**

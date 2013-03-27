@@ -1,4 +1,4 @@
-package com.gvaneyck.rtmp;
+package com.gvaneyck.util.encoding;
 /**
  * <p>
  * Encodes and decodes to and from Base64 notation.

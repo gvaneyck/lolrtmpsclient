@@ -45,8 +45,10 @@ import javax.swing.event.ListSelectionListener;
 
 import com.gvaneyck.rtmp.Callback;
 import com.gvaneyck.rtmp.LoLRTMPSClient;
+import com.gvaneyck.rtmp.ServerInfo;
 import com.gvaneyck.rtmp.TypedObject;
 import com.gvaneyck.util.ConsoleWindow;
+import com.gvaneyck.util.StreamGobbler;
 
 
 /**
@@ -81,7 +83,7 @@ public class SpectateAnyone
 	public static LoLRTMPSClient client;
 	public static Map<String, String> params;
 	
-	public static Map<String, String> regionMap;
+	public static Map<String, ServerInfo> regionMap;
 
 	public static void main(String[] args)
 	{
@@ -95,19 +97,19 @@ public class SpectateAnyone
 	
 	public static void initRegionMap()
 	{
-		regionMap = new HashMap<String, String>();
-		regionMap.put("NORTH AMERICA", "NA");
-		regionMap.put("EUROPE WEST", "EUW");
-		regionMap.put("EUROPE NORDIC & EAST", "EUN");
-		regionMap.put("KOREA", "KR");
-		regionMap.put("BRAZIL", "BR");
-		regionMap.put("TURKEY", "TR");
-		regionMap.put("PUBLIC BETA ENVIRONMENT", "PBE");
-		regionMap.put("SINGAPORE/MALAYSIA", "SG");
-		regionMap.put("TAIWAN", "TW");
-		regionMap.put("THAILAND", "TH");
-		regionMap.put("PHILLIPINES", "PH");
-		regionMap.put("VIETNAM", "VN");
+		regionMap = new HashMap<String, ServerInfo>();
+		regionMap.put("NORTH AMERICA", ServerInfo.NA);
+		regionMap.put("EUROPE WEST", ServerInfo.EUW);
+		regionMap.put("EUROPE NORDIC & EAST", ServerInfo.EUNE);
+		regionMap.put("KOREA", ServerInfo.KR);
+		regionMap.put("BRAZIL", ServerInfo.BR);
+		regionMap.put("TURKEY", ServerInfo.TR);
+		regionMap.put("PUBLIC BETA ENVIRONMENT", ServerInfo.PBE);
+		regionMap.put("SINGAPORE/MALAYSIA", ServerInfo.SG);
+		regionMap.put("TAIWAN", ServerInfo.TW);
+		regionMap.put("THAILAND", ServerInfo.TH);
+		regionMap.put("PHILLIPINES", ServerInfo.PH);
+		regionMap.put("VIETNAM", ServerInfo.VN);
 	}
 	
 	public static void setupFrame()
@@ -458,22 +460,6 @@ public class SpectateAnyone
 			}
 		}
 		
-		// Set the region used for the game executable
-		params.put("region", regionMap.get(params.get("region").toUpperCase()));
-		String region = params.get("region");
-		if (region.equals("NA"))
-			params.put("region2", "NA1");
-		else if (region.equals("EUW"))
-			params.put("region2", "EUW1");
-		else if (region.equals("EUN"))
-			params.put("region2", "EUN1");
-		else if (region.equals("KR"))
-			params.put("region2", "KR");
-		else if (region.equals("BR"))
-			params.put("region2", "BR1");
-		else if (region.equals("PBE"))
-			params.put("region2", "PBE1");
-		
 		// Figure out the path to executables
 		// I'm not sure what the difference is, but using the executable in lol_game_client (rather than lol_game_client_sln)
 		// gives the missing language file error
@@ -498,7 +484,8 @@ public class SpectateAnyone
 		params.put("airExe", air.getAbsolutePath());		
 		
 		// Connect
-		client = new LoLRTMPSClient(params.get("region"), params.get("version"), params.get("user"), params.get("pass"));
+		ServerInfo serverInfo = regionMap.get(params.get("region").toUpperCase());
+		client = new LoLRTMPSClient(serverInfo, params.get("version"), params.get("user"), params.get("pass"));
 		client.setLocale(params.get("locale"));
 		client.reconnect();
 		
@@ -707,7 +694,7 @@ public class SpectateAnyone
 				"8394",
 				"LoLLauncher.exe",
 				params.get("airExe"),
-				"spectator " + ip + ":" + port + " " + key + " " + gameID + " " + params.get("region2")
+				"spectator " + ip + ":" + port + " " + key + " " + gameID + " " + client.getServerInfo().platform
 			};
 		
 		try
