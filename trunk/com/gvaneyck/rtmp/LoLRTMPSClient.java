@@ -17,6 +17,7 @@ import javax.net.ssl.SSLSocketFactory;
 
 import com.gvaneyck.util.encoding.Base64;
 import com.gvaneyck.util.encoding.JSON;
+import com.gvaneyck.util.encoding.ObjectMap;
 
 /**
  * A very basic RTMPS client for connecting to League of Legends
@@ -336,7 +337,7 @@ public class LoLRTMPSClient extends RTMPSClient
 			return;
 		}
 		
-		TypedObject result = (TypedObject)JSON.parse(response);
+		ObjectMap result = (ObjectMap)JSON.parse(response);
 		ipAddress = result.getString("ip_address");
 	}
 	
@@ -511,11 +512,11 @@ public class LoLRTMPSClient extends RTMPSClient
 
 		// Read the response
 		String response;
-		TypedObject result;
+		ObjectMap result;
 		try
 		{
 			response = readAll(connection.getInputStream());
-			result = (TypedObject)JSON.parse(response);
+			result = (ObjectMap)JSON.parse(response);
 		}
 		catch (IOException e)
 		{
@@ -542,7 +543,7 @@ public class LoLRTMPSClient extends RTMPSClient
 			Object[] tickers = result.getArray("tickers");
 			for (Object o : tickers)
 			{
-				TypedObject to = (TypedObject)o;
+				ObjectMap to = (ObjectMap)o;
 				
 				// Find our queue
 				int tnode = to.getInt("node");
@@ -562,7 +563,7 @@ public class LoLRTMPSClient extends RTMPSClient
 			{
 				sleep(delay); // Sleep until the queue updates
 				response = readURL(loginQueue + "login-queue/rest/queue/ticker/" + champ);
-				result = (TypedObject)JSON.parse(response);
+				result = (ObjectMap)JSON.parse(response);
 				if (result == null)
 					continue;
 			
@@ -572,12 +573,12 @@ public class LoLRTMPSClient extends RTMPSClient
 
 			// Then try getting our token repeatedly
 			response = readURL(loginQueue + "login-queue/rest/queue/authToken/" + user.toLowerCase());
-			result = (TypedObject)JSON.parse(response);
+			result = (ObjectMap)JSON.parse(response);
 			while (response == null || !result.containsKey("token"))
 			{
 				sleep(delay / 10);
 				response = readURL(loginQueue + "login-queue/rest/queue/authToken/" + user.toLowerCase());
-				result = (TypedObject)JSON.parse(response);
+				result = (ObjectMap)JSON.parse(response);
 			}
 		}
 
