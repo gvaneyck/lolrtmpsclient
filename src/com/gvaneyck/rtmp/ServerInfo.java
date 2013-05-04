@@ -47,4 +47,9 @@ public class ServerInfo
 		this.loginQueue = loginQueue;
 		this.useGarena = useGarena;
 	}
+	
+	public String toString()
+	{
+		return region;
+	}
 }
