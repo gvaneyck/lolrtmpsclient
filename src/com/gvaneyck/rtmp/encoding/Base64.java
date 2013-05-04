@@ -1,4 +1,5 @@
-package com.gvaneyck.util.encoding;
+package com.gvaneyck.rtmp.encoding;
+
 /**
  * <p>
  * Encodes and decodes to and from Base64 notation.
@@ -19,6 +20,7 @@ package com.gvaneyck.util.encoding;
  * 
  * @author Robert Harder
  * @author rob@iharder.net
+ * @author Gabriel Van Eyck
  * @version 2.2.1
  */
 public class Base64

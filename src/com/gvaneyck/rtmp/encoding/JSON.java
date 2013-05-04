@@ -1,4 +1,4 @@
-package com.gvaneyck.util.encoding;
+package com.gvaneyck.rtmp.encoding;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
