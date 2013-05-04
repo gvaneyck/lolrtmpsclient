@@ -71,4 +71,29 @@ public class TypedObject extends ObjectMap
   		else
   			return (Object[])get(key);
   	}
+  	
+  	public String toString() {
+  		StringBuilder buff = new StringBuilder();
+  		buff.append("{");
+  		for (String key : keySet()) {
+  			buff.append(key);
+  			buff.append('=');
+  			if (key.equals("array")) {
+  				buff.append('[');
+  				for (Object o : getArray(key)) {
+  					buff.append(o.toString());
+  					buff.append(", ");
+  				}
+  				buff.append(']');
+  			}
+  			else if (get(key) instanceof Double) {
+  				buff.append(((Double)get(key)).longValue());
+  			}
+  			else
+  				buff.append(get(key));
+  			buff.append(", ");
+  		}
+  		buff.append("}");
+  		return buff.toString();
+  	}
 }
