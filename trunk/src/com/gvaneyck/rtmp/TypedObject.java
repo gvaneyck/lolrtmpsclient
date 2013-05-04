@@ -1,6 +1,6 @@
 package com.gvaneyck.rtmp;
 
-import com.gvaneyck.util.encoding.ObjectMap;
+import com.gvaneyck.rtmp.encoding.ObjectMap;
 
 /**
  * A map that has a type, used to represent an object

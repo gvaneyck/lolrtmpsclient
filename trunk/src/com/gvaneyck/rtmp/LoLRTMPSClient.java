@@ -15,9 +15,9 @@ import java.security.NoSuchAlgorithmException;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
 
-import com.gvaneyck.util.encoding.Base64;
-import com.gvaneyck.util.encoding.JSON;
-import com.gvaneyck.util.encoding.ObjectMap;
+import com.gvaneyck.rtmp.encoding.Base64;
+import com.gvaneyck.rtmp.encoding.JSON;
+import com.gvaneyck.rtmp.encoding.ObjectMap;
 
 /**
  * A very basic RTMPS client for connecting to League of Legends

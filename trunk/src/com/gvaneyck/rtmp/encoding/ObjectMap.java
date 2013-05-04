@@ -1,4 +1,4 @@
-package com.gvaneyck.util.encoding;
+package com.gvaneyck.rtmp.encoding;
 
 import java.util.Date;
 import java.util.HashMap;
