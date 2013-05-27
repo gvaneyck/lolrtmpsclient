@@ -1,5 +1,7 @@
 package com.gvaneyck.rtmp;
 
+import com.gvaneyck.rtmp.encoding.TypedObject;
+
 /**
  * Provides callback functionality
  * 

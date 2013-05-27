@@ -1,11 +1,9 @@
-package com.gvaneyck.rtmp;
+package com.gvaneyck.rtmp.encoding;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
-import com.gvaneyck.rtmp.encoding.JSON;
 
 /**
  * Decodes AMF3 data and packets from RTMP

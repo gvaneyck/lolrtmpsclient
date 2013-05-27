@@ -25,6 +25,10 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
+import com.gvaneyck.rtmp.encoding.AMF3Decoder;
+import com.gvaneyck.rtmp.encoding.AMF3Encoder;
+import com.gvaneyck.rtmp.encoding.TypedObject;
+
 /**
  * A very basic RTMPS client
  * 

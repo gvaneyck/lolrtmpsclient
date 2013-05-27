@@ -1,4 +1,4 @@
-package com.gvaneyck.rtmp;
+package com.gvaneyck.rtmp.encoding;
 
 import java.io.IOException;
 

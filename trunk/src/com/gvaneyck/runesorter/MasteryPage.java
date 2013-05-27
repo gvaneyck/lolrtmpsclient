@@ -1,6 +1,6 @@
 package com.gvaneyck.runesorter;
 
-import com.gvaneyck.rtmp.TypedObject;
+import com.gvaneyck.rtmp.encoding.TypedObject;
 
 /**
  * Stores mastery page info
