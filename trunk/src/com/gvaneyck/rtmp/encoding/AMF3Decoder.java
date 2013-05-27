@@ -440,7 +440,7 @@ public class AMF3Decoder
 
 					String json;
 					try { json = new String(readBytes(size), "UTF-8"); } catch (UnsupportedEncodingException e) { throw new EncodingException(e.toString()); }
-					ret = (TypedObject)JSON.parse(json);
+					ret = new TypedObject((ObjectMap)JSON.parse(json));
 					ret.type = cd.type;
 				}
 				else

@@ -2,6 +2,7 @@ package com.gvaneyck.runesorter;
 
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -29,6 +30,8 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.ListSelectionModel;
@@ -389,11 +392,25 @@ public class RunePageSorter {
 
 		if (!params.containsKey("pass"))
 		{
-			String res = (String)JOptionPane.showInputDialog(
+			JPanel panel = new JPanel();
+			JLabel label = new JLabel("Enter the password for '" + params.get("user") + "'");
+			JPasswordField pass = new JPasswordField(10);
+
+			panel.setLayout(new GridLayout(0, 1));
+			panel.add(label);
+			panel.add(pass);
+			
+			JOptionPane.showOptionDialog(
 					f,
-                    "Enter the password for '" + params.get("user") + "'",
-                    "Login Information",
-                    JOptionPane.QUESTION_MESSAGE);
+					panel,
+					"Login Information",
+			        JOptionPane.NO_OPTION,
+			        JOptionPane.QUESTION_MESSAGE,
+			        null,
+			        new String[] {"OK", "Cancel"},
+			        "OK");
+
+			String res = new String(pass.getPassword());
 
 			params.put("pass", res);
 		}
@@ -543,7 +560,7 @@ public class RunePageSorter {
 	{
 		try
 		{
-			TypedObject[] masteries2 = new TypedObject[pages.size()];
+			TypedObject[] masteries2 = new TypedObject[masteries.size()];
 			for (int i = 0; i < masteries.size(); i++)
 				masteries2[i] = masteries.get(i).getSavePage(summId);
 			
