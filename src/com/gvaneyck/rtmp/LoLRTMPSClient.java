@@ -18,6 +18,7 @@ import javax.net.ssl.SSLSocketFactory;
 import com.gvaneyck.rtmp.encoding.Base64;
 import com.gvaneyck.rtmp.encoding.JSON;
 import com.gvaneyck.rtmp.encoding.ObjectMap;
+import com.gvaneyck.rtmp.encoding.TypedObject;
 
 /**
  * A very basic RTMPS client for connecting to League of Legends

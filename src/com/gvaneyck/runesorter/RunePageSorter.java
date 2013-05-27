@@ -37,7 +37,7 @@ import javax.swing.event.ListSelectionListener;
 
 import com.gvaneyck.rtmp.LoLRTMPSClient;
 import com.gvaneyck.rtmp.ServerInfo;
-import com.gvaneyck.rtmp.TypedObject;
+import com.gvaneyck.rtmp.encoding.TypedObject;
 import com.gvaneyck.util.ConsoleWindow;
 
 
