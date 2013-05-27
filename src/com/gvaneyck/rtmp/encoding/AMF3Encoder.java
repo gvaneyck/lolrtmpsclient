@@ -106,7 +106,7 @@ public class AMF3Encoder
 		cm.put("messageId", randomUID());
 		cm.put("timestamp", 0d);
 		cm.put("timeToLive", 0d);
-		cm.put("body", new TypedObject(null));
+		cm.put("body", new TypedObject());
 		Map<String, Object> headers = new HashMap<String, Object>();
 		headers.put("DSMessagingVersion", 1d);
 		headers.put("DSId", "my-rtmps");
