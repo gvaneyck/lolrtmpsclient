@@ -16,8 +16,7 @@ public class MasteryPageListModel implements ListModel {
     List<ListDataListener> listeners = new ArrayList<ListDataListener>();
     List<MasteryPage> data = new ArrayList<MasteryPage>();
 
-    public MasteryPageListModel() {
-    }
+    public MasteryPageListModel() {}
 
     public void clear() {
         data.clear();

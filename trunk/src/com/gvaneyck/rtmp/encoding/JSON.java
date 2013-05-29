@@ -237,8 +237,7 @@ public class JSON {
      */
     private static Character removeNonSpace(LinkedList<Character> json) {
         Character ret;
-        while (Character.isWhitespace(ret = json.removeFirst())) {
-        }
+        while (Character.isWhitespace(ret = json.removeFirst())) {}
         return ret;
     }
 }

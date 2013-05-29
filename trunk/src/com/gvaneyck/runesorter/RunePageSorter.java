@@ -243,8 +243,7 @@ public class RunePageSorter {
         });
 
         pane.addHierarchyBoundsListener(new HierarchyBoundsListener() {
-            public void ancestorMoved(HierarchyEvent e) {
-            }
+            public void ancestorMoved(HierarchyEvent e) {}
 
             public void ancestorResized(HierarchyEvent e) {
                 Dimension d = f.getSize();
@@ -255,23 +254,17 @@ public class RunePageSorter {
         });
 
         f.addWindowListener(new WindowListener() {
-            public void windowOpened(WindowEvent e) {
-            }
+            public void windowOpened(WindowEvent e) {}
 
-            public void windowClosing(WindowEvent e) {
-            }
+            public void windowClosing(WindowEvent e) {}
 
-            public void windowIconified(WindowEvent e) {
-            }
+            public void windowIconified(WindowEvent e) {}
 
-            public void windowDeiconified(WindowEvent e) {
-            }
+            public void windowDeiconified(WindowEvent e) {}
 
-            public void windowActivated(WindowEvent e) {
-            }
+            public void windowActivated(WindowEvent e) {}
 
-            public void windowDeactivated(WindowEvent e) {
-            }
+            public void windowDeactivated(WindowEvent e) {}
 
             public void windowClosed(WindowEvent e) {
                 client.close();
@@ -317,21 +310,48 @@ public class RunePageSorter {
         boolean newinfo = false;
 
         if (!params.containsKey("region") || !regionMap.containsKey(params.get("region").toUpperCase())) {
-            String res = (String)JOptionPane.showInputDialog(f, "Select a region", "Login Information", JOptionPane.QUESTION_MESSAGE, null, new Object[] { "North America", "Europe West", "Europe Nordic & East", "Korea", "Brazil", "Turkey", "Public Beta Environment", "Singapore/Malaysia", "Taiwan", "Thailand", "Phillipines", "Vietnam" }, "North America");
+            String res = (String)JOptionPane.showInputDialog(
+                    f,
+                    "Select a region",
+                    "Login Information",
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    new Object[] {
+                            "North America",
+                            "Europe West",
+                            "Europe Nordic & East",
+                            "Korea",
+                            "Brazil",
+                            "Turkey",
+                            "Public Beta Environment",
+                            "Singapore/Malaysia",
+                            "Taiwan",
+                            "Thailand",
+                            "Phillipines",
+                            "Vietnam" },
+                    "North America");
 
             params.put("region", res);
             newinfo = true;
         }
 
         if (!params.containsKey("version")) {
-            String res = (String)JOptionPane.showInputDialog(f, "Enter the Client Version for " + params.get("region") + "\nClient version can be found at the top left of the real client", "Login Information", JOptionPane.QUESTION_MESSAGE);
+            String res = (String)JOptionPane.showInputDialog(
+                    f,
+                    "Enter the Client Version for " + params.get("region") + "\nClient version can be found at the top left of the real client",
+                    "Login Information",
+                    JOptionPane.QUESTION_MESSAGE);
 
             params.put("version", res);
             newinfo = true;
         }
 
         if (!params.containsKey("user")) {
-            String res = (String)JOptionPane.showInputDialog(f, "Enter your login name for " + params.get("region"), "Login Information", JOptionPane.QUESTION_MESSAGE);
+            String res = (String)JOptionPane.showInputDialog(
+                    f,
+                    "Enter your login name for " + params.get("region"),
+                    "Login Information",
+                    JOptionPane.QUESTION_MESSAGE);
 
             params.put("user", res);
             newinfo = true;
@@ -346,7 +366,15 @@ public class RunePageSorter {
             panel.add(label);
             panel.add(pass);
 
-            JOptionPane.showOptionDialog(f, panel, "Login Information", JOptionPane.NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, new String[] { "OK", "Cancel" }, "OK");
+            JOptionPane.showOptionDialog(
+                    f,
+                    panel,
+                    "Login Information",
+                    JOptionPane.NO_OPTION,
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    new String[] { "OK", "Cancel" },
+                    "OK");
 
             String res = new String(pass.getPassword());
 
@@ -358,8 +386,7 @@ public class RunePageSorter {
             try {
                 BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(conf), "UTF-8"));
                 out.write("user=" + params.get("user") + "\r\n");
-                // out.write("pass=" + params.get("pass") + "\r\n"); // Don't
-                // save password by default
+                //out.write("pass=" + params.get("pass") + "\r\n"); // Don't save password by default
                 out.write("version=" + params.get("version") + "\r\n");
                 out.write("region=" + params.get("region") + "\r\n");
                 out.close();

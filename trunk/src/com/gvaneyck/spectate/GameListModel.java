@@ -24,8 +24,7 @@ public class GameListModel implements ListModel {
                     try {
                         Thread.sleep(1000);
                     }
-                    catch (InterruptedException e) {
-                    }
+                    catch (InterruptedException e) {}
 
                     synchronized (data) {
                         for (GameInfo gi : data)
