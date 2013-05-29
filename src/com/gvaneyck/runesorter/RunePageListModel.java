@@ -16,8 +16,7 @@ public class RunePageListModel implements ListModel {
     List<ListDataListener> listeners = new ArrayList<ListDataListener>();
     List<RunePage> data = new ArrayList<RunePage>();
 
-    public RunePageListModel() {
-    }
+    public RunePageListModel() {}
 
     public void clear() {
         data.clear();

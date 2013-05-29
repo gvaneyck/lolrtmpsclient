@@ -142,11 +142,9 @@ public class SpectateAnyone {
 
         // Listeners
         txtName.addKeyListener(new KeyListener() {
-            public void keyTyped(KeyEvent e) {
-            }
+            public void keyTyped(KeyEvent e) {}
 
-            public void keyPressed(KeyEvent e) {
-            }
+            public void keyPressed(KeyEvent e) {}
 
             public void keyReleased(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER && btnName.isEnabled())
@@ -155,17 +153,13 @@ public class SpectateAnyone {
         });
 
         btnName.addMouseListener(new MouseListener() {
-            public void mousePressed(MouseEvent e) {
-            }
+            public void mousePressed(MouseEvent e) {}
 
-            public void mouseReleased(MouseEvent e) {
-            }
+            public void mouseReleased(MouseEvent e) {}
 
-            public void mouseEntered(MouseEvent e) {
-            }
+            public void mouseEntered(MouseEvent e) {}
 
-            public void mouseExited(MouseEvent e) {
-            }
+            public void mouseExited(MouseEvent e) {}
 
             public void mouseClicked(MouseEvent e) {
                 handleSpectate();
@@ -173,11 +167,9 @@ public class SpectateAnyone {
         });
 
         btnName.addKeyListener(new KeyListener() {
-            public void keyTyped(KeyEvent e) {
-            }
+            public void keyTyped(KeyEvent e) {}
 
-            public void keyPressed(KeyEvent e) {
-            }
+            public void keyPressed(KeyEvent e) {}
 
             public void keyReleased(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_SPACE)
@@ -186,8 +178,7 @@ public class SpectateAnyone {
         });
 
         txtFile.addFocusListener(new FocusListener() {
-            public void focusLost(FocusEvent e) {
-            }
+            public void focusLost(FocusEvent e) {}
 
             public void focusGained(FocusEvent e) {
                 setFile();
@@ -195,17 +186,13 @@ public class SpectateAnyone {
         });
 
         btnFile.addMouseListener(new MouseListener() {
-            public void mousePressed(MouseEvent e) {
-            }
+            public void mousePressed(MouseEvent e) {}
 
-            public void mouseReleased(MouseEvent e) {
-            }
+            public void mouseReleased(MouseEvent e) {}
 
-            public void mouseEntered(MouseEvent e) {
-            }
+            public void mouseEntered(MouseEvent e) {}
 
-            public void mouseExited(MouseEvent e) {
-            }
+            public void mouseExited(MouseEvent e) {}
 
             public void mouseClicked(MouseEvent e) {
                 loadFile();
@@ -213,11 +200,9 @@ public class SpectateAnyone {
         });
 
         btnFile.addKeyListener(new KeyListener() {
-            public void keyTyped(KeyEvent e) {
-            }
+            public void keyTyped(KeyEvent e) {}
 
-            public void keyPressed(KeyEvent e) {
-            }
+            public void keyPressed(KeyEvent e) {}
 
             public void keyReleased(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_SPACE)
@@ -226,17 +211,13 @@ public class SpectateAnyone {
         });
 
         lstInGame.addMouseListener(new MouseListener() {
-            public void mousePressed(MouseEvent e) {
-            }
+            public void mousePressed(MouseEvent e) {}
 
-            public void mouseReleased(MouseEvent e) {
-            }
+            public void mouseReleased(MouseEvent e) {}
 
-            public void mouseEntered(MouseEvent e) {
-            }
+            public void mouseEntered(MouseEvent e) {}
 
-            public void mouseExited(MouseEvent e) {
-            }
+            public void mouseExited(MouseEvent e) {}
 
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2)
@@ -245,11 +226,9 @@ public class SpectateAnyone {
         });
 
         lstInGame.addKeyListener(new KeyListener() {
-            public void keyTyped(KeyEvent e) {
-            }
+            public void keyTyped(KeyEvent e) {}
 
-            public void keyPressed(KeyEvent e) {
-            }
+            public void keyPressed(KeyEvent e) {}
 
             public void keyReleased(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER)
@@ -268,8 +247,7 @@ public class SpectateAnyone {
         });
 
         pane.addHierarchyBoundsListener(new HierarchyBoundsListener() {
-            public void ancestorMoved(HierarchyEvent e) {
-            }
+            public void ancestorMoved(HierarchyEvent e) {}
 
             public void ancestorResized(HierarchyEvent e) {
                 Dimension d = f.getSize();
@@ -280,23 +258,17 @@ public class SpectateAnyone {
         });
 
         f.addWindowListener(new WindowListener() {
-            public void windowOpened(WindowEvent e) {
-            }
+            public void windowOpened(WindowEvent e) {}
 
-            public void windowClosing(WindowEvent e) {
-            }
+            public void windowClosing(WindowEvent e) {}
 
-            public void windowIconified(WindowEvent e) {
-            }
+            public void windowIconified(WindowEvent e) {}
 
-            public void windowDeiconified(WindowEvent e) {
-            }
+            public void windowDeiconified(WindowEvent e) {}
 
-            public void windowActivated(WindowEvent e) {
-            }
+            public void windowActivated(WindowEvent e) {}
 
-            public void windowDeactivated(WindowEvent e) {
-            }
+            public void windowDeactivated(WindowEvent e) {}
 
             public void windowClosed(WindowEvent e) {
                 client.close();
@@ -341,7 +313,10 @@ public class SpectateAnyone {
         // Get missing information
         boolean newinfo = false;
         if (!params.containsKey("lollocation")) {
-            String res = (String)JOptionPane.showInputDialog(f, "Enter your LoL installation location\nE.g. C:\\Riot Games\\League of Legends\\", "Login Information", JOptionPane.QUESTION_MESSAGE);
+            String res = (String)JOptionPane.showInputDialog(
+                    f,
+                    "Enter your LoL installation location\nE.g. C:\\Riot Games\\League of Legends\\", "Login Information",
+                    JOptionPane.QUESTION_MESSAGE);
 
             // Fix location if necessary
             res.replace("/", File.separator);
@@ -354,7 +329,25 @@ public class SpectateAnyone {
         }
 
         if (!params.containsKey("region") || !regionMap.containsKey(params.get("region").toUpperCase())) {
-            String res = (String)JOptionPane.showInputDialog(f, "Select a region", "Login Information", JOptionPane.QUESTION_MESSAGE, null, new Object[] { "North America", "Europe West", "Europe Nordic & East", "Korea", "Brazil", "Turkey", "Public Beta Environment", "Singapore/Malaysia", "Taiwan", "Thailand", "Phillipines", "Vietnam" }, "North America");
+            String res = (String)JOptionPane.showInputDialog(
+                    f,
+                    "Select a region", "Login Information",
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    new Object[] {
+                            "North America",
+                            "Europe West",
+                            "Europe Nordic & East",
+                            "Korea",
+                            "Brazil",
+                            "Turkey",
+                            "Public Beta Environment",
+                            "Singapore/Malaysia",
+                            "Taiwan",
+                            "Thailand",
+                            "Phillipines",
+                            "Vietnam" },
+                    "North America");
 
             params.put("region", res);
             newinfo = true;
@@ -374,28 +367,46 @@ public class SpectateAnyone {
             for (int i = 0; i < langs.size(); i++)
                 langNames[i] = langs.get(i);
 
-            String res = (String)JOptionPane.showInputDialog(f, "Select a language", "Login Information", JOptionPane.QUESTION_MESSAGE, null, langNames, null);
+            String res = (String)JOptionPane.showInputDialog(
+                    f,
+                    "Select a language",
+                    "Login Information",
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    langNames,
+                    null);
 
             params.put("locale", res.substring(0, 5));
             newinfo = true;
         }
 
         if (!params.containsKey("version")) {
-            String res = (String)JOptionPane.showInputDialog(f, "Enter the Client Version for " + params.get("region") + "\nClient version can be found at the top left of the real client", "Login Information", JOptionPane.QUESTION_MESSAGE);
+            String res = (String)JOptionPane.showInputDialog(
+                    f,
+                    "Enter the Client Version for " + params.get("region") + "\nClient version can be found at the top left of the real client",
+                    "Login Information",
+                    JOptionPane.QUESTION_MESSAGE);
 
             params.put("version", res);
             newinfo = true;
         }
 
         if (!params.containsKey("user")) {
-            String res = (String)JOptionPane.showInputDialog(f, "Enter your login name for " + params.get("region"), "Login Information", JOptionPane.QUESTION_MESSAGE);
+            String res = (String)JOptionPane.showInputDialog(
+                    f,
+                    "Enter your login name for " + params.get("region"),
+                    "Login Information",
+                    JOptionPane.QUESTION_MESSAGE);
 
             params.put("user", res);
             newinfo = true;
         }
 
         if (!params.containsKey("pass")) {
-            String res = (String)JOptionPane.showInputDialog(f, "Enter the password for '" + params.get("user") + "'", "Login Information", JOptionPane.QUESTION_MESSAGE);
+            String res = (String)JOptionPane.showInputDialog(
+                    f,
+                    "Enter the password for '" + params.get("user") + "'", "Login Information",
+                    JOptionPane.QUESTION_MESSAGE);
 
             params.put("pass", res);
         }
@@ -406,8 +417,7 @@ public class SpectateAnyone {
                 BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(conf), "UTF-8"));
                 out.write("lollocation=" + params.get("lollocation") + "\r\n");
                 out.write("user=" + params.get("user") + "\r\n");
-                // out.write("pass=" + params.get("pass") + "\r\n"); // Don't
-                // save password by default
+                //out.write("pass=" + params.get("pass") + "\r\n"); // Don't save password by default
                 out.write("version=" + params.get("version") + "\r\n");
                 out.write("region=" + params.get("region") + "\r\n");
                 out.write("locale=" + params.get("locale") + "\r\n");
@@ -420,9 +430,8 @@ public class SpectateAnyone {
         }
 
         // Figure out the path to executables
-        // I'm not sure what the difference is, but using the executable in
-        // lol_game_client (rather than lol_game_client_sln)
-        // gives the missing language file error
+        // I'm not sure what the difference is, but using the executable in lol_game_client
+        // (rather than lol_game_client_sln) gives the missing language file error
         System.out.println("Finding most recent installation...");
         File base = new File(params.get("lollocation"));
         File lol = findMostRecent(base, "League of Legends.exe", "lol_game_client");
@@ -534,16 +543,31 @@ public class SpectateAnyone {
             if (result.get("result").equals("_error")) {
                 TypedObject rootCause = data.getTO("rootCause");
                 if (rootCause.type.equals("com.riotgames.platform.messaging.UnexpectedServiceException")) {
-                    JOptionPane.showMessageDialog(f, "No summoner found for " + toSpec + ".\nOr, did you not set up a summoner name for this account?", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(
+                            f,
+                            "No summoner found for " + toSpec + ".\nOr, did you not set up a summoner name for this account?",
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE);
                 }
                 else if (rootCause.type.equals("com.riotgames.platform.game.GameNotFoundException")) {
-                    JOptionPane.showMessageDialog(f, toSpec + " is not currently in a game.", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(
+                            f,
+                            toSpec + " is not currently in a game.",
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE);
                 }
                 else if (rootCause.get("localizedMessage").equals("An Authentication object was not found in the SecurityContext")) {
-                    JOptionPane.showMessageDialog(f, "This account has been logged in somewhere else.\nRestart this program to log in again.", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(
+                            f,
+                            "This account has been logged in somewhere else.\nRestart this program to log in again.",
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE);
                 }
                 else {
-                    JOptionPane.showMessageDialog(f, "Encountered an error when retrieving spectator information for " + toSpec + ":\n" + rootCause.get("localizedMessage"), "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(f,
+                            "Encountered an error when retrieving spectator information for " + toSpec + ":\n" + rootCause.get("localizedMessage"),
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE);
                 }
             }
             else {
@@ -564,11 +588,7 @@ public class SpectateAnyone {
                         public void run() {
                             // Delay until 5s left or text changes
                             int wait = delay;
-                            lblName.requestFocusInWindow(); // Force the focus
-                                                            // away so txtFile
-                                                            // isn't
-                                                            // accidentally
-                                                            // selected
+                            lblName.requestFocusInWindow(); // Force the focus away so txtFile isn't accidentally selected
                             btnName.setEnabled(false);
                             while (toSpec.equals(txtName.getText()) && wait > 0) {
                                 btnName.setText("Delaying (" + wait + "s)");
@@ -579,8 +599,7 @@ public class SpectateAnyone {
                                     try {
                                         Thread.sleep(100);
                                     }
-                                    catch (InterruptedException e) {
-                                    }
+                                    catch (InterruptedException e) {}
                                 }
                                 wait--;
                             }
@@ -603,7 +622,11 @@ public class SpectateAnyone {
             }
         }
         catch (IOException e) {
-            JOptionPane.showMessageDialog(f, "Encountered an error when trying to retrieve spectate information for " + toSpec + " (check console)\n" + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(
+                    f,
+                    "Encountered an error when trying to retrieve spectate information for " + toSpec + " (check console)\n" + e.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
     }
@@ -611,7 +634,12 @@ public class SpectateAnyone {
     public static void doSpectate(String ip, int port, String key, int gameID) {
         // Set up the command line
         File dir = new File(params.get("gameDir"));
-        String[] cmd = new String[] { params.get("gameDir") + File.separator + "League of Legends.exe", "8394", "LoLLauncher.exe", params.get("airExe"), "spectator " + ip + ":" + port + " " + key + " " + gameID + " " + client.getServerInfo().platform };
+        String[] cmd = new String[] {
+                params.get("gameDir") + File.separator + "League of Legends.exe",
+                "8394",
+                "LoLLauncher.exe",
+                params.get("airExe"),
+                "spectator " + ip + ":" + port + " " + key + " " + gameID + " " + client.getServerInfo().platform };
 
         try {
             // Run (and make sure to consume output)
@@ -620,7 +648,11 @@ public class SpectateAnyone {
             new StreamGobbler(game.getErrorStream());
         }
         catch (IOException e) {
-            JOptionPane.showMessageDialog(f, "Encountered an error when trying to launch spectator mode\n" + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(
+                    f,
+                    "Encountered an error when trying to launch spectator mode\n" + e.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
 
             System.err.println("LoL location = " + params.get("lollocation"));
             for (String s : cmd)
@@ -686,7 +718,11 @@ public class SpectateAnyone {
             in.close();
         }
         catch (IOException e) {
-            JOptionPane.showMessageDialog(f, "Error reading from " + filename + ":\n" + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(
+                    f,
+                    "Error reading from " + filename + ":\n" + e.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
         }
 
         // Wait for all requests to finish;

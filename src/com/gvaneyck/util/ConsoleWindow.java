@@ -44,8 +44,7 @@ public class ConsoleWindow {
                     try {
                         Thread.sleep(100);
                     }
-                    catch (InterruptedException e) {
-                    }
+                    catch (InterruptedException e) {}
                     String tempData = data.toString();
                     if (!lastData.equals(tempData)) {
                         lastData = tempData;
@@ -68,8 +67,7 @@ public class ConsoleWindow {
         pane.add(scrollArea);
 
         pane.addHierarchyBoundsListener(new HierarchyBoundsListener() {
-            public void ancestorMoved(HierarchyEvent e) {
-            }
+            public void ancestorMoved(HierarchyEvent e) {}
 
             public void ancestorResized(HierarchyEvent e) {
                 Dimension d = f.getSize();

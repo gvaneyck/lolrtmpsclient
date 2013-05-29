@@ -20,8 +20,7 @@ public class StringOutputStream extends OutputStream {
         sb = new StringBuffer();
     }
 
-    public void flush() throws IOException {
-    }
+    public void flush() throws IOException {}
 
     public void write(byte[] b) throws IOException {
         sb.append(new String(b));
