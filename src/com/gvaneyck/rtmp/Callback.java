@@ -7,12 +7,11 @@ import com.gvaneyck.rtmp.encoding.TypedObject;
  * 
  * @author Gabriel Van Eyck
  */
-public interface Callback
-{
-	/**
-	 * The function to call after the result has been read
-	 * 
-	 * @param result The result for this callback
-	 */
-	public void callback(TypedObject result);
+public interface Callback {
+    /**
+     * The function to call after the result has been read
+     * 
+     * @param result The result for this callback
+     */
+    public void callback(TypedObject result);
 }

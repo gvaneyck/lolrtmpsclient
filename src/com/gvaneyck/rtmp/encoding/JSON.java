@@ -5,13 +5,13 @@ import java.util.LinkedList;
 
 /**
  * Simple JSON parser. Throws a RuntimeException on parsing error
- *
+ * 
  * @author Gabriel Van Eyck
  */
 public class JSON {
     /**
      * Parses JSON from a string
-     *
+     * 
      * @param json The JSON to parse
      * @return The parsed object
      */
@@ -27,7 +27,7 @@ public class JSON {
 
     /**
      * Parses JSON from a linked list
-     *
+     * 
      * @param json The JSON to parse
      * @return The parsed object
      */
@@ -52,7 +52,7 @@ public class JSON {
     /**
      * Parses a JSON object
      * Assumes the opening curly brace has been consumed
-     *
+     * 
      * @param json The JSON to parse
      * @return The parsed object as a map
      */
@@ -78,7 +78,7 @@ public class JSON {
 
             ret.put(key, val);
         } while ((c = removeNonSpace(json)) == ',');
-           
+
         if (c != '}')
             throw new JSONParsingException("JSON object did not end with a curly brace: '" + c + "'");
 
@@ -88,7 +88,7 @@ public class JSON {
     /**
      * Parses a JSON array
      * Assumes the opening square bracket has been consumed
-     *
+     * 
      * @param json The JSON to parse
      * @return The parsed array
      */
@@ -105,7 +105,7 @@ public class JSON {
             temp.add(parse(json));
             c = removeNonSpace(json);
         } while (c == ',');
-           
+
         if (c != ']')
             throw new JSONParsingException("JSON array did not end with a square bracket: '" + c + "'");
 
@@ -119,7 +119,7 @@ public class JSON {
     /**
      * Parses a JSON string
      * Assumes the opening double quote has been consumed
-     *
+     * 
      * @param json The JSON to parse
      * @return The parsed string
      */
@@ -186,7 +186,7 @@ public class JSON {
 
     /**
      * Parses JSON numbers, booleans, and null
-     *
+     * 
      * @param json The JSON to parse
      * @return The parsed object
      */
@@ -218,7 +218,7 @@ public class JSON {
                 c = json.removeFirst();
             }
             json.addFirst(c);
-               
+
             if (buff.length() == 0)
                 throw new JSONParsingException("Tried parsing number but got: '" + c + "'");
 
@@ -231,13 +231,14 @@ public class JSON {
 
     /**
      * Extracts the first non-whitespace character from the JSON string
-     *
+     * 
      * @param json The JSON string
      * @return The first non-whitespace character
      */
     private static Character removeNonSpace(LinkedList<Character> json) {
         Character ret;
-        while (Character.isWhitespace(ret = json.removeFirst())) {}
+        while (Character.isWhitespace(ret = json.removeFirst())) {
+        }
         return ret;
     }
 }

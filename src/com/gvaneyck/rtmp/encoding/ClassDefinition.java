@@ -8,10 +8,9 @@ import java.util.List;
  * 
  * @author Gabriel Van Eyck
  */
-public class ClassDefinition
-{
-	public String type;
-	public boolean externalizable = false;
-	public boolean dynamic = false;
-	public List<String> members = new ArrayList<String>();
+public class ClassDefinition {
+    public String type;
+    public boolean externalizable = false;
+    public boolean dynamic = false;
+    public List<String> members = new ArrayList<String>();
 }

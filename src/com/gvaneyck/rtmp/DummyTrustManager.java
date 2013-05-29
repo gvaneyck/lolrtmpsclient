@@ -11,44 +11,33 @@ import javax.net.ssl.X509TrustManager;
  * Trust manager which accepts certificates without any validation
  * except date validation.
  */
-public class DummyTrustManager implements X509TrustManager
-{
-    public boolean isClientTrusted(X509Certificate[] cert)
-    {
+public class DummyTrustManager implements X509TrustManager {
+    public boolean isClientTrusted(X509Certificate[] cert) {
         return true;
     }
 
-    public boolean isServerTrusted(X509Certificate[] cert)
-    {
-        try
-        {
+    public boolean isServerTrusted(X509Certificate[] cert) {
+        try {
             cert[0].checkValidity();
             return true;
         }
-        catch (CertificateExpiredException e)
-        {
+        catch (CertificateExpiredException e) {
             return false;
         }
-        catch (CertificateNotYetValidException e)
-        {
+        catch (CertificateNotYetValidException e) {
             return false;
         }
     }
 
-    public void checkClientTrusted(X509Certificate[] x509Certificates, String s)
-        throws CertificateException
-    {
+    public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
         // Do nothing for now.
     }
 
-    public void checkServerTrusted(X509Certificate[] x509Certificates, String s)
-        throws CertificateException
-    {
+    public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
         // Do nothing for now.
     }
 
-    public X509Certificate[] getAcceptedIssuers()
-    {
+    public X509Certificate[] getAcceptedIssuers() {
         return new X509Certificate[0];
     }
 }

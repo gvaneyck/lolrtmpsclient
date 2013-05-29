@@ -5,7 +5,7 @@ import java.util.HashMap;
 
 /**
  * A map of objects with utility methods
- *
+ * 
  * @author Gabriel Van Eyck
  */
 public class ObjectMap extends HashMap<String, Object> {
@@ -13,7 +13,7 @@ public class ObjectMap extends HashMap<String, Object> {
 
     /**
      * Convenience for going through object hierarchy
-     *
+     * 
      * @param key The key of the ObjectMap
      * @return The ObjectMap
      */
@@ -23,7 +23,7 @@ public class ObjectMap extends HashMap<String, Object> {
 
     /**
      * Convenience for retrieving Strings
-     *
+     * 
      * @param key The key of the String
      * @return The String
      */
@@ -33,7 +33,7 @@ public class ObjectMap extends HashMap<String, Object> {
 
     /**
      * Convenience for retrieving integers
-     *
+     * 
      * @param key The key of the integer
      * @return The integer
      */
@@ -49,7 +49,7 @@ public class ObjectMap extends HashMap<String, Object> {
 
     /**
      * Convenience for retrieving doubles
-     *
+     * 
      * @param key The key of the double
      * @return The double
      */
@@ -65,7 +65,7 @@ public class ObjectMap extends HashMap<String, Object> {
 
     /**
      * Convenience for retrieving booleans
-     *
+     * 
      * @param key The key of the boolean
      * @return The boolean
      */
@@ -75,7 +75,7 @@ public class ObjectMap extends HashMap<String, Object> {
 
     /**
      * Convenience for retrieving object arrays
-     *
+     * 
      * @param key The key of the object array
      * @return The object array
      */
@@ -85,7 +85,7 @@ public class ObjectMap extends HashMap<String, Object> {
 
     /**
      * Convenience for retrieving Date objects
-     *
+     * 
      * @param key The key of the Date object
      * @return The Date object
      */
