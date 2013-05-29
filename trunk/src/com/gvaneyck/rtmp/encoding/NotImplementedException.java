@@ -8,12 +8,10 @@ import java.io.IOException;
  * 
  * @author Gabriel Van Eyck
  */
-public class NotImplementedException extends IOException
-{
-	private static final long serialVersionUID = -1806306151286578816L;
+public class NotImplementedException extends IOException {
+    private static final long serialVersionUID = -1806306151286578816L;
 
-	public NotImplementedException(String message)
-	{
-		super(message);
-	}
+    public NotImplementedException(String message) {
+        super(message);
+    }
 }

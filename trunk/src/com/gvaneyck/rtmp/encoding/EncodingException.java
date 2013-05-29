@@ -8,12 +8,10 @@ import java.io.IOException;
  * 
  * @author Gabriel Van Eyck
  */
-public class EncodingException extends IOException
-{
-	private static final long serialVersionUID = 1476074395589836889L;
+public class EncodingException extends IOException {
+    private static final long serialVersionUID = 1476074395589836889L;
 
-	public EncodingException(String message)
-	{
-		super(message);
-	}
+    public EncodingException(String message) {
+        super(message);
+    }
 }
