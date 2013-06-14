@@ -121,6 +121,8 @@ public class TypedObject extends ObjectMap {
 
             if (key.equals("array"))
                 buff.append(indent(arrayToString(getArray(key))));
+            else if (get(key) instanceof Object[])
+            	buff.append(indent(arrayToString((Object[])get(key))));
             else if (get(key) == null) {
                 buff.append("    ");
                 buff.append(key);
@@ -132,6 +134,8 @@ public class TypedObject extends ObjectMap {
                 buff.append('=');
                 buff.append(((Double)get(key)).longValue());
             }
+            else if (get(key) instanceof TypedObject)
+            	buff.append(indent(key + '=' + ((TypedObject)get(key)).toPrettyString()));
             else
                 buff.append(indent(key + '=' + get(key).toString()));
 
@@ -159,6 +163,8 @@ public class TypedObject extends ObjectMap {
         for (int i = 0; i < array.length; i++) {
             if (array[i] == null)
                 buff.append("    null");
+            else if (array[i] instanceof TypedObject)
+            	buff.append(indent(((TypedObject)array[i]).toPrettyString()));
             else
                 buff.append(indent(array[i].toString()));
 
