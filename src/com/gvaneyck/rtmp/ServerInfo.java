@@ -10,6 +10,10 @@ public class ServerInfo {
     public static final ServerInfo KR = new ServerInfo("KR", "prod.kr.lol.riotgames.com", "https://lq.kr.lol.riotgames.com/");
     public static final ServerInfo BR = new ServerInfo("BR", "BR1", "prod.br.lol.riotgames.com", "https://lq.br.lol.riotgames.com/");
     public static final ServerInfo TR = new ServerInfo("TR", "TR1", "prod.tr.lol.riotgames.com", "https://lq.tr.lol.riotgames.com/");
+    public static final ServerInfo RU = new ServerInfo("RU", "RU", "prod.ru.lol.riotgames.com", "https://lq.ru.lol.riotgames.com/");
+    public static final ServerInfo LAN = new ServerInfo("LAN", "LA1", "prod.la1.lol.riotgames.com", "https://lq.la1.lol.riotgames.com/");
+    public static final ServerInfo LAS = new ServerInfo("LAS", "LA2", "prod.la2.lol.riotgames.com", "https://lq.la2.lol.riotgames.com/");
+    public static final ServerInfo OCE = new ServerInfo("OCE", "OC1", "prod.oc1.lol.riotgames.com", "https://lq.oc1.lol.riotgames.com/");
     public static final ServerInfo PBE = new ServerInfo("PBE", "PBE1", "prod.pbe1.lol.riotgames.com", "https://lq.pbe1.lol.riotgames.com/");
     public static final ServerInfo SG = new ServerInfo("SG", "prod.lol.garenanow.com", "https://lq.lol.garenanow.com/", true);
     public static final ServerInfo TW = new ServerInfo("TW", "prodtw.lol.garenanow.com", "https://loginqueuetw.lol.garenanow.com/", true);
