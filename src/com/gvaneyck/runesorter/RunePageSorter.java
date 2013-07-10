@@ -1,15 +1,6 @@
 package com.gvaneyck.runesorter;
 
-import java.awt.Container;
-import java.awt.Dimension;
 import java.awt.GridLayout;
-import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.HierarchyBoundsListener;
-import java.awt.event.HierarchyEvent;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -25,18 +16,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.swing.JButton;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
-import javax.swing.JScrollPane;
-import javax.swing.JSeparator;
-import javax.swing.ListSelectionModel;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 
 import com.gvaneyck.rtmp.LoLRTMPSClient;
 import com.gvaneyck.rtmp.ServerInfo;
@@ -44,52 +27,21 @@ import com.gvaneyck.rtmp.encoding.TypedObject;
 import com.gvaneyck.util.ConsoleWindow;
 
 public class RunePageSorter {
-
-    public static final JFrame f = new JFrame("Rune/Mastery Page Sorter");
-
-    public static final JButton btnSort = new JButton("Sort Alphabetically");
-    public static final JButton btnMoveUp = new JButton("Move Up");
-    public static final JButton btnMoveDown = new JButton("Move Down");
-
-    public static final JLabel lblRunePages = new JLabel("Rune Pages");
-    public static final RunePageListModel lstModel = new RunePageListModel();
-    public static final JList lstRunePages = new JList(lstModel);
-    public static final JScrollPane lstScroll = new JScrollPane(lstRunePages);
-
-    public static final JLabel lblMasteryPages = new JLabel("Mastery Pages");
-    public static final MasteryPageListModel lstModel2 = new MasteryPageListModel();
-    public static final JList lstMasteryPages = new JList(lstModel2);
-    public static final JScrollPane lstScroll2 = new JScrollPane(lstMasteryPages);
-
-    public static final JSeparator sep = new JSeparator(JSeparator.HORIZONTAL);
-
-    public static int width = 250;
-    public static int height = 320;
+    
+    public static SorterWindow sorterWindow;
 
     public static LoLRTMPSClient client;
     public static Map<String, String> params;
 
     public static Map<String, ServerInfo> regionMap;
 
-    public static List<RunePage> pages = new ArrayList<RunePage>();
-    public static int lastSelectedPage = -1;
-    public static List<MasteryPage> masteries = new ArrayList<MasteryPage>();
-    public static int lastSelectedMasteries = -1;
-    public static boolean changingSelection = false;
+    public static List<RunePage> runePages = new ArrayList<RunePage>();
+    public static List<MasteryPage> masteryPages = new ArrayList<MasteryPage>();
 
     public static int acctId = 0;
     public static int summId = 0;
 
-    public static void main(String[] args) {
-        new ConsoleWindow(width, 0);
-
-        initRegionMap();
-        setupFrame();
-
-        setupClient();
-    }
-
-    public static void initRegionMap() {
+    static {
         regionMap = new HashMap<String, ServerInfo>();
         regionMap.put("NORTH AMERICA", ServerInfo.NA);
         regionMap.put("EUROPE WEST", ServerInfo.EUW);
@@ -97,6 +49,10 @@ public class RunePageSorter {
         regionMap.put("KOREA", ServerInfo.KR);
         regionMap.put("BRAZIL", ServerInfo.BR);
         regionMap.put("TURKEY", ServerInfo.TR);
+        regionMap.put("RUSSIA", ServerInfo.RU);
+        regionMap.put("LATIN AMERICA NORTH", ServerInfo.LAN);
+        regionMap.put("LATIN AMERICA SOUTH", ServerInfo.LAS);
+        regionMap.put("OCEANIA", ServerInfo.OCE);
         regionMap.put("PUBLIC BETA ENVIRONMENT", ServerInfo.PBE);
         regionMap.put("SINGAPORE/MALAYSIA", ServerInfo.SG);
         regionMap.put("TAIWAN", ServerInfo.TW);
@@ -105,177 +61,10 @@ public class RunePageSorter {
         regionMap.put("VIETNAM", ServerInfo.VN);
     }
 
-    public static void setupFrame() {
-        // GUI settings
-        lstRunePages.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-
-        // Initially grey out buttons
-        btnSort.setEnabled(false);
-        btnMoveUp.setEnabled(false);
-        btnMoveDown.setEnabled(false);
-
-        // Add the items
-        Container pane = f.getContentPane();
-        pane.setLayout(null);
-
-        pane.add(btnSort);
-        pane.add(btnMoveUp);
-        pane.add(btnMoveDown);
-
-        pane.add(sep);
-
-        pane.add(lblRunePages);
-        pane.add(lstScroll);
-        pane.add(lblMasteryPages);
-        pane.add(lstScroll2);
-
-        // Layout everything
-        doLayout();
-
-        // Listeners
-        btnSort.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (lastSelectedPage != -1) {
-                    List<Integer> pageIds = new ArrayList<Integer>();
-                    for (RunePage page : pages)
-                        pageIds.add(page.pageId);
-
-                    Collections.sort(pages, new Comparator<RunePage>() {
-                        public int compare(RunePage page1, RunePage page2) {
-                            return page1.name.compareTo(page2.name);
-                        }
-                    });
-
-                    for (int i = 0; i < pages.size(); i++)
-                        pages.get(i).pageId = pageIds.get(i);
-
-                    savePages();
-                }
-                if (lastSelectedMasteries != -1) {
-                    List<Integer> pageIds = new ArrayList<Integer>();
-                    for (MasteryPage page : masteries)
-                        pageIds.add(page.pageId);
-
-                    Collections.sort(masteries, new Comparator<MasteryPage>() {
-                        public int compare(MasteryPage page1, MasteryPage page2) {
-                            return page1.name.compareTo(page2.name);
-                        }
-                    });
-
-                    for (int i = 0; i < masteries.size(); i++)
-                        masteries.get(i).pageId = pageIds.get(i);
-
-                    saveMasteries();
-                }
-            }
-        });
-
-        btnMoveUp.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (lastSelectedPage != -1 && lastSelectedPage != 0) {
-                    RunePage current = pages.get(lastSelectedPage);
-                    current.swap(pages.get(lastSelectedPage - 1));
-
-                    lastSelectedPage--;
-                    lstRunePages.setSelectedIndex(lastSelectedPage);
-
-                    savePages();
-                }
-                if (lastSelectedMasteries != -1 && lastSelectedMasteries != 0) {
-                    MasteryPage current = masteries.get(lastSelectedMasteries);
-                    current.swap(masteries.get(lastSelectedMasteries - 1));
-
-                    lastSelectedMasteries--;
-                    lstMasteryPages.setSelectedIndex(lastSelectedMasteries);
-
-                    saveMasteries();
-                }
-            }
-        });
-
-        btnMoveDown.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (lastSelectedPage != -1 && lastSelectedPage != pages.size() - 1) {
-                    RunePage current = pages.get(lastSelectedPage);
-                    current.swap(pages.get(lastSelectedPage + 1));
-
-                    lastSelectedPage++;
-                    lstRunePages.setSelectedIndex(lastSelectedPage);
-
-                    savePages();
-                }
-                if (lastSelectedMasteries != -1 && lastSelectedMasteries != masteries.size() - 1) {
-                    MasteryPage current = masteries.get(lastSelectedMasteries);
-                    current.swap(masteries.get(lastSelectedMasteries + 1));
-
-                    lastSelectedMasteries++;
-                    lstMasteryPages.setSelectedIndex(lastSelectedMasteries);
-
-                    saveMasteries();
-                }
-            }
-        });
-
-        lstRunePages.addListSelectionListener(new ListSelectionListener() {
-            public void valueChanged(ListSelectionEvent e) {
-                if (changingSelection)
-                    return;
-
-                changingSelection = true;
-                lastSelectedPage = lstRunePages.getSelectedIndex();
-                lstMasteryPages.clearSelection();
-                lastSelectedMasteries = -1;
-                changingSelection = false;
-            }
-        });
-
-        lstMasteryPages.addListSelectionListener(new ListSelectionListener() {
-            public void valueChanged(ListSelectionEvent e) {
-                if (changingSelection)
-                    return;
-
-                changingSelection = true;
-                lastSelectedMasteries = lstMasteryPages.getSelectedIndex();
-                lastSelectedPage = -1;
-                lstRunePages.clearSelection();
-                changingSelection = false;
-            }
-        });
-
-        pane.addHierarchyBoundsListener(new HierarchyBoundsListener() {
-            public void ancestorMoved(HierarchyEvent e) {}
-
-            public void ancestorResized(HierarchyEvent e) {
-                Dimension d = f.getSize();
-                width = d.width;
-                height = d.height;
-                doLayout();
-            }
-        });
-
-        f.addWindowListener(new WindowListener() {
-            public void windowOpened(WindowEvent e) {}
-
-            public void windowClosing(WindowEvent e) {}
-
-            public void windowIconified(WindowEvent e) {}
-
-            public void windowDeiconified(WindowEvent e) {}
-
-            public void windowActivated(WindowEvent e) {}
-
-            public void windowDeactivated(WindowEvent e) {}
-
-            public void windowClosed(WindowEvent e) {
-                client.close();
-            }
-        });
-
-        // Window settings
-        f.setSize(width, height);
-        f.setMinimumSize(new Dimension(width, height));
-        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        f.setVisible(true);
+    public static void main(String[] args) {
+        sorterWindow = new SorterWindow();
+        setupClient();
+        new ConsoleWindow(SorterWindow.width, 0);
     }
 
     public static void setupClient() {
@@ -302,7 +91,7 @@ public class RunePageSorter {
                 in.close();
             }
             catch (IOException e) {
-                JOptionPane.showMessageDialog(f, "Encountered an error when parsing config.txt", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, "Encountered an error when parsing config.txt", "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
 
@@ -311,7 +100,7 @@ public class RunePageSorter {
 
         if (!params.containsKey("region") || !regionMap.containsKey(params.get("region").toUpperCase())) {
             String res = (String)JOptionPane.showInputDialog(
-                    f,
+                    null,
                     "Select a region",
                     "Login Information",
                     JOptionPane.QUESTION_MESSAGE,
@@ -323,6 +112,10 @@ public class RunePageSorter {
                             "Korea",
                             "Brazil",
                             "Turkey",
+                            "Russia",
+                            "Latin America North",
+                            "Latin America South",
+                            "Oceania",
                             "Public Beta Environment",
                             "Singapore/Malaysia",
                             "Taiwan",
@@ -337,7 +130,7 @@ public class RunePageSorter {
 
         if (!params.containsKey("version")) {
             String res = (String)JOptionPane.showInputDialog(
-                    f,
+                    null,
                     "Enter the Client Version for " + params.get("region") + "\nClient version can be found at the top left of the real client",
                     "Login Information",
                     JOptionPane.QUESTION_MESSAGE);
@@ -348,7 +141,7 @@ public class RunePageSorter {
 
         if (!params.containsKey("user")) {
             String res = (String)JOptionPane.showInputDialog(
-                    f,
+                    null,
                     "Enter your login name for " + params.get("region"),
                     "Login Information",
                     JOptionPane.QUESTION_MESSAGE);
@@ -367,7 +160,7 @@ public class RunePageSorter {
             panel.add(pass);
 
             JOptionPane.showOptionDialog(
-                    f,
+                    null,
                     panel,
                     "Login Information",
                     JOptionPane.NO_OPTION,
@@ -418,23 +211,19 @@ public class RunePageSorter {
             id = client.invoke("summonerService", "getAllSummonerDataByAccount", new Object[] { acctId });
             TypedObject body = client.getResult(id).getTO("data").getTO("body");
 
-            Object[] spellBookPages = body.getTO("spellBook").getArray("bookPages");
-            for (Object o : spellBookPages)
-                pages.add(new RunePage((TypedObject)o));
-            Collections.sort(pages);
-            updatePages();
+            Object[] runeBookPages = body.getTO("spellBook").getArray("bookPages");
+            for (Object o : runeBookPages)
+                runePages.add(new RunePage((TypedObject)o));
+            Collections.sort(runePages);
+            sorterWindow.updateRunePages(runePages);
 
-            Object[] masteryPages = body.getTO("masteryBook").getArray("bookPages");
-            for (Object o : masteryPages)
-                masteries.add(new MasteryPage((TypedObject)o));
-            Collections.sort(masteries);
-            updateMasteries();
+            Object[] masteryBookPages = body.getTO("masteryBook").getArray("bookPages");
+            for (Object o : masteryBookPages)
+                masteryPages.add(new MasteryPage((TypedObject)o));
+            Collections.sort(masteryPages);
+            sorterWindow.updateMasteryPages(masteryPages);
 
-            // Enable the buttons
-            btnSort.setEnabled(true);
-            btnMoveUp.setEnabled(true);
-            btnMoveDown.setEnabled(true);
-
+            sorterWindow.enableButtons();
         }
         catch (IOException e) {
             client.close();
@@ -445,21 +234,72 @@ public class RunePageSorter {
             System.out.println("Restart the program to try again.");
         }
     }
+    
+    public static void sortRunes() {
+        List<Integer> pageIds = new ArrayList<Integer>();
+        for (RunePage page : runePages)
+            pageIds.add(page.pageId);
 
-    public static void updatePages() {
-        lstModel.clear();
-        for (RunePage page : pages)
-            lstModel.add(page);
-        lstModel.update();
+        Collections.sort(runePages, new Comparator<RunePage>() {
+            public int compare(RunePage page1, RunePage page2) {
+                return page1.name.compareTo(page2.name);
+            }
+        });
+
+        for (int i = 0; i < runePages.size(); i++)
+            runePages.get(i).pageId = pageIds.get(i);
+
+        savePages();
+    }
+    
+    public static void sortMasteries() {
+        List<Integer> pageIds = new ArrayList<Integer>();
+        for (MasteryPage page : masteryPages)
+            pageIds.add(page.pageId);
+
+        Collections.sort(masteryPages, new Comparator<MasteryPage>() {
+            public int compare(MasteryPage page1, MasteryPage page2) {
+                return page1.name.compareTo(page2.name);
+            }
+        });
+
+        for (int i = 0; i < masteryPages.size(); i++)
+            masteryPages.get(i).pageId = pageIds.get(i);
+
+        saveMasteries();
+    }
+    
+    public static void moveRunePageUp(int index) {
+        RunePage current = runePages.get(index);
+        current.swap(runePages.get(index - 1));
+        savePages();
+    }
+    
+    public static void moveRunePageDown(int index) {
+        RunePage current = runePages.get(index);
+        current.swap(runePages.get(index + 1));
+        savePages();
+    }
+    
+    public static void moveMasteryPageUp(int index) {
+        MasteryPage current = masteryPages.get(index);
+        current.swap(masteryPages.get(index - 1));
+        saveMasteries();
+    }
+    
+    public static void moveMasteryPageDown(int index) {
+        MasteryPage current = masteryPages.get(index);
+        current.swap(masteryPages.get(index + 1));
+        saveMasteries();
     }
 
     public static void savePages() {
         try {
-            TypedObject[] pages2 = new TypedObject[pages.size()];
+            TypedObject[] pages2 = new TypedObject[runePages.size()];
             TypedObject currentPage = null;
-            for (int i = 0; i < pages.size(); i++) {
-                pages2[i] = pages.get(i).getSavePage(summId);
-                if (pages.get(i).current)
+            for (int i = 0; i < runePages.size(); i++) {
+                pages2[i] = runePages.get(i).getSavePage(summId);
+                if (runePages.get(i).current)
                     currentPage = pages2[i];
             }
 
@@ -491,7 +331,7 @@ public class RunePageSorter {
             if (result.get("result").equals("_error"))
                 System.out.println("Error changing rune page order");
 
-            updatePages();
+            sorterWindow.updateRunePages(runePages);
         }
         catch (IOException e) {
             client.close();
@@ -503,18 +343,11 @@ public class RunePageSorter {
         }
     }
 
-    public static void updateMasteries() {
-        lstModel2.clear();
-        for (MasteryPage page : masteries)
-            lstModel2.add(page);
-        lstModel2.update();
-    }
-
     public static void saveMasteries() {
         try {
-            TypedObject[] masteries2 = new TypedObject[masteries.size()];
-            for (int i = 0; i < masteries.size(); i++)
-                masteries2[i] = masteries.get(i).getSavePage(summId);
+            TypedObject[] masteries2 = new TypedObject[masteryPages.size()];
+            for (int i = 0; i < masteryPages.size(); i++)
+                masteries2[i] = masteryPages.get(i).getSavePage(summId);
 
             TypedObject args = new TypedObject("com.riotgames.platform.summoner.masterybook.MasteryBookDTO");
             args.put("bookPages", TypedObject.makeArrayCollection(masteries2));
@@ -541,7 +374,7 @@ public class RunePageSorter {
             if (result.get("result").equals("_error"))
                 System.out.println(result + "\nError changing mastery page order");
 
-            updateMasteries();
+            sorterWindow.updateMasteryPages(masteryPages);
         }
         catch (IOException e) {
             client.close();
@@ -553,21 +386,7 @@ public class RunePageSorter {
         }
     }
 
-    public static void doLayout() {
-        Insets i = f.getInsets();
-        int twidth = width - i.left - i.right;
-        int theight = height - i.top - i.bottom;
-
-        btnSort.setBounds(5, 5, twidth - 10, 24);
-        btnMoveUp.setBounds(5, 34, twidth / 2 - 10, 24);
-        btnMoveDown.setBounds(5 + twidth / 2, 34, twidth / 2 - 10, 24);
-
-        sep.setBounds(5, 63, twidth - 10, 5);
-
-        int scrollHeight = theight / 2 - 50;
-        lblRunePages.setBounds(5, 65, twidth - 9, 15);
-        lstScroll.setBounds(5, 80, twidth - 9, scrollHeight);
-        lblMasteryPages.setBounds(5, 80 + scrollHeight, twidth - 9, 15);
-        lstScroll2.setBounds(5, 95 + scrollHeight, twidth - 9, scrollHeight);
+    public static void exit() {
+        client.close();
     }
 }
