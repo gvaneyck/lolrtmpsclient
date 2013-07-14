@@ -7,6 +7,7 @@ import java.awt.event.HierarchyBoundsListener;
 import java.awt.event.HierarchyEvent;
 import java.io.PrintStream;
 
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -18,7 +19,7 @@ public class ConsoleWindow {
     private int width = 480;
     private int height = 320;
 
-    private static final JFrame f = new JFrame("Console");
+    private static final JDialog f = new JDialog();
     private static final JTextArea txtConsole = new JTextArea();
     private static final JScrollPane scrollArea = new JScrollPane(txtConsole);
 
@@ -31,6 +32,8 @@ public class ConsoleWindow {
     }
 
     public ConsoleWindow(int xpos, int ypos) {
+        f.setTitle("Console");
+        
         // Redirect output
         System.setOut(new PrintStream(sos));
         System.setErr(new PrintStream(sos));
@@ -81,7 +84,6 @@ public class ConsoleWindow {
         f.setSize(width, height);
         f.setLocation(xpos, ypos);
         f.setMinimumSize(new Dimension(width, height));
-        f.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         f.setVisible(true);
     }
 

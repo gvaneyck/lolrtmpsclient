@@ -72,9 +72,6 @@ public class SorterWindow {
         pane.add(lblMasteryPages);
         pane.add(lstMasteryScroll);
 
-        // Layout everything
-        doLayout();
-
         // Listeners
         btnSort.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
