@@ -24,7 +24,13 @@ public class ConsoleWindow extends JDialog {
     private static final JScrollPane scrollArea = new JScrollPane(txtConsole);
 
     public static void main(String[] args) {
-        new ConsoleWindow();
+        ConsoleWindow temp = new ConsoleWindow();
+        
+        while (temp.isVisible()) {
+            try { Thread.sleep(10); } catch (Exception e) { }
+        }
+        
+        System.exit(0);
     }
 
     public ConsoleWindow() {
@@ -32,8 +38,11 @@ public class ConsoleWindow extends JDialog {
     }
 
     public ConsoleWindow(int xpos, int ypos) {
-        setTitle("Console");
-        
+        redirectOutput();
+        initWindow(xpos, ypos);
+    }
+    
+    private void redirectOutput() {
         // Redirect output
         System.setOut(new PrintStream(sos));
         System.setErr(new PrintStream(sos));
@@ -59,8 +68,11 @@ public class ConsoleWindow extends JDialog {
         t.setDaemon(true);
         t.setName("ConsoleWindow");
         t.start();
-
-        // Set up the window
+    }
+    
+    private void initWindow(int xpos, int ypos) {
+        setTitle("Console");
+        
         txtConsole.setEditable(false);
         scrollArea.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
         scrollArea.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
@@ -76,7 +88,7 @@ public class ConsoleWindow extends JDialog {
                 Dimension d = getSize();
                 width = d.width;
                 height = d.height;
-                doLayout();
+                doMyLayout();
             }
         });
 
@@ -87,7 +99,7 @@ public class ConsoleWindow extends JDialog {
         setVisible(true);
     }
 
-    public void doLayout() {
+    public void doMyLayout() {
         Insets i = getInsets();
         int twidth = width - i.left - i.right;
         int theight = height - i.top - i.bottom;

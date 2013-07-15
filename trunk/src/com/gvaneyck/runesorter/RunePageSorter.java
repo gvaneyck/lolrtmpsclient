@@ -1,5 +1,7 @@
 package com.gvaneyck.runesorter;
 
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowFocusListener;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,6 +15,7 @@ import com.gvaneyck.util.ConsoleWindow;
 public class RunePageSorter {
     
     public static SorterWindow sorterWindow;
+    public static ConsoleWindow consoleWindow;
     public static SettingsWindow settingsWindow;
 
     public static LoLRTMPSClient client;
@@ -22,12 +25,25 @@ public class RunePageSorter {
 
     public static int acctId = 0;
     public static int summId = 0;
-    public static int sumLevel = 0;
+    public static int summLevel = 0;
 
     public static void main(String[] args) {
         sorterWindow = new SorterWindow();
-        new ConsoleWindow(SorterWindow.width, 0);
+        consoleWindow = new ConsoleWindow(SorterWindow.width, 0);
         settingsWindow = new SettingsWindow("config.txt");
+        
+        sorterWindow.addWindowFocusListener(new WindowFocusListener() {
+            public void windowLostFocus(WindowEvent e) { }
+            
+            public void windowGainedFocus(WindowEvent e) {
+                if (settingsWindow.isVisible()) {
+                    settingsWindow.toFront();
+                    settingsWindow.requestFocus();
+                    //settingsWindow.repaint();
+                }
+            }
+        });
+        
         setupClient();
     }
 
@@ -71,7 +87,7 @@ public class RunePageSorter {
 
 
             TypedObject summonerLevel = data.getTO("summonerLevelAndPoints");
-            System.out.println(summonerLevel.toPrettyString());
+            summLevel = summonerLevel.getInt("summonerLevel");
 
             // Get our pages
             id = client.invoke("summonerService", "getAllSummonerDataByAccount", new Object[] { acctId });
