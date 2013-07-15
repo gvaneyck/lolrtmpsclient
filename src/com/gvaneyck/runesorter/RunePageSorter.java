@@ -22,6 +22,7 @@ public class RunePageSorter {
 
     public static int acctId = 0;
     public static int summId = 0;
+    public static int sumLevel = 0;
 
     public static void main(String[] args) {
         sorterWindow = new SorterWindow();
@@ -31,9 +32,9 @@ public class RunePageSorter {
     }
 
     public static void setupClient() {
-        settingsWindow.reOpen();
+        settingsWindow.setVisible(true);
         
-        while (settingsWindow.isOpen()) {
+        while (settingsWindow.isVisible()) {
             try { Thread.sleep(10); } catch (Exception e) { }
         }
         
@@ -62,9 +63,15 @@ public class RunePageSorter {
         try {
             // Get the account and summoner ID
             int id = client.invoke("clientFacadeService", "getLoginDataPacketForUser", new Object[] {});
-            TypedObject summoner = client.getResult(id).getTO("data").getTO("body").getTO("allSummonerData").getTO("summoner");
+            TypedObject result = client.getResult(id);
+            TypedObject data = result.getTO("data").getTO("body").getTO("allSummonerData");
+            TypedObject summoner = data.getTO("summoner");
             acctId = summoner.getInt("acctId");
             summId = summoner.getInt("sumId");
+
+
+            TypedObject summonerLevel = data.getTO("summonerLevelAndPoints");
+            System.out.println(summonerLevel.toPrettyString());
 
             // Get our pages
             id = client.invoke("summonerService", "getAllSummonerDataByAccount", new Object[] { acctId });

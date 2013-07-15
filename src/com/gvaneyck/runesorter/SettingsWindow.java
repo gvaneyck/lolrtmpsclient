@@ -7,8 +7,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyBoundsListener;
 import java.awt.event.HierarchyEvent;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -30,9 +28,8 @@ import javax.swing.SwingConstants;
 
 import com.gvaneyck.rtmp.ServerInfo;
 
-public class SettingsWindow {
-
-    private final JDialog f = new JDialog();
+public class SettingsWindow extends JDialog {
+    private static final long serialVersionUID = -292661627143118163L;
 
     private final JLabel lblRegion = new JLabel("Region");
     private final JComboBox cboRegion = new JComboBox();
@@ -152,7 +149,7 @@ public class SettingsWindow {
     }
     
     private void initWindow() {
-        f.setTitle("Settings");
+        setTitle("Settings");
         
         cboRegion.addItem(ServerInfo.NA);
         cboRegion.addItem(ServerInfo.EUW);
@@ -171,7 +168,7 @@ public class SettingsWindow {
         cboRegion.addItem(ServerInfo.TH);
         cboRegion.addItem(ServerInfo.VN);
 
-        Container pane = f.getContentPane();
+        Container pane = getContentPane();
         pane.setLayout(null);
 
         pane.add(lblRegion);
@@ -195,35 +192,35 @@ public class SettingsWindow {
             public void ancestorMoved(HierarchyEvent e) {}
 
             public void ancestorResized(HierarchyEvent e) {
-                Dimension d = f.getSize();
+                Dimension d = getSize();
                 width = d.width;
                 height = d.height;
-                doLayout();
+                doMyLayout();
             }
         });
         
         btnOk.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 writeConfig();
-                f.setVisible(false);
+                setVisible(false);
             }
         });
         
         btnCancel.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                f.setVisible(false);
+                setVisible(false);
             }
         });
         
-        f.setSize(width, height);
-        f.setMinimumSize(new Dimension(width, height));
-        f.setVisible(true);
+        setSize(width, height);
+        setMinimumSize(new Dimension(width, height));
+        setVisible(true);
         
-        doLayout();
+        doMyLayout();
     }
     
-    private void doLayout() {
-        Insets i = f.getInsets();
+    private void doMyLayout() {
+        Insets i = getInsets();
         int twidth = width - i.left - i.right;
         
         int lblwidth = 80;
@@ -253,13 +250,5 @@ public class SettingsWindow {
                 txtPassword.getText(), 
                 txtClientVersion.getText(), 
                 (ServerInfo)cboRegion.getSelectedItem());
-    }
-    
-    public boolean isOpen() {
-        return f.isVisible();
-    }
-    
-    public void reOpen() {
-        f.setVisible(true);
     }
 }
