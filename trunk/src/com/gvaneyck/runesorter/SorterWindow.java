@@ -21,9 +21,8 @@ import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-public class SorterWindow {
-
-    private final JFrame f = new JFrame("Rune/Mastery Page Manager");
+public class SorterWindow extends JFrame {
+    private static final long serialVersionUID = -4909493574753556479L;
 
     private final JButton btnSort = new JButton("Sort Alphabetically");
     private final JButton btnMoveUp = new JButton("Move Up");
@@ -49,6 +48,8 @@ public class SorterWindow {
     public static int height = 320;
 
     public SorterWindow() {
+        setTitle("Rune/Mastery Page Manager");
+        
         // GUI settings
         lstRunePages.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
@@ -58,7 +59,7 @@ public class SorterWindow {
         btnMoveDown.setEnabled(false);
 
         // Add the items
-        Container pane = f.getContentPane();
+        Container pane = getContentPane();
         pane.setLayout(null);
 
         pane.add(btnSort);
@@ -144,14 +145,14 @@ public class SorterWindow {
             public void ancestorMoved(HierarchyEvent e) {}
 
             public void ancestorResized(HierarchyEvent e) {
-                Dimension d = f.getSize();
+                Dimension d = getSize();
                 width = d.width;
                 height = d.height;
-                doLayout();
+                doMyLayout();
             }
         });
 
-        f.addWindowListener(new WindowListener() {
+        addWindowListener(new WindowListener() {
             public void windowOpened(WindowEvent e) {}
             public void windowClosing(WindowEvent e) {}
             public void windowIconified(WindowEvent e) {}
@@ -165,10 +166,10 @@ public class SorterWindow {
         });
 
         // Window settings
-        f.setSize(width, height);
-        f.setMinimumSize(new Dimension(width, height));
-        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        f.setVisible(true);
+        setSize(width, height);
+        setMinimumSize(new Dimension(width, height));
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setVisible(true);
     }
     
     public void enableButtons() {
@@ -197,8 +198,8 @@ public class SorterWindow {
         lstMasteryModel.update();
     }
     
-    private void doLayout() {
-        Insets i = f.getInsets();
+    private void doMyLayout() {
+        Insets i = getInsets();
         int twidth = width - i.left - i.right;
         int theight = height - i.top - i.bottom;
 

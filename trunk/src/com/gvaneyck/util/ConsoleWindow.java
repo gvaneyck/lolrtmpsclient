@@ -8,18 +8,18 @@ import java.awt.event.HierarchyEvent;
 import java.io.PrintStream;
 
 import javax.swing.JDialog;
-import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
-public class ConsoleWindow {
+public class ConsoleWindow extends JDialog {
+    private static final long serialVersionUID = 6067310150468068797L;
+    
     StringBuffer data = new StringBuffer();
     StringOutputStream sos = new StringOutputStream(data);
 
     private int width = 480;
     private int height = 320;
 
-    private static final JDialog f = new JDialog();
     private static final JTextArea txtConsole = new JTextArea();
     private static final JScrollPane scrollArea = new JScrollPane(txtConsole);
 
@@ -32,7 +32,7 @@ public class ConsoleWindow {
     }
 
     public ConsoleWindow(int xpos, int ypos) {
-        f.setTitle("Console");
+        setTitle("Console");
         
         // Redirect output
         System.setOut(new PrintStream(sos));
@@ -65,7 +65,7 @@ public class ConsoleWindow {
         scrollArea.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
         scrollArea.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 
-        Container pane = f.getContentPane();
+        Container pane = getContentPane();
         pane.setLayout(null);
         pane.add(scrollArea);
 
@@ -73,7 +73,7 @@ public class ConsoleWindow {
             public void ancestorMoved(HierarchyEvent e) {}
 
             public void ancestorResized(HierarchyEvent e) {
-                Dimension d = f.getSize();
+                Dimension d = getSize();
                 width = d.width;
                 height = d.height;
                 doLayout();
@@ -81,14 +81,14 @@ public class ConsoleWindow {
         });
 
         // Window settings
-        f.setSize(width, height);
-        f.setLocation(xpos, ypos);
-        f.setMinimumSize(new Dimension(width, height));
-        f.setVisible(true);
+        setSize(width, height);
+        setLocation(xpos, ypos);
+        setMinimumSize(new Dimension(width, height));
+        setVisible(true);
     }
 
     public void doLayout() {
-        Insets i = f.getInsets();
+        Insets i = getInsets();
         int twidth = width - i.left - i.right;
         int theight = height - i.top - i.bottom;
 
