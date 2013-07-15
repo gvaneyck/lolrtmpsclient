@@ -22,6 +22,7 @@ public class RunePageSorter {
 
     public static List<RunePage> runePages = new ArrayList<RunePage>();
     public static List<MasteryPage> masteryPages = new ArrayList<MasteryPage>();
+    public static List<Rune> runes = new ArrayList<Rune>();
 
     public static int acctId = 0;
     public static int summId = 0;
@@ -85,9 +86,17 @@ public class RunePageSorter {
             acctId = summoner.getInt("acctId");
             summId = summoner.getInt("sumId");
 
-
+            // Get the summoner level
             TypedObject summonerLevel = data.getTO("summonerLevelAndPoints");
             summLevel = summonerLevel.getInt("summonerLevel");
+            
+            // Get our rune inventory
+            id = client.invoke("summonerRuneService", "getSummonerRuneInventory", new Object[] { summId });
+            result = client.getResult(id);
+            Object[] runeList = result.getTO("data").getTO("body").getArray("summonerRunes");
+            for (Object rune : runeList) {
+                runes.add(new Rune((TypedObject)rune));
+            }
 
             // Get our pages
             id = client.invoke("summonerService", "getAllSummonerDataByAccount", new Object[] { acctId });
