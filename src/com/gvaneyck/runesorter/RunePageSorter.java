@@ -6,7 +6,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.gvaneyck.rtmp.LoLRTMPSClient;
 import com.gvaneyck.rtmp.encoding.TypedObject;
@@ -20,9 +22,9 @@ public class RunePageSorter {
 
     public static LoLRTMPSClient client;
 
-    public static List<RunePage> runePages = new ArrayList<RunePage>();
+    public static List<RunePage> runePages;
     public static List<MasteryPage> masteryPages = new ArrayList<MasteryPage>();
-    public static List<Rune> runes = new ArrayList<Rune>();
+    public static Map<Integer, Rune> runes = new HashMap<Integer, Rune>();
 
     public static int acctId = 0;
     public static int summId = 0;
@@ -95,20 +97,18 @@ public class RunePageSorter {
             result = client.getResult(id);
             Object[] runeList = result.getTO("data").getTO("body").getArray("summonerRunes");
             for (Object rune : runeList) {
-                runes.add(new Rune((TypedObject)rune));
+                Rune r = new Rune((TypedObject)rune);
+                runes.put(r.id, r);
             }
 
-            // Get our pages
-            id = client.invoke("summonerService", "getAllSummonerDataByAccount", new Object[] { acctId });
-            TypedObject body = client.getResult(id).getTO("data").getTO("body");
-
-            Object[] runeBookPages = body.getTO("spellBook").getArray("bookPages");
-            for (Object o : runeBookPages)
-                runePages.add(new RunePage((TypedObject)o));
+            // Get our rune pages
+            runePages = getRunePages(summId);
             Collections.sort(runePages);
             sorterWindow.updateRunePages(runePages);
 
-            Object[] masteryBookPages = body.getTO("masteryBook").getArray("bookPages");
+            // Get our mastery pages
+            id = client.invoke("summonerService", "getAllSummonerDataByAccount", new Object[] { acctId });
+            Object[] masteryBookPages = client.getResult(id).getTO("data").getTO("body").getTO("masteryBook").getArray("bookPages");
             for (Object o : masteryBookPages)
                 masteryPages.add(new MasteryPage((TypedObject)o));
             Collections.sort(masteryPages);
@@ -124,6 +124,22 @@ public class RunePageSorter {
             System.out.println();
             System.out.println("Restart the program to try again.");
         }
+    }
+    
+    public static List<RunePage> getRunePages(String summoner) throws IOException {
+        int id = client.invoke("summonerService", "getSummonerByName", new Object[] { summoner });
+        return getRunePages(client.getResult(id).getTO("data").getTO("body").getInt("summonerId"));
+    }
+    
+    public static List<RunePage> getRunePages(int summonerId) throws IOException {
+        int id = client.invoke("spellBookService", "getSpellBook", new Object[] { summonerId });
+        Object[] runeBookPages = client.getResult(id).getTO("data").getTO("body").getArray("bookPages");
+        
+        List<RunePage> result = new ArrayList<RunePage>();
+        for (Object o : runeBookPages)
+            result.add(new RunePage((TypedObject)o));
+        
+        return result;
     }
     
     public static void sortRunes() {
