@@ -43,7 +43,7 @@ import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import com.gvaneyck.rtmp.Callback;
+import com.gvaneyck.rtmp.RTMPCallback;
 import com.gvaneyck.rtmp.LoLRTMPSClient;
 import com.gvaneyck.rtmp.ServerInfo;
 import com.gvaneyck.rtmp.encoding.TypedObject;
@@ -708,7 +708,7 @@ public class SpectateAnyone {
 
                 // Invoke asynchronously
                 final String name = line;
-                client.invokeWithCallback("gameService", "retrieveInProgressSpectatorGameInfo", new Object[] { name }, new Callback() {
+                client.invokeWithCallback("gameService", "retrieveInProgressSpectatorGameInfo", new Object[] { name }, new RTMPCallback() {
                     public void callback(TypedObject result) {
                         if (result.get("result").equals("_result"))
                             lstModel.add(new GameInfo(name, result));

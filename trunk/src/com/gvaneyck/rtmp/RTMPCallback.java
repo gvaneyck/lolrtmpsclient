@@ -7,7 +7,7 @@ import com.gvaneyck.rtmp.encoding.TypedObject;
  * 
  * @author Gabriel Van Eyck
  */
-public interface Callback {
+public interface RTMPCallback {
     /**
      * The function to call after the result has been read
      * 

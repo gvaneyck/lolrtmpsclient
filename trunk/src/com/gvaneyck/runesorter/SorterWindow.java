@@ -9,6 +9,7 @@ import java.awt.event.HierarchyBoundsListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JButton;
@@ -18,8 +19,12 @@ import javax.swing.JList;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+
+import com.gvaneyck.util.Callback;
+import com.gvaneyck.util.Tuple;
 
 public class SorterWindow extends JFrame {
     private static final long serialVersionUID = -4909493574753556479L;
@@ -27,6 +32,8 @@ public class SorterWindow extends JFrame {
     private final JButton btnSort = new JButton("Sort Alphabetically");
     private final JButton btnMoveUp = new JButton("Move Up");
     private final JButton btnMoveDown = new JButton("Move Down");
+
+    private final JSeparator sep = new JSeparator(JSeparator.HORIZONTAL);
 
     private final JLabel lblRunePages = new JLabel("Rune Pages");
     private final RunePageListModel lstRuneModel = new RunePageListModel();
@@ -37,21 +44,30 @@ public class SorterWindow extends JFrame {
     private final MasteryPageListModel lstMasteryModel = new MasteryPageListModel();
     private final JList lstMasteryPages = new JList(lstMasteryModel);
     private final JScrollPane lstMasteryScroll = new JScrollPane(lstMasteryPages);
-
-    private final JSeparator sep = new JSeparator(JSeparator.HORIZONTAL);
+    
+    private final JLabel lblSide = new JLabel("");
 
     private int lastSelectedPage = -1;
     private int lastSelectedMasteries = -1;
     private boolean changingSelection = false;
 
-    public static int width = 250;
+    public static int width = 550;
     public static int height = 320;
+    
+    // Callbacks
+    public Callback runeSorterListener;
+    public Callback masterySorterListener;
+    public Callback runeSwapListener;
+    public Callback masterySwapListener;
+    public Callback runeSelectListener;
+    public Callback masterySelectListener;
 
     public SorterWindow() {
         setTitle("Rune/Mastery Page Manager");
         
         // GUI settings
         lstRunePages.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        lblSide.setVerticalAlignment(SwingConstants.TOP);
 
         // Initially grey out buttons
         btnSort.setEnabled(false);
@@ -72,28 +88,35 @@ public class SorterWindow extends JFrame {
         pane.add(lstRuneScroll);
         pane.add(lblMasteryPages);
         pane.add(lstMasteryScroll);
+        
+        pane.add(lblSide);
 
         // Listeners
         btnSort.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if (lastSelectedPage != -1) {
-                    RunePageSorter.sortRunes();
-                }
-                if (lastSelectedMasteries != -1) {
-                    RunePageSorter.sortMasteries();
-                }
+                if (lastSelectedPage != -1)
+                    if (runeSorterListener != null)
+                        runeSorterListener.callback(null);
+
+                if (lastSelectedMasteries != -1)
+                    if (masterySorterListener != null)
+                        masterySorterListener.callback(null);
             }
         });
 
         btnMoveUp.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (lastSelectedPage != -1 && lastSelectedPage != 0) {
-                    RunePageSorter.moveRunePageUp(lastSelectedPage);
+                    if (runeSwapListener != null)
+                        runeSwapListener.callback(new Tuple(lastSelectedPage, lastSelectedPage - 1));
+
                     lastSelectedPage--;
                     lstRunePages.setSelectedIndex(lastSelectedPage);
                 }
                 if (lastSelectedMasteries != -1 && lastSelectedMasteries != 0) {
-                    RunePageSorter.moveMasteryPageUp(lastSelectedMasteries);
+                    if (masterySwapListener != null)
+                        masterySwapListener.callback(new Tuple(lastSelectedPage, lastSelectedPage - 1));
+
                     lastSelectedMasteries--;
                     lstMasteryPages.setSelectedIndex(lastSelectedMasteries);
                 }
@@ -103,12 +126,16 @@ public class SorterWindow extends JFrame {
         btnMoveDown.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (lastSelectedPage != -1 && lastSelectedPage != lstRunePages.getModel().getSize() - 1) {
-                    RunePageSorter.moveRunePageDown(lastSelectedPage);
+                    if (runeSwapListener != null)
+                        runeSwapListener.callback(new Tuple(lastSelectedPage, lastSelectedPage + 1));
+
                     lastSelectedPage++;
                     lstRunePages.setSelectedIndex(lastSelectedPage);
                 }
                 if (lastSelectedMasteries != -1 && lastSelectedMasteries != lstMasteryPages.getModel().getSize() - 1) {
-                    RunePageSorter.moveMasteryPageDown(lastSelectedPage);
+                    if (masterySwapListener != null)
+                        masterySwapListener.callback(new Tuple(lastSelectedPage, lastSelectedPage + 1));
+
                     lastSelectedMasteries++;
                     lstMasteryPages.setSelectedIndex(lastSelectedMasteries);
                 }
@@ -125,6 +152,9 @@ public class SorterWindow extends JFrame {
                 lstMasteryPages.clearSelection();
                 lastSelectedMasteries = -1;
                 changingSelection = false;
+                
+                if (runeSelectListener != null)
+                    runeSelectListener.callback(lastSelectedPage);
             }
         });
 
@@ -138,6 +168,9 @@ public class SorterWindow extends JFrame {
                 lastSelectedPage = -1;
                 lstRunePages.clearSelection();
                 changingSelection = false;
+
+                if (masterySelectListener != null)
+                    masterySelectListener.callback(lastSelectedPage);
             }
         });
 
@@ -149,19 +182,6 @@ public class SorterWindow extends JFrame {
                 width = d.width;
                 height = d.height;
                 doMyLayout();
-            }
-        });
-
-        addWindowListener(new WindowListener() {
-            public void windowOpened(WindowEvent e) {}
-            public void windowClosing(WindowEvent e) {}
-            public void windowIconified(WindowEvent e) {}
-            public void windowDeiconified(WindowEvent e) {}
-            public void windowActivated(WindowEvent e) {}
-            public void windowDeactivated(WindowEvent e) {}
-
-            public void windowClosed(WindowEvent e) {
-                RunePageSorter.exit();
             }
         });
 
@@ -198,9 +218,13 @@ public class SorterWindow extends JFrame {
         lstMasteryModel.update();
     }
     
+    public void setInfo1(String text) {
+        lblSide.setText(text);
+    }
+    
     private void doMyLayout() {
         Insets i = getInsets();
-        int twidth = width - i.left - i.right;
+        int twidth = width - i.left - i.right - 300;
         int theight = height - i.top - i.bottom;
 
         btnSort.setBounds(5, 5, twidth - 10, 24);
@@ -214,5 +238,7 @@ public class SorterWindow extends JFrame {
         lstRuneScroll.setBounds(5, 80, twidth - 9, scrollHeight);
         lblMasteryPages.setBounds(5, 80 + scrollHeight, twidth - 9, 15);
         lstMasteryScroll.setBounds(5, 95 + scrollHeight, twidth - 9, scrollHeight);
+        
+        lblSide.setBounds(twidth + 5, 5, 290, theight - 10);
     }
 }

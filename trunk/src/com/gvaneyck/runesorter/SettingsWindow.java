@@ -7,6 +7,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyBoundsListener;
 import java.awt.event.HierarchyEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -211,6 +213,23 @@ public class SettingsWindow extends JDialog {
                 setVisible(false);
             }
         });
+        
+        KeyListener enterListener = new KeyListener() {
+            public void keyTyped(KeyEvent e) { 
+                if (e.getKeyChar() == '\n') {
+                    writeConfig();
+                    setVisible(false);
+                }
+            }
+            
+            public void keyReleased(KeyEvent e) { }
+            public void keyPressed(KeyEvent e) { }
+        };
+        
+        cboRegion.addKeyListener(enterListener);
+        txtUsername.addKeyListener(enterListener);
+        txtPassword.addKeyListener(enterListener);
+        txtClientVersion.addKeyListener(enterListener);
         
         setSize(width, height);
         setMinimumSize(new Dimension(width, height));
