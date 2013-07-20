@@ -2,6 +2,7 @@ package com.gvaneyck.runesorter;
 
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
+import java.awt.event.WindowListener;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,9 +11,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+
 import com.gvaneyck.rtmp.LoLRTMPSClient;
 import com.gvaneyck.rtmp.encoding.TypedObject;
+import com.gvaneyck.util.Callback;
 import com.gvaneyck.util.ConsoleWindow;
+import com.gvaneyck.util.Tuple;
 
 public class RunePageSorter {
     
@@ -42,11 +48,65 @@ public class RunePageSorter {
                 if (settingsWindow.isVisible()) {
                     settingsWindow.toFront();
                     settingsWindow.requestFocus();
-                    //settingsWindow.repaint();
                 }
             }
         });
         
+        sorterWindow.addWindowListener(new WindowListener() {
+            public void windowOpened(WindowEvent e) {}
+            public void windowClosing(WindowEvent e) {}
+            public void windowIconified(WindowEvent e) {}
+            public void windowDeiconified(WindowEvent e) {}
+            public void windowActivated(WindowEvent e) {}
+            public void windowDeactivated(WindowEvent e) {}
+
+            public void windowClosed(WindowEvent e) {
+                exit();
+            }
+        });
+        
+        sorterWindow.runeSorterListener = new Callback() {
+            public void callback(Object data) {
+                sortRunes();
+            }
+        };
+
+        sorterWindow.masterySorterListener = new Callback() {
+            public void callback(Object data) {
+                sortMasteries();
+            }
+        };
+
+        sorterWindow.runeSwapListener = new Callback() {
+            public void callback(Object data) {
+                Tuple t = (Tuple)data;
+                RunePage current = runePages.get((Integer)t.obj1);
+                current.swap(runePages.get((Integer)t.obj2));
+                savePages();
+            }
+        };
+
+        sorterWindow.masterySwapListener = new Callback() {
+            public void callback(Object data) {
+                Tuple t = (Tuple)data;
+                MasteryPage current = masteryPages.get((Integer)t.obj1);
+                current.swap(masteryPages.get((Integer)t.obj2));
+                saveMasteries();
+            }
+        };
+
+        sorterWindow.runeSelectListener = new Callback() {
+            public void callback(Object data) {
+                selectRunePage((Integer)data);
+            }
+        };
+        
+        sorterWindow.masterySelectListener = new Callback() {
+            public void callback(Object data) {
+                sorterWindow.setInfo1("");
+            }
+        };
+
         setupClient();
     }
 
@@ -176,28 +236,24 @@ public class RunePageSorter {
         saveMasteries();
     }
     
-    public static void moveRunePageUp(int index) {
-        RunePage current = runePages.get(index);
-        current.swap(runePages.get(index - 1));
-        savePages();
-    }
-    
-    public static void moveRunePageDown(int index) {
-        RunePage current = runePages.get(index);
-        current.swap(runePages.get(index + 1));
-        savePages();
-    }
-    
-    public static void moveMasteryPageUp(int index) {
-        MasteryPage current = masteryPages.get(index);
-        current.swap(masteryPages.get(index - 1));
-        saveMasteries();
-    }
-    
-    public static void moveMasteryPageDown(int index) {
-        MasteryPage current = masteryPages.get(index);
-        current.swap(masteryPages.get(index + 1));
-        saveMasteries();
+    public static void selectRunePage(int index) {
+        RunePage page = runePages.get(index);                
+        Map<Integer, Rune> pageContents = page.getPageContents();
+        
+        StringBuilder buffer = new StringBuilder();
+        buffer.append("<html><body>");
+        buffer.append("Name: ");
+        buffer.append(page.name);
+        buffer.append("<br/>");
+        
+        for (int key : pageContents.keySet()) {
+            Rune r = pageContents.get(key);
+            buffer.append(String.format("+%.2f %s", r.effect * r.quantity, r.effectName));
+            buffer.append("<br/>");
+        }
+        
+        buffer.append("</body></html>");
+        sorterWindow.setInfo1(buffer.toString());
     }
 
     public static void savePages() {

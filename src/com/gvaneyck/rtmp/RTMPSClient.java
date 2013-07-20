@@ -71,10 +71,10 @@ public class RTMPSClient {
     private Map<Integer, TypedObject> results = Collections.synchronizedMap(new HashMap<Integer, TypedObject>());
 
     /** Callback list */
-    protected Map<Integer, Callback> callbacks = Collections.synchronizedMap(new HashMap<Integer, Callback>());
+    protected Map<Integer, RTMPCallback> callbacks = Collections.synchronizedMap(new HashMap<Integer, RTMPCallback>());
 
     /** Receive handler */
-    protected volatile Callback receiveCallback = null;
+    protected volatile RTMPCallback receiveCallback = null;
 
     /**
      * A simple test for doing the basic RTMPS connection to Riot
@@ -168,7 +168,7 @@ public class RTMPSClient {
         // Reset pending invokes and callbacks so this connection can be
         // restarted
         pendingInvokes = Collections.synchronizedSet(new HashSet<Integer>());
-        callbacks = Collections.synchronizedMap(new HashMap<Integer, Callback>());
+        callbacks = Collections.synchronizedMap(new HashMap<Integer, RTMPCallback>());
     }
 
     /**
@@ -480,7 +480,7 @@ public class RTMPSClient {
      * @return The invoke ID to use with getResult(), peekResult(), and join()
      * @throws IOException
      */
-    public synchronized int invokeWithCallback(String destination, Object operation, Object body, Callback cb) throws IOException {
+    public synchronized int invokeWithCallback(String destination, Object operation, Object body, RTMPCallback cb) throws IOException {
         callbacks.put(invokeID, cb); // Register the callback
         return invoke(destination, operation, body);
     }
@@ -610,7 +610,7 @@ public class RTMPSClient {
      * 
      * @param cb The handler to use
      */
-    public void setReceiveHandler(Callback cb) {
+    public void setReceiveHandler(RTMPCallback cb) {
         receiveCallback = cb;
     }
 
@@ -753,7 +753,7 @@ public class RTMPSClient {
                     }
                     // Callback handler
                     else if (callbacks.containsKey(id)) {
-                        final Callback cb = callbacks.remove(id);
+                        final RTMPCallback cb = callbacks.remove(id);
                         if (cb != null) {
                             // Thread the callback so it doesn't hang us
                             Thread t = new Thread() {

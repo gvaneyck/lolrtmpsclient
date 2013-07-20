@@ -71,7 +71,7 @@ public class LoLRTMPSClient extends RTMPSClient {
             System.out.println(client.getResult(id));
 
             // Asynchronous invoke
-            client.invokeWithCallback("summonerService", "getSummonerByName", new Object[] { "Jabe" }, new Callback() {
+            client.invokeWithCallback("summonerService", "getSummonerByName", new Object[] { "Jabe" }, new RTMPCallback() {
                 public void callback(TypedObject result) {
                     System.out.println(result);
                 }

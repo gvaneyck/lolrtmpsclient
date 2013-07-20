@@ -1,5 +1,8 @@
 package com.gvaneyck.runesorter;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.gvaneyck.rtmp.encoding.TypedObject;
 
 /**
@@ -12,6 +15,8 @@ public class RunePage implements Comparable {
     public String name;
     public Boolean current;
     public TypedObject page;
+    
+    public Map<Integer, Rune> pageContents;
 
     public RunePage(TypedObject page) {
         name = page.getString("name");
@@ -32,6 +37,10 @@ public class RunePage implements Comparable {
         Boolean tempCurrent = target.current;
         target.current = current;
         current = tempCurrent;
+        
+        Map<Integer, Rune> tempContents = target.pageContents;
+        target.pageContents = pageContents;
+        pageContents = tempContents;
     }
 
     public TypedObject getSavePage(int summId) {
@@ -59,6 +68,22 @@ public class RunePage implements Comparable {
         ret.put("dataVersion", null);
 
         return ret;
+    }
+    
+    public Map<Integer, Rune> getPageContents() {
+        if (pageContents == null) {
+            pageContents = new HashMap<Integer, Rune>();
+            Object[] entries = page.getArray("slotEntries");
+            for (Object o : entries) {
+                Rune r = new Rune((TypedObject)o);
+                if (pageContents.containsKey(r.id))
+                    pageContents.get(r.id).quantity++;
+                else
+                    pageContents.put(r.id, r);
+            }
+        }
+        
+        return pageContents;
     }
 
     public int compareTo(Object o) {
