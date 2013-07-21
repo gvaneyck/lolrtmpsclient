@@ -11,8 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
+import javax.swing.JOptionPane;
 
 import com.gvaneyck.rtmp.LoLRTMPSClient;
 import com.gvaneyck.rtmp.encoding.TypedObject;
@@ -30,7 +29,9 @@ public class RunePageSorter {
 
     public static List<RunePage> runePages;
     public static List<MasteryPage> masteryPages = new ArrayList<MasteryPage>();
-    public static Map<Integer, Rune> runes = new HashMap<Integer, Rune>();
+    public static Map<Integer, Rune> runeInventory = new HashMap<Integer, Rune>();
+    
+    public static List<RunePage> runePages2;
 
     public static int acctId = 0;
     public static int summId = 0;
@@ -38,7 +39,7 @@ public class RunePageSorter {
 
     public static void main(String[] args) {
         sorterWindow = new SorterWindow();
-        consoleWindow = new ConsoleWindow(SorterWindow.width, 0);
+        consoleWindow = new ConsoleWindow(SorterWindow.MIN_WIDTH, 0);
         settingsWindow = new SettingsWindow("config.txt");
         
         sorterWindow.addWindowFocusListener(new WindowFocusListener() {
@@ -61,7 +62,7 @@ public class RunePageSorter {
             public void windowDeactivated(WindowEvent e) {}
 
             public void windowClosed(WindowEvent e) {
-                exit();
+                client.close();
             }
         });
         
@@ -104,6 +105,25 @@ public class RunePageSorter {
         sorterWindow.masterySelectListener = new Callback() {
             public void callback(Object data) {
                 sorterWindow.setInfo1("");
+            }
+        };
+        
+        sorterWindow.searchListener = new Callback() {
+            public void callback(Object data) {
+                search((String)data);
+            }
+        };
+        
+        sorterWindow.runeSelectListener2 = new Callback() {
+            public void callback(Object data) {
+                selectRunePage2((Integer)data);
+            }
+        };
+        
+        sorterWindow.copyListener = new Callback() {
+            public void callback(Object data) {
+                Tuple t = (Tuple)data;
+                copyPage((Integer)t.obj1, (Integer)t.obj2);
             }
         };
 
@@ -158,7 +178,7 @@ public class RunePageSorter {
             Object[] runeList = result.getTO("data").getTO("body").getArray("summonerRunes");
             for (Object rune : runeList) {
                 Rune r = new Rune((TypedObject)rune);
-                runes.put(r.id, r);
+                runeInventory.put(r.id, r);
             }
 
             // Get our rune pages
@@ -188,7 +208,11 @@ public class RunePageSorter {
     
     public static List<RunePage> getRunePages(String summoner) throws IOException {
         int id = client.invoke("summonerService", "getSummonerByName", new Object[] { summoner });
-        return getRunePages(client.getResult(id).getTO("data").getTO("body").getInt("summonerId"));
+        TypedObject result = client.getResult(id);
+        if (!result.getTO("data").containsKey("body"))
+            return null;
+
+        return getRunePages(result.getTO("data").getTO("body").getInt("summonerId"));
     }
     
     public static List<RunePage> getRunePages(int summonerId) throws IOException {
@@ -237,23 +261,10 @@ public class RunePageSorter {
     }
     
     public static void selectRunePage(int index) {
-        RunePage page = runePages.get(index);                
-        Map<Integer, Rune> pageContents = page.getPageContents();
-        
-        StringBuilder buffer = new StringBuilder();
-        buffer.append("<html><body>");
-        buffer.append("Name: ");
-        buffer.append(page.name);
-        buffer.append("<br/>");
-        
-        for (int key : pageContents.keySet()) {
-            Rune r = pageContents.get(key);
-            buffer.append(String.format("+%.2f %s", r.effect * r.quantity, r.effectName));
-            buffer.append("<br/>");
-        }
-        
-        buffer.append("</body></html>");
-        sorterWindow.setInfo1(buffer.toString());
+        if (index == -1 || index >= runePages.size())
+            sorterWindow.setInfo1("");
+        else
+            sorterWindow.setInfo1(formatRunePage(runePages.get(index)));
     }
 
     public static void savePages() {
@@ -348,8 +359,111 @@ public class RunePageSorter {
             System.out.println("Restart the program to try again.");
         }
     }
+    
+    public static void search(String player) {
+        if (!client.isLoggedIn())
+            return;
+        
+        try {
+            runePages2 = getRunePages(player);
+            sorterWindow.updateRunePages2(runePages2);
+            if (runePages2 == null) {
+                System.out.println("No player found with summoner name " + player);
+                return;
+            }
+            else {
+                Collections.sort(runePages2);
+            }
+        }
+        catch (IOException e) {
+            System.out.println("Error retrieving rune pages for " + player);
+            e.printStackTrace();
+        }
+    }
+    
+    public static void selectRunePage2(int index) {
+        if (runePages2 == null || index == -1 || index >= runePages2.size())
+            sorterWindow.setInfo2("");
+        else
+            sorterWindow.setInfo2(formatRunePage(runePages2.get(index)));
+    }
+    
+    private static String formatRunePage(RunePage page) {
+        Map<Integer, Rune> pageContents = page.getPageContents();
+        StringBuilder buffer = new StringBuilder();
+        buffer.append("<html><body>");
+        buffer.append("Name: ");
+        buffer.append(page.name);
+        buffer.append("<br/>");
+        
+        Map<String, Rune> contents2 = new HashMap<String, Rune>();
+        for (int key : pageContents.keySet()) {
+            Rune r = pageContents.get(key);
+            if (contents2.containsKey(r.effectName)) {
+                Rune r2 = contents2.get(r.effectName);
+                contents2.put(r.effectName, new Rune(r, r2));
+            }
+            else {
+                contents2.put(r.effectName, r);
+            }
+        }
+         
+        for (Rune r : contents2.values()) {
+            double multiplier = 1;
+            String percent = "";
+            String at18 = "";
+            if (r.effectName.contains("Percent")) {
+                multiplier *= 100;
+                percent = "%";
+            }
+            if (r.effectName.contains("PerLevel")) {
+                multiplier *= 18;
+                at18 = " at 18";
+            }
+            if (r.effectName.contains("Regen")) {
+                multiplier *= 5;
+            }
 
-    public static void exit() {
-        client.close();
+            buffer.append(String.format("%+.2f%s %s%s", r.effect * r.quantity * multiplier, percent, Rune.translateEffect(r.effectName), at18));
+            buffer.append("<br/>");
+        }
+        
+        buffer.append("</body></html>");
+        
+        return buffer.toString();
+    }
+    
+    public static void copyPage(int p1, int p2) {
+        RunePage mine = runePages.get(p1);
+        RunePage theirs = runePages2.get(p2);
+        
+        // Make sure we have enough runes
+        Map<Integer, Rune> requiredRunes = theirs.getPageContents();
+        for (Rune entry : requiredRunes.values()) {
+            if (!runeInventory.containsKey(entry.id)
+                || runeInventory.get(entry.id).quantity < entry.quantity) {
+                JOptionPane.showMessageDialog(sorterWindow, "You don't have enough " + entry.name + " runes", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        }
+        
+        // Get a name for this page
+        String name = (String)JOptionPane.showInputDialog(
+                sorterWindow,
+                "Name the page:",
+                "Copy Rune Page",
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                null,
+                theirs.name);
+        
+        if (name == null)
+            return;
+        
+        // Copy and save
+        mine.copy(theirs);
+        mine.name = name;
+        savePages();
+        selectRunePage(p1);
     }
 }
