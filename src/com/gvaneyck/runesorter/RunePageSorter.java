@@ -371,13 +371,14 @@ public class RunePageSorter {
         
         try {
             runePages2 = getRunePages(player);
-            sorterWindow.updateRunePages2(runePages2);
             if (runePages2 == null) {
+                sorterWindow.updateRunePages2(runePages2);
                 System.out.println("No player found with summoner name " + player);
                 return;
             }
             else {
                 Collections.sort(runePages2);
+                sorterWindow.updateRunePages2(runePages2);
             }
         }
         catch (IOException e) {
