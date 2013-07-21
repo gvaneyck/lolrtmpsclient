@@ -24,6 +24,12 @@ public class RunePage implements Comparable {
         current = page.getBool("current");
         this.page = page;
     }
+    
+    public void copy(RunePage target) {
+        name = target.name;
+        page = target.page;
+        pageContents = target.pageContents;
+    }
 
     public void swap(RunePage target) {
         String tempName = target.name;

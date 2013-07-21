@@ -7,9 +7,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyBoundsListener;
 import java.awt.event.HierarchyEvent;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
-import java.util.ArrayList;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.util.List;
 
 import javax.swing.JButton;
@@ -18,6 +17,7 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
 import javax.swing.event.ListSelectionEvent;
@@ -29,11 +29,16 @@ import com.gvaneyck.util.Tuple;
 public class SorterWindow extends JFrame {
     private static final long serialVersionUID = -4909493574753556479L;
 
+    public static final int MIN_WIDTH = 250;
+    public static final int MIN_HEIGHT = 520;
+    
+    public static final int EXPAND_WIDTH = 250;
+    
     private final JButton btnSort = new JButton("Sort Alphabetically");
     private final JButton btnMoveUp = new JButton("Move Up");
     private final JButton btnMoveDown = new JButton("Move Down");
 
-    private final JSeparator sep = new JSeparator(JSeparator.HORIZONTAL);
+    private final JSeparator sep1 = new JSeparator(JSeparator.HORIZONTAL);
 
     private final JLabel lblRunePages = new JLabel("Rune Pages");
     private final RunePageListModel lstRuneModel = new RunePageListModel();
@@ -45,15 +50,30 @@ public class SorterWindow extends JFrame {
     private final JList lstMasteryPages = new JList(lstMasteryModel);
     private final JScrollPane lstMasteryScroll = new JScrollPane(lstMasteryPages);
     
-    private final JLabel lblSide = new JLabel("");
+    private final JLabel lblSide1 = new JLabel("");
+    
+    private final JSeparator sep2 = new JSeparator(JSeparator.HORIZONTAL);
+    
+    private final JLabel lblSearch = new JLabel("Search & Copy");
+    private final JTextField txtSearch = new JTextField();
+    
+    private final JLabel lblRunePages2 = new JLabel("Rune Pages");
+    private final RunePageListModel lstRuneModel2 = new RunePageListModel();
+    private final JList lstRunePages2 = new JList(lstRuneModel2);
+    private final JScrollPane lstRuneScroll2 = new JScrollPane(lstRunePages2);
+    
+    private final JLabel lblSide2 = new JLabel("");
+    
+    private final JButton btnCopy = new JButton("^^^ Copy Page ^^^");
 
     private int lastSelectedPage = -1;
     private int lastSelectedMasteries = -1;
     private boolean changingSelection = false;
-
-    public static int width = 550;
-    public static int height = 320;
+    private boolean isExpanded = false;
     
+    private int width = MIN_WIDTH;
+    private int height = MIN_HEIGHT;
+
     // Callbacks
     public Callback runeSorterListener;
     public Callback masterySorterListener;
@@ -61,18 +81,25 @@ public class SorterWindow extends JFrame {
     public Callback masterySwapListener;
     public Callback runeSelectListener;
     public Callback masterySelectListener;
+    
+    public Callback searchListener;
+    public Callback runeSelectListener2;
+    
+    public Callback copyListener;
 
     public SorterWindow() {
         setTitle("Rune/Mastery Page Manager");
         
         // GUI settings
         lstRunePages.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        lblSide.setVerticalAlignment(SwingConstants.TOP);
+        lblSide1.setVerticalAlignment(SwingConstants.TOP);
+        lblSide2.setVerticalAlignment(SwingConstants.TOP);
 
         // Initially grey out buttons
         btnSort.setEnabled(false);
         btnMoveUp.setEnabled(false);
         btnMoveDown.setEnabled(false);
+        btnCopy.setVisible(false);
 
         // Add the items
         Container pane = getContentPane();
@@ -82,14 +109,30 @@ public class SorterWindow extends JFrame {
         pane.add(btnMoveUp);
         pane.add(btnMoveDown);
 
-        pane.add(sep);
+        pane.add(sep1);
 
         pane.add(lblRunePages);
         pane.add(lstRuneScroll);
         pane.add(lblMasteryPages);
         pane.add(lstMasteryScroll);
         
-        pane.add(lblSide);
+        pane.add(lblSide1);
+        
+        pane.add(sep2);
+        
+        pane.add(lblSearch);
+        pane.add(txtSearch);
+
+        pane.add(lblRunePages2);
+        pane.add(lstRuneScroll2);
+        
+        pane.add(lblSide2);
+        
+        pane.add(btnCopy);
+        
+        // Minor Z order edit
+        pane.setComponentZOrder(btnCopy, 0);
+        pane.setComponentZOrder(sep2, 1);
 
         // Listeners
         btnSort.addActionListener(new ActionListener() {
@@ -151,6 +194,8 @@ public class SorterWindow extends JFrame {
                 lastSelectedPage = lstRunePages.getSelectedIndex();
                 lstMasteryPages.clearSelection();
                 lastSelectedMasteries = -1;
+                if (!lblSide2.getText().isEmpty())
+                    btnCopy.setVisible(true);
                 changingSelection = false;
                 
                 if (runeSelectListener != null)
@@ -167,10 +212,38 @@ public class SorterWindow extends JFrame {
                 lastSelectedMasteries = lstMasteryPages.getSelectedIndex();
                 lastSelectedPage = -1;
                 lstRunePages.clearSelection();
+                btnCopy.setVisible(false);
                 changingSelection = false;
 
                 if (masterySelectListener != null)
                     masterySelectListener.callback(lastSelectedPage);
+            }
+        });
+        
+        txtSearch.addKeyListener(new KeyListener() {
+            public void keyTyped(KeyEvent e) {
+                if (e.getKeyChar() == '\n' && searchListener != null)
+                    searchListener.callback(txtSearch.getText());
+            }
+            
+            public void keyReleased(KeyEvent e) { }
+            public void keyPressed(KeyEvent e) { }
+        });
+        
+        lstRunePages2.addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                if (runeSelectListener2 != null)
+                    runeSelectListener2.callback(lstRunePages2.getSelectedIndex());
+                if (lastSelectedPage != -1)
+                    btnCopy.setVisible(true);
+            }
+        });
+        
+        btnCopy.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (!lblSide1.getText().isEmpty() && !lblSide2.getText().isEmpty() && copyListener != null) {
+                    copyListener.callback(new Tuple(lastSelectedPage, lstRunePages2.getSelectedIndex()));
+                }
             }
         });
 
@@ -187,7 +260,7 @@ public class SorterWindow extends JFrame {
 
         // Window settings
         setSize(width, height);
-        setMinimumSize(new Dimension(width, height));
+        setMinimumSize(new Dimension(MIN_WIDTH, MIN_HEIGHT));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setVisible(true);
     }
@@ -218,27 +291,71 @@ public class SorterWindow extends JFrame {
         lstMasteryModel.update();
     }
     
+    public void updateRunePages2(List<RunePage> pages) {
+        lstRuneModel2.clear();
+        lstRunePages2.clearSelection();
+        if (pages != null)
+            for (RunePage page : pages)
+                lstRuneModel2.add(page);
+        lstRuneModel2.update();
+        runeSelectListener2.callback(-1);
+    }
+    
     public void setInfo1(String text) {
-        lblSide.setText(text);
+        lblSide1.setText(text);
+        adjustSize();
+    }
+    
+    public void setInfo2(String text) {
+        lblSide2.setText(text);
+        adjustSize();
+    }
+    
+    private void adjustSize() {
+        if (isExpanded && lblSide1.getText().isEmpty() && lblSide2.getText().isEmpty()) {
+            isExpanded = false;
+            width -= EXPAND_WIDTH;
+            setMinimumSize(new Dimension(MIN_WIDTH, MIN_HEIGHT));
+            setSize(width, height);
+        }
+        if (!isExpanded && (!lblSide1.getText().isEmpty() || !lblSide2.getText().isEmpty())) {
+            isExpanded = true;
+            width += EXPAND_WIDTH;
+            setMinimumSize(new Dimension(MIN_WIDTH + EXPAND_WIDTH, MIN_HEIGHT));
+            setSize(width, height);
+        }
     }
     
     private void doMyLayout() {
         Insets i = getInsets();
-        int twidth = width - i.left - i.right - 300;
+        int twidthfull = width - i.left - i.right;
+        int twidth = twidthfull - (isExpanded ? EXPAND_WIDTH : 0);
         int theight = height - i.top - i.bottom;
 
         btnSort.setBounds(5, 5, twidth - 10, 24);
         btnMoveUp.setBounds(5, 34, twidth / 2 - 10, 24);
         btnMoveDown.setBounds(5 + twidth / 2, 34, twidth / 2 - 10, 24);
 
-        sep.setBounds(5, 63, twidth - 10, 5);
+        sep1.setBounds(5, 63, twidth - 10, 5);
 
-        int scrollHeight = theight / 2 - 50;
+        int scrollHeight = (theight - 165) / 3;
         lblRunePages.setBounds(5, 65, twidth - 9, 15);
         lstRuneScroll.setBounds(5, 80, twidth - 9, scrollHeight);
         lblMasteryPages.setBounds(5, 80 + scrollHeight, twidth - 9, 15);
         lstMasteryScroll.setBounds(5, 95 + scrollHeight, twidth - 9, scrollHeight);
         
-        lblSide.setBounds(twidth + 5, 5, 290, theight - 10);
+        lblSide1.setBounds(twidth + 5, 5, EXPAND_WIDTH - 10, 95 + 2 * scrollHeight);
+        
+        sep2.setBounds(5, 100 + 2 * scrollHeight, twidthfull - 10, 5);
+        
+        lblSearch.setBounds(5, 105 + 2 * scrollHeight, twidth - 9, 15);
+        txtSearch.setBounds(5, 120 + 2 * scrollHeight, twidth - 9, 24);
+        
+        lblRunePages2.setBounds(5, 145 + 2 * scrollHeight, twidth - 9, 15);
+        lstRuneScroll2.setBounds(5, 160 + 2 * scrollHeight, twidth - 9, scrollHeight);
+        
+        lblSide2.setBounds(twidth + 5, 120 + 2 * scrollHeight, EXPAND_WIDTH - 10, scrollHeight + 30);
+        
+        btnCopy.setBounds(twidth + 45, 87 + 2 * scrollHeight, EXPAND_WIDTH - 90, 24);
     }
 }
