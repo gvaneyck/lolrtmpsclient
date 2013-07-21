@@ -158,7 +158,7 @@ public class SorterWindow extends JFrame {
                 }
                 if (lastSelectedMasteries != -1 && lastSelectedMasteries != 0) {
                     if (masterySwapListener != null)
-                        masterySwapListener.callback(new Tuple(lastSelectedPage, lastSelectedPage - 1));
+                        masterySwapListener.callback(new Tuple(lastSelectedMasteries, lastSelectedMasteries - 1));
 
                     lastSelectedMasteries--;
                     lstMasteryPages.setSelectedIndex(lastSelectedMasteries);
@@ -177,7 +177,7 @@ public class SorterWindow extends JFrame {
                 }
                 if (lastSelectedMasteries != -1 && lastSelectedMasteries != lstMasteryPages.getModel().getSize() - 1) {
                     if (masterySwapListener != null)
-                        masterySwapListener.callback(new Tuple(lastSelectedPage, lastSelectedPage + 1));
+                        masterySwapListener.callback(new Tuple(lastSelectedMasteries, lastSelectedMasteries + 1));
 
                     lastSelectedMasteries++;
                     lstMasteryPages.setSelectedIndex(lastSelectedMasteries);
