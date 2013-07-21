@@ -194,7 +194,7 @@ public class SorterWindow extends JFrame {
                 lastSelectedPage = lstRunePages.getSelectedIndex();
                 lstMasteryPages.clearSelection();
                 lastSelectedMasteries = -1;
-                if (!lblSide2.getText().isEmpty())
+                if (!lblSide2.getText().equals(""))
                     btnCopy.setVisible(true);
                 changingSelection = false;
                 
@@ -241,7 +241,7 @@ public class SorterWindow extends JFrame {
         
         btnCopy.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if (!lblSide1.getText().isEmpty() && !lblSide2.getText().isEmpty() && copyListener != null) {
+                if (!lblSide1.getText().equals("") && !lblSide2.getText().equals("") && copyListener != null) {
                     copyListener.callback(new Tuple(lastSelectedPage, lstRunePages2.getSelectedIndex()));
                 }
             }
@@ -312,13 +312,13 @@ public class SorterWindow extends JFrame {
     }
     
     private void adjustSize() {
-        if (isExpanded && lblSide1.getText().isEmpty() && lblSide2.getText().isEmpty()) {
+        if (isExpanded && lblSide1.getText().equals("") && lblSide2.getText().equals("")) {
             isExpanded = false;
             width -= EXPAND_WIDTH;
             setMinimumSize(new Dimension(MIN_WIDTH, MIN_HEIGHT));
             setSize(width, height);
         }
-        if (!isExpanded && (!lblSide1.getText().isEmpty() || !lblSide2.getText().isEmpty())) {
+        if (!isExpanded && (!lblSide1.getText().equals("") || !lblSide2.getText().equals(""))) {
             isExpanded = true;
             width += EXPAND_WIDTH;
             setMinimumSize(new Dimension(MIN_WIDTH + EXPAND_WIDTH, MIN_HEIGHT));
