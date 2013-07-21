@@ -34,7 +34,7 @@ public class SettingsWindow extends JDialog {
     private static final long serialVersionUID = -292661627143118163L;
 
     private final JLabel lblRegion = new JLabel("Region");
-    private final JComboBox cboRegion = new JComboBox();
+    private final JComboBox<ServerInfo> cboRegion = new JComboBox<ServerInfo>();
     
     private final JLabel lblUsername = new JLabel("Username");
     private final JTextField txtUsername = new JTextField();

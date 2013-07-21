@@ -1,6 +1,8 @@
 package com.gvaneyck.runesorter;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.gvaneyck.rtmp.encoding.TypedObject;
@@ -10,48 +12,46 @@ public class Rune {
     public String name;
     public int tier;
     public int quantity;
-    public double effect;
-    public String effectName;
+    public List<RuneEffect> runeEffects = new ArrayList<RuneEffect>();
     
-    public static final Map<String, String> effectNames;
+    public static final Map<String, String> effectTranslations;
     
     static {
-        effectNames = new HashMap<String, String>();
-        effectNames.put("FlatArmorMod", "Armor");
-        effectNames.put("FlatCritChanceMod", "Crit Chance");
-        effectNames.put("FlatCritDamageMod", "Crit Damage");
-        effectNames.put("FlatEnergyPoolMod", "Energy");
-        effectNames.put("FlatEnergyRegenMod", "Energy/5");
-        effectNames.put("FlatHPPoolMod", "HP");
-        effectNames.put("FlatHPRegenMod", "HP/5");
-        effectNames.put("FlatMagicDamageMod", "AP");
-        effectNames.put("FlatMPPoolMod", "MP");
-        effectNames.put("FlatMPRegenMod", "MP/5");
-        effectNames.put("FlatPhysicalDamageMod", "Damage");
-        effectNames.put("FlatSpellBlockMod", "MR");
-        effectNames.put("PercentAttackSpeedMod", "AS");
-        effectNames.put("PercentEXPBonus", "XP");
-        effectNames.put("PercentHPPoolMod", "HP");
-        effectNames.put("PercentLifeStealMod", "Life Steal");
-        effectNames.put("PercentMovementSpeedMod", "MS");
-        effectNames.put("PercentSpellVampMod", "Spell Vamp");
-        effectNames.put("rFlatArmorModPerLevel", "Armor");
-        effectNames.put("rFlatArmorPenetrationMod", "Armor Pen");
-        effectNames.put("rFlatEnergyModPerLevel", "Energy");
-        effectNames.put("rFlatEnergyRegenModPerLevel", "Energy/5");
-        effectNames.put("rFlatGoldPer10Mod", "Gold/10");
-        effectNames.put("rFlatHPModPerLevel", "HP");
-        effectNames.put("rFlatHPRegenModPerLevel", "HP/5");
-        effectNames.put("rFlatMagicDamageModPerLevel", "AP");
-        effectNames.put("rFlatMagicPenetrationMod", "Magic Pen");
-        effectNames.put("rFlatMPModPerLevel", "MP");
-        effectNames.put("rFlatMPRegenModPerLevel", "MP/5"); //PP 8.9
-        effectNames.put("rFlatPhysicalDamageModPerLevel", "Damage");
-        effectNames.put("rFlatSpellBlockModPerLevel", "MR");
-        effectNames.put("rPercentCooldownMod", "Cooldown");
-        effectNames.put("rPercentCooldownModPerLevel", "Cooldown");
-        effectNames.put("rPercentTimeDeadMod", "Time Dead");
-
+        effectTranslations = new HashMap<String, String>();
+        effectTranslations.put("FlatArmorMod", "Armor");
+        effectTranslations.put("FlatCritChanceMod", "Crit Chance");
+        effectTranslations.put("FlatCritDamageMod", "Crit Damage");
+        effectTranslations.put("FlatEnergyPoolMod", "Energy");
+        effectTranslations.put("FlatEnergyRegenMod", "Energy/5");
+        effectTranslations.put("FlatHPPoolMod", "HP");
+        effectTranslations.put("FlatHPRegenMod", "HP/5");
+        effectTranslations.put("FlatMagicDamageMod", "AP");
+        effectTranslations.put("FlatMPPoolMod", "MP");
+        effectTranslations.put("FlatMPRegenMod", "MP/5");
+        effectTranslations.put("FlatPhysicalDamageMod", "Damage");
+        effectTranslations.put("FlatSpellBlockMod", "MR");
+        effectTranslations.put("PercentAttackSpeedMod", "AS");
+        effectTranslations.put("PercentEXPBonus", "XP");
+        effectTranslations.put("PercentHPPoolMod", "HP");
+        effectTranslations.put("PercentLifeStealMod", "Life Steal");
+        effectTranslations.put("PercentMovementSpeedMod", "MS");
+        effectTranslations.put("PercentSpellVampMod", "Spell Vamp");
+        effectTranslations.put("rFlatArmorModPerLevel", "Armor");
+        effectTranslations.put("rFlatArmorPenetrationMod", "Armor Pen");
+        effectTranslations.put("rFlatEnergyModPerLevel", "Energy");
+        effectTranslations.put("rFlatEnergyRegenModPerLevel", "Energy/5");
+        effectTranslations.put("rFlatGoldPer10Mod", "Gold/10");
+        effectTranslations.put("rFlatHPModPerLevel", "HP");
+        effectTranslations.put("rFlatHPRegenModPerLevel", "HP/5");
+        effectTranslations.put("rFlatMagicDamageModPerLevel", "AP");
+        effectTranslations.put("rFlatMagicPenetrationMod", "Magic Pen");
+        effectTranslations.put("rFlatMPModPerLevel", "MP");
+        effectTranslations.put("rFlatMPRegenModPerLevel", "MP/5"); //PP 8.9
+        effectTranslations.put("rFlatPhysicalDamageModPerLevel", "Damage");
+        effectTranslations.put("rFlatSpellBlockModPerLevel", "MR");
+        effectTranslations.put("rPercentCooldownMod", "Cooldown");
+        effectTranslations.put("rPercentCooldownModPerLevel", "Cooldown");
+        effectTranslations.put("rPercentTimeDeadMod", "Time Dead");
     }
     
     public Rune(TypedObject rune) {
@@ -64,28 +64,41 @@ public class Rune {
         else
             quantity = 1;
 
-        TypedObject effectInfo = (TypedObject)rune.getTO("rune").getArray("itemEffects")[0];
-        effect = Double.parseDouble(effectInfo.getString("value"));
-        effectName = effectInfo.getTO("effect").getString("name");
-    }
-    
-    public Rune(Rune r1, Rune r2) {
-        quantity = 1;
-        effect = r1.quantity * r1.effect + r2.quantity * r2.effect;
-        effectName = r1.effectName;
+        Object[] effectList = rune.getTO("rune").getArray("itemEffects");
+        for (Object o : effectList) {
+            TypedObject effectInfo = (TypedObject)o;
+            runeEffects.add(new RuneEffect(Double.parseDouble(effectInfo.getString("value")), effectInfo.getTO("effect").getString("name")));
+        }
     }
     
     public String toString() {
-        String value;
-        if (effectName.contains("Percent"))
-            value = String.format("%+.2f%%", effect * quantity * 100);
-        else
-            value = String.format("%+.2f", effect * quantity);
+        StringBuilder buffer = new StringBuilder();
+        buffer.append(name);
+        buffer.append(": ");
         
-        return String.format("%s: %s %s", name, value, effectName);
+        for (RuneEffect effect : runeEffects) {
+            double multiplier = 1;
+            String percent = "";
+            String at18 = "";
+            if (effect.effectName.contains("Percent")) {
+                multiplier *= 100;
+                percent = "%";
+            }
+            if (effect.effectName.contains("PerLevel")) {
+                multiplier *= 18;
+                at18 = " at 18";
+            }
+            if (effect.effectName.contains("Regen")) {
+                multiplier *= 5;
+            }
+    
+            buffer.append(String.format("%+.2f%s %s%s", effect.value * quantity * multiplier, percent, translateEffect(effect.effectName), at18));
+        }
+
+        return buffer.toString();
     }
     
     public static String translateEffect(String effect) {
-        return effectNames.get(effect);
+        return effectTranslations.get(effect);
     }
 }

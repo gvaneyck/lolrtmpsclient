@@ -7,7 +7,7 @@ import com.gvaneyck.rtmp.encoding.TypedObject;
  * 
  * @author Gvaneyck
  */
-public class MasteryPage implements Comparable {
+public class MasteryPage implements Comparable<MasteryPage> {
     public Integer pageId;
     public String name;
     public Boolean current;
@@ -60,12 +60,8 @@ public class MasteryPage implements Comparable {
         return ret;
     }
 
-    public int compareTo(Object o) {
-        if (o instanceof MasteryPage) {
-            MasteryPage temp = (MasteryPage)o;
-            return pageId.compareTo(temp.pageId);
-        }
-        return 0;
+    public int compareTo(MasteryPage page) {
+        return pageId.compareTo(page.pageId);
     }
 
     public String toString() {

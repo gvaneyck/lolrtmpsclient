@@ -42,12 +42,12 @@ public class SorterWindow extends JFrame {
 
     private final JLabel lblRunePages = new JLabel("Rune Pages");
     private final RunePageListModel lstRuneModel = new RunePageListModel();
-    private final JList lstRunePages = new JList(lstRuneModel);
+    private final JList<RunePage> lstRunePages = new JList<RunePage>(lstRuneModel);
     private final JScrollPane lstRuneScroll = new JScrollPane(lstRunePages);
 
     private final JLabel lblMasteryPages = new JLabel("Mastery Pages");
     private final MasteryPageListModel lstMasteryModel = new MasteryPageListModel();
-    private final JList lstMasteryPages = new JList(lstMasteryModel);
+    private final JList<MasteryPage> lstMasteryPages = new JList<MasteryPage>(lstMasteryModel);
     private final JScrollPane lstMasteryScroll = new JScrollPane(lstMasteryPages);
     
     private final JLabel lblSide1 = new JLabel("");
@@ -59,7 +59,7 @@ public class SorterWindow extends JFrame {
     
     private final JLabel lblRunePages2 = new JLabel("Rune Pages");
     private final RunePageListModel lstRuneModel2 = new RunePageListModel();
-    private final JList lstRunePages2 = new JList(lstRuneModel2);
+    private final JList<RunePage> lstRunePages2 = new JList<RunePage>(lstRuneModel2);
     private final JScrollPane lstRuneScroll2 = new JScrollPane(lstRunePages2);
     
     private final JLabel lblSide2 = new JLabel("");

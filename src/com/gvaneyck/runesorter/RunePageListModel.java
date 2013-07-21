@@ -12,7 +12,7 @@ import javax.swing.event.ListDataListener;
  * 
  * @author Gvaneyck
  */
-public class RunePageListModel implements ListModel {
+public class RunePageListModel implements ListModel<RunePage> {
     List<ListDataListener> listeners = new ArrayList<ListDataListener>();
     List<RunePage> data = new ArrayList<RunePage>();
 
@@ -36,7 +36,7 @@ public class RunePageListModel implements ListModel {
         listeners.add(l);
     }
 
-    public Object getElementAt(int index) {
+    public RunePage getElementAt(int index) {
         return data.get(index);
     }
 

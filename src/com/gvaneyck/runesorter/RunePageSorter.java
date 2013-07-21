@@ -139,6 +139,11 @@ public class RunePageSorter {
         
         // Connect
         Settings settings = settingsWindow.getSettings();
+        if (settings.version.isEmpty() || settings.username.isEmpty() || settings.password.isEmpty()) {
+            System.out.println("Missing required information, restart the program to enter the information");
+            return;
+        }
+        
         client = new LoLRTMPSClient(settings.region, settings.version, settings.username, settings.password);
         
         try {
@@ -396,19 +401,22 @@ public class RunePageSorter {
         buffer.append(page.name);
         buffer.append("<br/>");
         
-        Map<String, Rune> contents2 = new HashMap<String, Rune>();
+        Map<String, RuneEffect> contents2 = new HashMap<String, RuneEffect>();
         for (int key : pageContents.keySet()) {
             Rune r = pageContents.get(key);
-            if (contents2.containsKey(r.effectName)) {
-                Rune r2 = contents2.get(r.effectName);
-                contents2.put(r.effectName, new Rune(r, r2));
-            }
-            else {
-                contents2.put(r.effectName, r);
+            for (RuneEffect effect : r.runeEffects) {
+                String name = effect.effectName;
+                if (contents2.containsKey(name)) {
+                    RuneEffect effect2 = contents2.get(name);
+                    effect2.value += r.quantity * effect.value;
+                }
+                else {
+                    contents2.put(name, new RuneEffect(r.quantity * effect.value, name));
+                }
             }
         }
          
-        for (Rune r : contents2.values()) {
+        for (RuneEffect r : contents2.values()) {
             double multiplier = 1;
             String percent = "";
             String at18 = "";
@@ -424,7 +432,7 @@ public class RunePageSorter {
                 multiplier *= 5;
             }
 
-            buffer.append(String.format("%+.2f%s %s%s", r.effect * r.quantity * multiplier, percent, Rune.translateEffect(r.effectName), at18));
+            buffer.append(String.format("%+.2f%s %s%s", r.value * multiplier, percent, Rune.translateEffect(r.effectName), at18));
             buffer.append("<br/>");
         }
         

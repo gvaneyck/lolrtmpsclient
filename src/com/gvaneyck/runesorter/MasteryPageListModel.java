@@ -12,7 +12,7 @@ import javax.swing.event.ListDataListener;
  * 
  * @author Gvaneyck
  */
-public class MasteryPageListModel implements ListModel {
+public class MasteryPageListModel implements ListModel<MasteryPage> {
     List<ListDataListener> listeners = new ArrayList<ListDataListener>();
     List<MasteryPage> data = new ArrayList<MasteryPage>();
 
@@ -36,7 +36,7 @@ public class MasteryPageListModel implements ListModel {
         listeners.add(l);
     }
 
-    public Object getElementAt(int index) {
+    public MasteryPage getElementAt(int index) {
         return data.get(index);
     }
 
