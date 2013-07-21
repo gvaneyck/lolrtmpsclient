@@ -89,6 +89,7 @@ public class LoLRTMPSClient extends RTMPSClient {
     /**
      * Hidden constructor
      */
+    @SuppressWarnings("unused")
     private LoLRTMPSClient() {
         super();
     }

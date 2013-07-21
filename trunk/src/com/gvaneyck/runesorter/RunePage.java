@@ -10,7 +10,7 @@ import com.gvaneyck.rtmp.encoding.TypedObject;
  * 
  * @author Gvaneyck
  */
-public class RunePage implements Comparable {
+public class RunePage implements Comparable<RunePage> {
     public Integer pageId;
     public String name;
     public Boolean current;
@@ -92,12 +92,8 @@ public class RunePage implements Comparable {
         return pageContents;
     }
 
-    public int compareTo(Object o) {
-        if (o instanceof RunePage) {
-            RunePage temp = (RunePage)o;
-            return pageId.compareTo(temp.pageId);
-        }
-        return 0;
+    public int compareTo(RunePage page) {
+        return pageId.compareTo(page.pageId);
     }
 
     public String toString() {
