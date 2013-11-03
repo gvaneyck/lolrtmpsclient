@@ -127,7 +127,7 @@ public class SettingsWindow extends JDialog {
         if (config.containsKey("region")) {
             String region = config.get("region");
             if (regionMap.containsKey(region.toUpperCase())) {
-                cboRegion.setSelectedItem(region);
+                cboRegion.setSelectedItem(regionMap.get(region.toUpperCase()));
             }
         }
         else {
