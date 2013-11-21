@@ -20,6 +20,11 @@ public class MasteryPage implements Comparable<MasteryPage> {
         talents = page.getArray("talentEntries");
     }
 
+    public void copy(MasteryPage target) {
+        name = target.name;
+        talents = target.talents;
+    }
+
     public void swap(MasteryPage target) {
         String tempName = target.name;
         target.name = name;

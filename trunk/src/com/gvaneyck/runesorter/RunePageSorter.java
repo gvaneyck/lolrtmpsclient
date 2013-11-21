@@ -32,6 +32,7 @@ public class RunePageSorter {
     public static Map<Integer, Rune> runeInventory = new HashMap<Integer, Rune>();
     
     public static List<RunePage> runePages2;
+    public static List<MasteryPage> masteryPages2;
 
     public static int acctId = 0;
     public static int summId = 0;
@@ -83,7 +84,7 @@ public class RunePageSorter {
                 Tuple t = (Tuple)data;
                 RunePage current = runePages.get((Integer)t.obj1);
                 current.swap(runePages.get((Integer)t.obj2));
-                savePages();
+                saveRunePages();
             }
         };
 
@@ -92,7 +93,7 @@ public class RunePageSorter {
                 Tuple t = (Tuple)data;
                 MasteryPage current = masteryPages.get((Integer)t.obj1);
                 current.swap(masteryPages.get((Integer)t.obj2));
-                saveMasteries();
+                saveMasteryPages();
             }
         };
 
@@ -104,7 +105,7 @@ public class RunePageSorter {
         
         sorterWindow.masterySelectListener = new Callback() {
             public void callback(Object data) {
-                sorterWindow.setInfo1("");
+            	selectMasteryPage((Integer)data);
             }
         };
         
@@ -120,10 +121,23 @@ public class RunePageSorter {
             }
         };
         
-        sorterWindow.copyListener = new Callback() {
+        sorterWindow.masterySelectListener2 = new Callback() {
+            public void callback(Object data) {
+                selectMasteryPage2((Integer)data);
+            }
+        };
+        
+        sorterWindow.copyRuneListener = new Callback() {
             public void callback(Object data) {
                 Tuple t = (Tuple)data;
-                copyPage((Integer)t.obj1, (Integer)t.obj2);
+                copyRunePage((Integer)t.obj1, (Integer)t.obj2);
+            }
+        };
+
+        sorterWindow.copyMasteryListener = new Callback() {
+            public void callback(Object data) {
+                Tuple t = (Tuple)data;
+                copyMasteryPage((Integer)t.obj1, (Integer)t.obj2);
             }
         };
 
@@ -211,13 +225,13 @@ public class RunePageSorter {
         }
     }
     
-    public static List<RunePage> getRunePages(String summoner) throws IOException {
+    public static int getSummonerId(String summoner) throws IOException {
         int id = client.invoke("summonerService", "getSummonerByName", new Object[] { summoner });
         TypedObject result = client.getResult(id);
         if (!result.getTO("data").containsKey("body"))
-            return null;
+            return 0;
 
-        return getRunePages(result.getTO("data").getTO("body").getInt("summonerId"));
+        return result.getTO("data").getTO("body").getInt("summonerId");
     }
     
     public static List<RunePage> getRunePages(int summonerId) throws IOException {
@@ -227,6 +241,17 @@ public class RunePageSorter {
         List<RunePage> result = new ArrayList<RunePage>();
         for (Object o : runeBookPages)
             result.add(new RunePage((TypedObject)o));
+        
+        return result;
+    }
+    
+    public static List<MasteryPage> getMasteryPages(int summonerId) throws IOException {
+        int id = client.invoke("masteryBookService", "getMasteryBook", new Object[] { summonerId });
+        Object[] masteryBookPages = client.getResult(id).getTO("data").getTO("body").getArray("bookPages");
+        
+        List<MasteryPage> result = new ArrayList<MasteryPage>();
+        for (Object o : masteryBookPages)
+            result.add(new MasteryPage((TypedObject)o));
         
         return result;
     }
@@ -245,7 +270,7 @@ public class RunePageSorter {
         for (int i = 0; i < runePages.size(); i++)
             runePages.get(i).pageId = pageIds.get(i);
 
-        savePages();
+        saveRunePages();
     }
     
     public static void sortMasteries() {
@@ -262,7 +287,7 @@ public class RunePageSorter {
         for (int i = 0; i < masteryPages.size(); i++)
             masteryPages.get(i).pageId = pageIds.get(i);
 
-        saveMasteries();
+        saveMasteryPages();
     }
     
     public static void selectRunePage(int index) {
@@ -272,7 +297,14 @@ public class RunePageSorter {
             sorterWindow.setInfo1(formatRunePage(runePages.get(index)));
     }
 
-    public static void savePages() {
+    public static void selectMasteryPage(int index) {
+        if (index == -1 || index >= masteryPages.size())
+            sorterWindow.setInfo1("");
+        else
+            sorterWindow.setInfo1(masteryPages.get(index).name);
+    }
+
+    public static void saveRunePages() {
         try {
             TypedObject[] pages2 = new TypedObject[runePages.size()];
             TypedObject currentPage = null;
@@ -322,7 +354,7 @@ public class RunePageSorter {
         }
     }
 
-    public static void saveMasteries() {
+    public static void saveMasteryPages() {
         try {
             TypedObject[] masteries2 = new TypedObject[masteryPages.size()];
             for (int i = 0; i < masteryPages.size(); i++)
@@ -370,16 +402,20 @@ public class RunePageSorter {
             return;
         
         try {
-            runePages2 = getRunePages(player);
-            if (runePages2 == null) {
+        	int summonerId = getSummonerId(player);
+        	if (summonerId == 0) {
                 sorterWindow.updateRunePages2(runePages2);
                 System.out.println("No player found with summoner name " + player);
                 return;
-            }
-            else {
-                Collections.sort(runePages2);
-                sorterWindow.updateRunePages2(runePages2);
-            }
+        	}
+
+        	runePages2 = getRunePages(summonerId);
+            Collections.sort(runePages2);
+            sorterWindow.updateRunePages2(runePages2);
+
+        	masteryPages2 = getMasteryPages(summonerId);
+            Collections.sort(masteryPages2);
+            sorterWindow.updateMasteryPages2(masteryPages2);
         }
         catch (IOException e) {
             System.out.println("Error retrieving rune pages for " + player);
@@ -392,6 +428,13 @@ public class RunePageSorter {
             sorterWindow.setInfo2("");
         else
             sorterWindow.setInfo2(formatRunePage(runePages2.get(index)));
+    }
+    
+    public static void selectMasteryPage2(int index) {
+        if (masteryPages2 == null || index == -1 || index >= masteryPages2.size())
+            sorterWindow.setInfo2("");
+        else
+            sorterWindow.setInfo2(masteryPages2.get(index).name);
     }
     
     private static String formatRunePage(RunePage page) {
@@ -442,7 +485,7 @@ public class RunePageSorter {
         return buffer.toString();
     }
     
-    public static void copyPage(int p1, int p2) {
+    public static void copyRunePage(int p1, int p2) {
         RunePage mine = runePages.get(p1);
         RunePage theirs = runePages2.get(p2);
         
@@ -472,7 +515,31 @@ public class RunePageSorter {
         // Copy and save
         mine.copy(theirs);
         mine.name = name;
-        savePages();
+        saveRunePages();
         selectRunePage(p1);
+    }
+
+    public static void copyMasteryPage(int p1, int p2) {
+        MasteryPage mine = masteryPages.get(p1);
+        MasteryPage theirs = masteryPages2.get(p2);
+        
+        // Get a name for this page
+        String name = (String)JOptionPane.showInputDialog(
+                sorterWindow,
+                "Name the page:",
+                "Copy Rune Page",
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                null,
+                theirs.name);
+        
+        if (name == null)
+            return;
+        
+        // Copy and save
+        mine.copy(theirs);
+        mine.name = name;
+        saveMasteryPages();
+        selectMasteryPage(p1);
     }
 }
