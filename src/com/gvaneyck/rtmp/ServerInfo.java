@@ -5,7 +5,7 @@ package com.gvaneyck.rtmp;
  */
 public class ServerInfo {
     public static final ServerInfo NA = new ServerInfo("NA", "NA1", "North America", "prod.na1.lol.riotgames.com", "https://lq.na1.lol.riotgames.com/");
-    public static final ServerInfo EUW = new ServerInfo("EUW", "EUW1", "Europe West", "prod.eu.lol.riotgames.com", "https://lq.eu.lol.riotgames.com/");
+    public static final ServerInfo EUW = new ServerInfo("EUW", "EUW1", "Europe West", "prod.euw1.lol.riotgames.com", "https://lq.euw1.lol.riotgames.com/");
     public static final ServerInfo EUNE = new ServerInfo("EUNE", "EUN1", "Europe Nordic & East", "prod.eun1.lol.riotgames.com", "https://lq.eun1.lol.riotgames.com/");
     public static final ServerInfo KR = new ServerInfo("KR", "KR", "Korea", "prod.kr.lol.riotgames.com", "https://lq.kr.lol.riotgames.com/");
     public static final ServerInfo BR = new ServerInfo("BR", "BR1", "Brazil", "prod.br.lol.riotgames.com", "https://lq.br.lol.riotgames.com/");
