@@ -2,6 +2,7 @@ package com.gvaneyck.rtmp.encoding;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.regex.Pattern;
 
 /**
  * A map of objects with utility methods
@@ -10,6 +11,8 @@ import java.util.HashMap;
  */
 public class ObjectMap extends HashMap<String, Object> {
     private static final long serialVersionUID = -7957187649383807122L;
+
+    private static Pattern linePattern = Pattern.compile("^", Pattern.MULTILINE);
 
     /**
      * Convenience for going through object hierarchy
@@ -28,7 +31,9 @@ public class ObjectMap extends HashMap<String, Object> {
      * @return The String
      */
     public String getString(String key) {
-        return (String)get(key);
+    	if (get(key) == null)
+    		return "null";
+        return get(key).toString();
     }
 
     /**
@@ -43,7 +48,9 @@ public class ObjectMap extends HashMap<String, Object> {
             return null;
         else if (val instanceof Integer)
             return (Integer)val;
-        else
+        else if (val instanceof Long)
+        	return ((Long)val).intValue();
+    	else
             return ((Double)val).intValue();
     }
 
@@ -59,6 +66,8 @@ public class ObjectMap extends HashMap<String, Object> {
             return null;
         else if (val instanceof Integer)
             return ((Integer)val).longValue();
+        else if (val instanceof Long)
+            return ((Long)val).longValue();
         else
             return ((Double)val).longValue();
     }
@@ -107,5 +116,86 @@ public class ObjectMap extends HashMap<String, Object> {
      */
     public Date getDate(String key) {
         return (Date)get(key);
+    }
+    
+    /**
+     * Makes a pretty (indented) human readable form of this object
+     * 
+     * @return A pretty string
+     */
+    public String toPrettyString() {
+        String[] keys = keySet().toArray(new String[0]);
+        if (keys.length == 0)
+            return "{ }\n";
+
+        StringBuilder buff = new StringBuilder();
+
+        buff.append("{\n");
+        for (int i = 0; i < keys.length; i++) {
+            String key = keys[i];
+
+            if (get(key) instanceof Object[])
+            	buff.append(key + '=' + indent(arrayToString((Object[])get(key))));
+            else if (get(key) == null) {
+                buff.append("    ");
+                buff.append(key);
+                buff.append("=null");
+            }
+            else if (get(key) instanceof Double) {
+                buff.append("    ");
+                buff.append(key);
+                buff.append('=');
+                buff.append(((Double)get(key)).longValue());
+            }
+            else if (get(key) instanceof ObjectMap)
+            	buff.append(indent(key + '=' + ((ObjectMap)get(key)).toPrettyString()));
+            else
+                buff.append(indent(key + '=' + get(key).toString()));
+
+            if (i < keys.length - 1)
+                buff.append(",\n");
+        }
+        buff.append("\n}\n");
+
+        return buff.toString();
+    }
+
+    /**
+     * Turns an array into a pretty string
+     * 
+     * @param array The array to transform
+     * @return A pretty string
+     */
+    private String arrayToString(Object[] array) {
+        if (array.length == 0)
+            return "[ ]\n";
+
+        StringBuilder buff = new StringBuilder();
+
+        buff.append("[\n");
+        for (int i = 0; i < array.length; i++) {
+            if (array[i] == null)
+                buff.append("    null");
+            else if (array[i] instanceof TypedObject)
+            	buff.append(indent(((TypedObject)array[i]).toPrettyString()));
+            else
+                buff.append(indent(array[i].toString()));
+
+            if (i < array.length - 1)
+                buff.append(",\n");
+        }
+        buff.append("\n]\n");
+
+        return buff.toString();
+    }
+
+    /**
+     * Indents some text
+     * 
+     * @param data The text to indent
+     * @return Indented text
+     */
+    private String indent(String data) {
+        return linePattern.matcher(data.trim()).replaceAll("    ");
     }
 }

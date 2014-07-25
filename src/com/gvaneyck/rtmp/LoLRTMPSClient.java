@@ -59,7 +59,7 @@ public class LoLRTMPSClient extends RTMPSClient {
      * @param args Unused
      */
     public static void main(String[] args) {
-        LoLRTMPSClient client = new LoLRTMPSClient(ServerInfo.NA, "3.03.FOOBAR", "user", "pass");
+        LoLRTMPSClient client = new LoLRTMPSClient(ServerInfo.NA, "4.8.FOOBAR", "qweasn", "123qwe123qw");
 
         try {
             int id;

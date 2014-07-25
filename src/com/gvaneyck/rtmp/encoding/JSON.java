@@ -223,7 +223,7 @@ public class JSON {
                 throw new JSONParsingException("Tried parsing number but got: '" + c + "'");
 
             if (isInt)
-                return Integer.parseInt(buff.toString());
+                return Long.parseLong(buff.toString());
             else
                 return Double.parseDouble(buff.toString());
         }
