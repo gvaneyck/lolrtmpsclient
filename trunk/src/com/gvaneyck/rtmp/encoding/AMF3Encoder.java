@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import com.gvaneyck.util.ByteUtils;
+
 /**
  * Encodes AMF3 data and packets for RTMP
  * 
@@ -63,6 +65,9 @@ public class AMF3Encoder {
         byte[] ret = new byte[result.size()];
         for (int i = 0; i < ret.length; i++)
             ret[i] = result.get(i);
+        
+//        System.out.println(ByteUtils.bytesToHex(ret));
+//        System.out.println(ByteUtils.bytesToPrettyHex(ret));
 
         return ret;
     }
