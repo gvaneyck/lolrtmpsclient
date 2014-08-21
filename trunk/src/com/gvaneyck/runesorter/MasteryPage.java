@@ -39,7 +39,7 @@ public class MasteryPage implements Comparable<MasteryPage> {
         current = tempCurrent;
     }
 
-    public TypedObject getSavePage(int summId) {
+    public TypedObject getSavePage(long summId) {
         TypedObject ret = new TypedObject("com.riotgames.platform.summoner.masterybook.MasteryBookPageDTO");
 
         Object[] saveTalents = new Object[talents.length];

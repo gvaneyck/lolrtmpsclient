@@ -49,7 +49,7 @@ public class RunePage implements Comparable<RunePage> {
         pageContents = tempContents;
     }
 
-    public TypedObject getSavePage(int summId) {
+    public TypedObject getSavePage(long summId) {
         TypedObject ret = new TypedObject("com.riotgames.platform.summoner.spellbook.SpellBookPageDTO");
 
         Object[] slots = page.getArray("slotEntries");

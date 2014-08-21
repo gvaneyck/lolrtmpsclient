@@ -203,6 +203,10 @@ public class AMF3Encoder {
             ret.add((byte)0x05);
             writeDouble(ret, (Double)obj);
         }
+        else if (obj instanceof Long) {
+            ret.add((byte)0x05);
+            writeDouble(ret, ((Long)obj).doubleValue());
+        }
         else if (obj instanceof String) {
             ret.add((byte)0x06);
             writeString(ret, (String)obj);
