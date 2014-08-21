@@ -34,8 +34,8 @@ public class RunePageSorter {
     public static List<RunePage> runePages2;
     public static List<MasteryPage> masteryPages2;
 
-    public static int acctId = 0;
-    public static int summId = 0;
+    public static long acctId = 0;
+    public static long summId = 0;
     public static int summLevel = 0;
 
     public static void main(String[] args) {
@@ -184,8 +184,8 @@ public class RunePageSorter {
             TypedObject result = client.getResult(id);
             TypedObject data = result.getTO("data").getTO("body").getTO("allSummonerData");
             TypedObject summoner = data.getTO("summoner");
-            acctId = summoner.getInt("acctId");
-            summId = summoner.getInt("sumId");
+            acctId = summoner.getLong("acctId");
+            summId = summoner.getLong("sumId");
 
             // Get the summoner level
             TypedObject summonerLevel = data.getTO("summonerLevelAndPoints");
@@ -225,16 +225,16 @@ public class RunePageSorter {
         }
     }
     
-    public static int getSummonerId(String summoner) throws IOException {
+    public static long getSummonerId(String summoner) throws IOException {
         int id = client.invoke("summonerService", "getSummonerByName", new Object[] { summoner });
         TypedObject result = client.getResult(id);
         if (!result.getTO("data").containsKey("body"))
             return 0;
 
-        return result.getTO("data").getTO("body").getInt("summonerId");
+        return result.getTO("data").getTO("body").getLong("summonerId");
     }
     
-    public static List<RunePage> getRunePages(int summonerId) throws IOException {
+    public static List<RunePage> getRunePages(long summonerId) throws IOException {
         int id = client.invoke("spellBookService", "getSpellBook", new Object[] { summonerId });
         Object[] runeBookPages = client.getResult(id).getTO("data").getTO("body").getArray("bookPages");
         
@@ -245,7 +245,7 @@ public class RunePageSorter {
         return result;
     }
     
-    public static List<MasteryPage> getMasteryPages(int summonerId) throws IOException {
+    public static List<MasteryPage> getMasteryPages(long summonerId) throws IOException {
         int id = client.invoke("masteryBookService", "getMasteryBook", new Object[] { summonerId });
         Object[] masteryBookPages = client.getResult(id).getTO("data").getTO("body").getArray("bookPages");
         
@@ -402,7 +402,7 @@ public class RunePageSorter {
             return;
         
         try {
-        	int summonerId = getSummonerId(player);
+        	long summonerId = getSummonerId(player);
         	if (summonerId == 0) {
                 sorterWindow.updateRunePages2(runePages2);
                 System.out.println("No player found with summoner name " + player);
