@@ -1,5 +1,9 @@
 package com.gvaneyck.runesorter;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import com.gvaneyck.rtmp.encoding.ObjectMap;
 import com.gvaneyck.rtmp.encoding.TypedObject;
 
 /**
@@ -71,5 +75,68 @@ public class MasteryPage implements Comparable<MasteryPage> {
 
     public String toString() {
         return name;
+    }
+    
+    public void validate() {
+        Map<Integer, Talent> data = new HashMap<Integer, Talent>();
+        for (Object o : talents) {
+            ObjectMap temp = (ObjectMap)o;
+            Talent t = new Talent();
+            t.id = temp.getInt("talentId");
+            t.desc = temp.getMap("talent").getString("level1Desc");
+            t.preReq = temp.getMap("talent").getInt("prereqTalentGameCode");
+            t.row = temp.getMap("talent").getInt("talentRowId");
+            t.rank = temp.getInt("rank");
+            t.max = temp.getMap("talent").getInt("maxRank");
+        }
+        
+        int totalPoints = 0;
+        for (Talent t : data.values()) {
+            totalPoints += t.rank;
+        }
+        if (totalPoints > 30) {
+            System.out.println(name + ": Too many points (" + totalPoints + ")");
+        }
+        
+        for (Talent t : data.values()) {
+            if (t.rank > t.max) {
+                System.out.println(name + ": Too many points in " + t.desc + " (" + t.rank + " of " + t.max + ")");
+            }
+        }
+        
+        for (Talent t : data.values()) {
+            if (t.rank < 0) {
+                System.out.println(name + ": Negative points in " + t.desc + " (" + t.rank + ")");
+            }
+        }
+        
+        for (Talent t : data.values()) {
+            if (t.preReq != null) {
+                Talent preReq = data.get(t.preReq);
+                if (preReq.rank != preReq.max) {
+                    System.out.println(name + ": " + t.desc + " does not have the prereq filled (" + preReq.desc + ")");
+                }
+            }
+        }
+        
+        int[] pointsPerRow = new int[18];
+        for (Talent t : data.values()) {
+            pointsPerRow[t.row - 1] += t.rank;
+        }
+        
+        for (int i = 0; i < 3; i++) {
+            int pts = 0;
+            for (int j = 0; j < 6; j++) {
+                if (pts < j * 4) {
+                    for (int q = j + 1; q < 6; q++) {
+                        if (pointsPerRow[i*6+q] > 0) {
+                            System.out.println(name + ": Not enough points in tree " + i + " row " + j);
+                            break;
+                        }
+                    }
+                }
+                pts += pointsPerRow[i*6+j];
+            }
+        }
     }
 }
