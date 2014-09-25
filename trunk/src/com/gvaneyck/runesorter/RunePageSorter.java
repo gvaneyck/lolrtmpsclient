@@ -250,8 +250,11 @@ public class RunePageSorter {
         Object[] masteryBookPages = client.getResult(id).getTO("data").getTO("body").getArray("bookPages");
         
         List<MasteryPage> result = new ArrayList<MasteryPage>();
-        for (Object o : masteryBookPages)
-            result.add(new MasteryPage((TypedObject)o));
+        for (Object o : masteryBookPages) {
+            MasteryPage temp = new MasteryPage((TypedObject)o);
+            result.add(temp);
+            temp.validate();
+        }
         
         return result;
     }
