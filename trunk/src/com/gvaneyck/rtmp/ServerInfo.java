@@ -4,7 +4,7 @@ package com.gvaneyck.rtmp;
  * Class for storing connection information
  */
 public class ServerInfo {
-    public static final ServerInfo NA = new ServerInfo("NA", "NA1", "North America", "prod.na1.lol.riotgames.com", "https://lq.na1.lol.riotgames.com/");
+    public static final ServerInfo NA = new ServerInfo("NA", "NA1", "North America", "prod.na2.lol.riotgames.com", "https://lq.na2.lol.riotgames.com/");
     public static final ServerInfo EUW = new ServerInfo("EUW", "EUW1", "Europe West", "prod.euw1.lol.riotgames.com", "https://lq.euw1.lol.riotgames.com/");
     public static final ServerInfo EUNE = new ServerInfo("EUNE", "EUN1", "Europe Nordic & East", "prod.eun1.lol.riotgames.com", "https://lq.eun1.lol.riotgames.com/");
     public static final ServerInfo KR = new ServerInfo("KR", "KR", "Korea", "prod.kr.lol.riotgames.com", "https://lq.kr.lol.riotgames.com/");
