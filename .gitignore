@@ -1,0 +1,25 @@
+# IntelliJ files
+*.idea
+*.iml
+
+# Maven files
+*target
+
+# Eclipse files
+*.project
+*.classpath
+*.settings
+*bin
+
+# Other
+*.bat
+*.iws
+*.ipr
+*.log
+.DS_Store
+dependency-reduced-pom.xml
+out
+plugins
+lib
+loccms-frontend/src/main/resources/assets/
+
