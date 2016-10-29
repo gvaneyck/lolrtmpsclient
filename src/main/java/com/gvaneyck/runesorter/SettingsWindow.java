@@ -63,6 +63,7 @@ public class SettingsWindow extends JDialog {
         regionMap.put(ServerInfo.KR.name.toUpperCase(), ServerInfo.KR);
         regionMap.put(ServerInfo.BR.name.toUpperCase(), ServerInfo.BR);
         regionMap.put(ServerInfo.TR.name.toUpperCase(), ServerInfo.TR);
+        regionMap.put(ServerInfo.JP.name.toUpperCase(), ServerInfo.JP);
         regionMap.put(ServerInfo.RU.name.toUpperCase(), ServerInfo.RU);
         regionMap.put(ServerInfo.LAN.name.toUpperCase(), ServerInfo.LAN);
         regionMap.put(ServerInfo.LAS.name.toUpperCase(), ServerInfo.LAS);
@@ -152,6 +153,7 @@ public class SettingsWindow extends JDialog {
         setTitle("Settings");
 
         cboRegion.addItem(ServerInfo.NA);
+        cboRegion.addItem(ServerInfo.JP);
         cboRegion.addItem(ServerInfo.EUW);
         cboRegion.addItem(ServerInfo.EUNE);
         cboRegion.addItem(ServerInfo.KR);
