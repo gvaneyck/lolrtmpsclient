@@ -98,6 +98,7 @@ public class SpectateAnyone {
         regionMap.put("EUROPE NORDIC & EAST", ServerInfo.EUNE);
         regionMap.put("KOREA", ServerInfo.KR);
         regionMap.put("BRAZIL", ServerInfo.BR);
+        regionMap.put("JAPAN", ServerInfo.JP);
         regionMap.put("TURKEY", ServerInfo.TR);
         regionMap.put("PUBLIC BETA ENVIRONMENT", ServerInfo.PBE);
         regionMap.put("SINGAPORE/MALAYSIA", ServerInfo.SG);
@@ -339,6 +340,7 @@ public class SpectateAnyone {
                             "Europe Nordic & East",
                             "Korea",
                             "Brazil",
+                            "Japan",
                             "Turkey",
                             "Public Beta Environment",
                             "Singapore/Malaysia",
