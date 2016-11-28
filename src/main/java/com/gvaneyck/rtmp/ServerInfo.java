@@ -4,16 +4,16 @@ package com.gvaneyck.rtmp;
  * Class for storing connection information
  */
 public class ServerInfo {
-    public static final ServerInfo NA = new ServerInfo("NA", "NA1", "North America", "prod.na2.lol.riotgames.com", "https://lq.na2.lol.riotgames.com/");
+    public static final ServerInfo NA = new ServerInfo("NA", "NA1", "North America", "prod.na2.lol.riotgames.com", "https://lqak.na2.lol.riotgames.com/");
     public static final ServerInfo EUW = new ServerInfo("EUW", "EUW1", "Europe West", "prod.euw1.lol.riotgames.com", "https://lqak.euw1.lol.riotgames.com/");
-    public static final ServerInfo EUNE = new ServerInfo("EUNE", "EUN1", "Europe Nordic & East", "prod.eun1.lol.riotgames.com", "https://lq.eun1.lol.riotgames.com/");
+    public static final ServerInfo EUNE = new ServerInfo("EUNE", "EUN1", "Europe Nordic & East", "prod.eun1.lol.riotgames.com", "https://lqak.eun1.lol.riotgames.com/");
     public static final ServerInfo KR = new ServerInfo("KR", "KR", "Korea", "prod.kr.lol.riotgames.com", "https://lq.kr.lol.riotgames.com/");
     public static final ServerInfo BR = new ServerInfo("BR", "BR1", "Brazil", "prod.br.lol.riotgames.com", "https://lq.br.lol.riotgames.com/");
-    public static final ServerInfo TR = new ServerInfo("TR", "TR1", "Turkey", "prod.tr.lol.riotgames.com", "https://lq.tr.lol.riotgames.com/");
+    public static final ServerInfo TR = new ServerInfo("TR", "TR1", "Turkey", "prod.tr.lol.riotgames.com", "https://lqak.tr.lol.riotgames.com/");
     public static final ServerInfo RU = new ServerInfo("RU", "RU", "Russia", "prod.ru.lol.riotgames.com", "https://lq.ru.lol.riotgames.com/");
-    public static final ServerInfo LAN = new ServerInfo("LAN", "LA1", "Latin America North", "prod.la1.lol.riotgames.com", "https://lq.la1.lol.riotgames.com/");
-    public static final ServerInfo LAS = new ServerInfo("LAS", "LA2", "Latin America South", "prod.la2.lol.riotgames.com", "https://lq.la2.lol.riotgames.com/");
-    public static final ServerInfo OCE = new ServerInfo("OCE", "OC1", "Oceania", "prod.oc1.lol.riotgames.com", "https://lq.oc1.lol.riotgames.com/");
+    public static final ServerInfo LAN = new ServerInfo("LAN", "LA1", "Latin America North", "prod.la1.lol.riotgames.com", "https://lqak.la1.lol.riotgames.com/");
+    public static final ServerInfo LAS = new ServerInfo("LAS", "LA2", "Latin America South", "prod.la2.lol.riotgames.com", "https://lqak.la2.lol.riotgames.com/");
+    public static final ServerInfo OCE = new ServerInfo("OCE", "OC1", "Oceania", "prod.oc1.lol.riotgames.com", "https://lqak.oc1.lol.riotgames.com/");
     public static final ServerInfo JP = new ServerInfo("JP", "JP1", "Japan", "prod.jp1.lol.riotgames.com", "https://lq.jp1.lol.riotgames.jp/");
     public static final ServerInfo PBE = new ServerInfo("PBE", "PBE1", "Public Beta Environment", "prod.pbe1.lol.riotgames.com", "https://lq.pbe1.lol.riotgames.com/");
     public static final ServerInfo SG = new ServerInfo("SG", "SG", "Singapore/Malaysia", "prod.lol.garenanow.com", "https://lq.lol.garenanow.com/", true);
