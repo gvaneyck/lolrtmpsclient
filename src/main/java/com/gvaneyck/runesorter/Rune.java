@@ -12,12 +12,12 @@ public class Rune {
     public String name;
     public int tier;
     public int quantity;
-    public List<RuneEffect> runeEffects = new ArrayList<RuneEffect>();
+    public List<RuneEffect> runeEffects = new ArrayList<>();
 
     public static final Map<String, String> effectTranslations;
 
     static {
-        effectTranslations = new HashMap<String, String>();
+        effectTranslations = new HashMap<>();
         effectTranslations.put("FlatArmorMod", "Armor");
         effectTranslations.put("FlatCritChanceMod", "Crit Chance");
         effectTranslations.put("FlatCritDamageMod", "Crit Damage");

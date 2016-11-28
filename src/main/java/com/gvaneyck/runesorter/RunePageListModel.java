@@ -12,8 +12,8 @@ import java.util.List;
  * @author Gvaneyck
  */
 public class RunePageListModel implements ListModel<RunePage> {
-    List<ListDataListener> listeners = new ArrayList<ListDataListener>();
-    List<RunePage> data = new ArrayList<RunePage>();
+    List<ListDataListener> listeners = new ArrayList<>();
+    List<RunePage> data = new ArrayList<>();
 
     public RunePageListModel() {}
 

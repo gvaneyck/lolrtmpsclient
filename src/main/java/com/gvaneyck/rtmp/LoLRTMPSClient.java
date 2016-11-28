@@ -65,7 +65,7 @@ public class LoLRTMPSClient extends RTMPSClient {
      * @param args Unused
      */
     public static void main(String[] args) {
-        LoLRTMPSClient client = new LoLRTMPSClient(ServerInfo.NA, "6.19.16_09_15_21_03", "jabe", "betatear1");
+        LoLRTMPSClient client = new LoLRTMPSClient(ServerInfo.NA, "6.19.16_09_15_21_03", "user", "pass");
 
         try {
             int id;

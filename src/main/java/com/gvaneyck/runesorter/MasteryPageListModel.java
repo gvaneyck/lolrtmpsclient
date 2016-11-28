@@ -12,8 +12,8 @@ import java.util.List;
  * @author Gvaneyck
  */
 public class MasteryPageListModel implements ListModel<MasteryPage> {
-    List<ListDataListener> listeners = new ArrayList<ListDataListener>();
-    List<MasteryPage> data = new ArrayList<MasteryPage>();
+    List<ListDataListener> listeners = new ArrayList<>();
+    List<MasteryPage> data = new ArrayList<>();
 
     public MasteryPageListModel() {}
 

@@ -348,7 +348,7 @@ public class RTMPSClient {
         // -- 02 | 00 00 00 | 00 00 05 | 06 00 00 00 00 | 00 03 D0 90 02
 
         // Connect
-        Map<String, Object> params = new HashMap<String, Object>();
+        Map<String, Object> params = new HashMap<>();
         params.put("app", app);
         params.put("flashVer", "WIN 10,1,85,3");
         params.put("swfUrl", swfUrl);
@@ -652,7 +652,7 @@ public class RTMPSClient {
          */
         private void parsePackets(Thread thread) {
             try {
-                Map<Integer, Packet> packets = new HashMap<Integer, Packet>();
+                Map<Integer, Packet> packets = new HashMap<>();
 
                 while (true) {
                     // Parse the basic header

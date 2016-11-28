@@ -6,7 +6,7 @@
     <groupId>com.gvaneyck</groupId>
     <artifactId>lolrtmpsclient</artifactId>
 
-    <version>1.0.0</version>
+    <version>1.2.0</version>
 
     <scm>
         <connection>scm:git:git@github.com:gvaneyck/lolrtmpsclient.git</connection>

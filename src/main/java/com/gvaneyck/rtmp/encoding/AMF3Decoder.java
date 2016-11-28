@@ -23,9 +23,9 @@ public class AMF3Decoder {
     private int dataPos;
 
     /** Lists of references and class definitions seen so far */
-    private List<String> stringReferences = new ArrayList<String>();
-    private List<Object> objectReferences = new ArrayList<Object>();
-    private List<ClassDefinition> classDefinitions = new ArrayList<ClassDefinition>();
+    private List<String> stringReferences = new ArrayList<>();
+    private List<Object> objectReferences = new ArrayList<>();
+    private List<ClassDefinition> classDefinitions = new ArrayList<>();
 
     /**
      * Resets all the reference lists
@@ -551,7 +551,7 @@ public class AMF3Decoder {
     }
 
     private List<Integer> readFlags() {
-        List<Integer> flags = new ArrayList<Integer>();
+        List<Integer> flags = new ArrayList<>();
         int flag;
         do {
             flag = readByteAsInt();

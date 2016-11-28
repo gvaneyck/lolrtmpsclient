@@ -16,9 +16,9 @@ public class GameInfo implements Comparable {
     public int delay;
     public String type;
     public String targetSummoner;
-    public Map<String, Player> players = new HashMap<String, Player>();
-    public List<Player> teamOne = new ArrayList<Player>();
-    public List<Player> teamTwo = new ArrayList<Player>();
+    public Map<String, Player> players = new HashMap<>();
+    public List<Player> teamOne = new ArrayList<>();
+    public List<Player> teamTwo = new ArrayList<>();
 
     public GameInfo(String target, TypedObject gameData) {
         targetSummoner = target;

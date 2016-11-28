@@ -27,8 +27,8 @@ public class RunePageSorter {
     public static LoLRTMPSClient client;
 
     public static List<RunePage> runePages;
-    public static List<MasteryPage> masteryPages = new ArrayList<MasteryPage>();
-    public static Map<Integer, Rune> runeInventory = new HashMap<Integer, Rune>();
+    public static List<MasteryPage> masteryPages = new ArrayList<>();
+    public static Map<Integer, Rune> runeInventory = new HashMap<>();
 
     public static List<RunePage> runePages2;
     public static List<MasteryPage> masteryPages2;
@@ -237,7 +237,7 @@ public class RunePageSorter {
         int id = client.invoke("spellBookService", "getSpellBook", new Object[] { summonerId });
         Object[] runeBookPages = client.getResult(id).getTO("data").getTO("body").getArray("bookPages");
 
-        List<RunePage> result = new ArrayList<RunePage>();
+        List<RunePage> result = new ArrayList<>();
         for (Object o : runeBookPages)
             result.add(new RunePage((TypedObject)o));
 
@@ -248,7 +248,7 @@ public class RunePageSorter {
         int id = client.invoke("masteryBookService", "getMasteryBook", new Object[] { summonerId });
         Object[] masteryBookPages = client.getResult(id).getTO("data").getTO("body").getArray("bookPages");
 
-        List<MasteryPage> result = new ArrayList<MasteryPage>();
+        List<MasteryPage> result = new ArrayList<>();
         for (Object o : masteryBookPages)
             result.add(new MasteryPage((TypedObject)o));
 
@@ -273,7 +273,7 @@ public class RunePageSorter {
     }
 
     public static void sortMasteries() {
-        List<Integer> pageIds = new ArrayList<Integer>();
+        List<Integer> pageIds = new ArrayList<>();
         for (MasteryPage page : masteryPages)
             pageIds.add(page.pageId);
 
@@ -444,7 +444,7 @@ public class RunePageSorter {
         buffer.append(page.name);
         buffer.append("<br/>");
 
-        Map<String, RuneEffect> contents2 = new HashMap<String, RuneEffect>();
+        Map<String, RuneEffect> contents2 = new HashMap<>();
         for (int key : pageContents.keySet()) {
             Rune r = pageContents.get(key);
             for (RuneEffect effect : r.runeEffects) {

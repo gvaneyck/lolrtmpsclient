@@ -11,7 +11,7 @@ import java.util.Random;
 
 /**
  * Encodes AMF3 data and packets for RTMP
- * 
+ *
  * @author Gabriel Van Eyck
  */
 public class AMF3Encoder {
@@ -23,12 +23,12 @@ public class AMF3Encoder {
 
     /**
      * Adds headers to provided data
-     * 
+     *
      * @param data
      * @return The data with headers added
      */
     public byte[] addHeaders(byte[] data) {
-        List<Byte> result = new ArrayList<Byte>();
+        List<Byte> result = new ArrayList<>();
 
         // Header byte
         result.add((byte)0x03);
@@ -69,14 +69,14 @@ public class AMF3Encoder {
 
     /**
      * Encodes the given parameters as a connect packet
-     * 
+     *
      * @param params The connection parameters
      * @return The connection packet
      * @throws NotImplementedException
      * @throws EncodingException
      */
     public byte[] encodeConnect(Map<String, Object> params) throws EncodingException, NotImplementedException {
-        List<Byte> result = new ArrayList<Byte>();
+        List<Byte> result = new ArrayList<>();
 
         writeStringAMF0(result, "connect");
         writeIntAMF0(result, 1); // invokeId
@@ -103,7 +103,7 @@ public class AMF3Encoder {
         cm.put("timestamp", 0d);
         cm.put("timeToLive", 0d);
         cm.put("body", new TypedObject());
-        Map<String, Object> headers = new HashMap<String, Object>();
+        Map<String, Object> headers = new HashMap<>();
         headers.put("DSMessagingVersion", 1d);
         headers.put("DSId", "my-rtmps");
         cm.put("headers", headers);
@@ -124,15 +124,15 @@ public class AMF3Encoder {
 
     /**
      * Encodes the given data as a connect packet
-     * 
+     *
      * @param id The invoke ID
-     * @param params The data to invoke
+     * @param data The data to invoke
      * @return The invoke packet
      * @throws NotImplementedException
      * @throws EncodingException
      */
     public byte[] encodeInvoke(int id, Object data) throws EncodingException, NotImplementedException {
-        List<Byte> result = new ArrayList<Byte>();
+        List<Byte> result = new ArrayList<>();
 
         result.add((byte)0x00); // version
         result.add((byte)0x05); // type?
@@ -153,14 +153,14 @@ public class AMF3Encoder {
 
     /**
      * Encodes an object as AMF3
-     * 
+     *
      * @param obj The object to encode
      * @return The encoded object
      * @throws NotImplementedException
      * @throws EncodingException
      */
     public byte[] encode(Object obj) throws EncodingException, NotImplementedException {
-        List<Byte> result = new ArrayList<Byte>();
+        List<Byte> result = new ArrayList<>();
         encode(result, obj);
 
         byte[] ret = new byte[result.size()];
@@ -172,7 +172,7 @@ public class AMF3Encoder {
 
     /**
      * Encodes an object as AMF3 to the given buffer
-     * 
+     *
      * @param ret The buffer to encode to
      * @param obj The object to encode
      * @throws EncodingException
@@ -231,7 +231,7 @@ public class AMF3Encoder {
 
     /**
      * Encodes an integer as AMF3 to the given buffer
-     * 
+     *
      * @param ret The buffer to encode to
      * @param val The integer to encode
      */
@@ -255,7 +255,7 @@ public class AMF3Encoder {
 
     /**
      * Encodes a double as AMF3 to the given buffer
-     * 
+     *
      * @param ret The buffer to encode to
      * @param val The double to encode
      */
@@ -280,7 +280,7 @@ public class AMF3Encoder {
 
     /**
      * Encodes a string as AMF3 to the given buffer
-     * 
+     *
      * @param ret The buffer to encode to
      * @param val The string to encode
      * @throws EncodingException
@@ -302,7 +302,7 @@ public class AMF3Encoder {
 
     /**
      * Encodes a date as AMF3 to the given buffer
-     * 
+     *
      * @param ret The buffer to encode to
      * @param val The date to encode
      */
@@ -313,7 +313,7 @@ public class AMF3Encoder {
 
     /**
      * Encodes an array as AMF3 to the given buffer
-     * 
+     *
      * @param ret The buffer to encode to
      * @param val The array to encode
      * @throws EncodingException
@@ -328,7 +328,7 @@ public class AMF3Encoder {
 
     /**
      * Encodes an associative array as AMF3 to the given buffer
-     * 
+     *
      * @param ret The buffer to encode to
      * @param val The associative array to encode
      * @throws EncodingException
@@ -345,7 +345,7 @@ public class AMF3Encoder {
 
     /**
      * Encodes an object as AMF3 to the given buffer
-     * 
+     *
      * @param ret The buffer to encode to
      * @param val The object to encode
      * @throws EncodingException
@@ -372,7 +372,7 @@ public class AMF3Encoder {
             writeInt(ret, (val.size() << 4) | 3); // Inline + member count
             writeString(ret, val.type);
 
-            List<String> keyOrder = new ArrayList<String>();
+            List<String> keyOrder = new ArrayList<>();
             for (String key : val.keySet()) {
                 writeString(ret, key);
                 keyOrder.add(key);
@@ -385,7 +385,7 @@ public class AMF3Encoder {
 
     /**
      * Not implemented
-     * 
+     *
      * @param ret
      * @param val
      * @throws NotImplementedException
@@ -396,7 +396,7 @@ public class AMF3Encoder {
 
     /**
      * Encodes an integer as AMF0 to the given buffer
-     * 
+     *
      * @param ret The buffer to encode to
      * @param val The integer to encode
      */
@@ -411,7 +411,7 @@ public class AMF3Encoder {
 
     /**
      * Encodes a string as AMF0 to the given buffer
-     * 
+     *
      * @param ret The buffer to encode to
      * @param val The string to encode
      * @throws EncodingException
@@ -436,7 +436,7 @@ public class AMF3Encoder {
 
     /**
      * Generates a random UID, used for messageIDs
-     * 
+     *
      * @return A random UID
      */
     public static String randomUID() {

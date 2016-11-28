@@ -56,7 +56,7 @@ public class SettingsWindow extends JDialog {
     public static Map<String, ServerInfo> regionMap;
 
     static {
-        regionMap = new HashMap<String, ServerInfo>();
+        regionMap = new HashMap<>();
         regionMap.put(ServerInfo.NA.name.toUpperCase(), ServerInfo.NA);
         regionMap.put(ServerInfo.EUW.name.toUpperCase(), ServerInfo.EUW);
         regionMap.put(ServerInfo.EUNE.name.toUpperCase(), ServerInfo.EUNE);
@@ -83,7 +83,7 @@ public class SettingsWindow extends JDialog {
 
     private void loadConfig() {
         File conf = new File("config.txt");
-        Map<String, String> config = new HashMap<String, String>();
+        Map<String, String> config = new HashMap<>();
 
         if (conf.exists()) {
             try {
@@ -161,12 +161,8 @@ public class SettingsWindow extends JDialog {
         cboRegion.addItem(ServerInfo.LAN);
         cboRegion.addItem(ServerInfo.LAS);
         cboRegion.addItem(ServerInfo.OCE);
+        cboRegion.addItem(ServerInfo.JP);
         cboRegion.addItem(ServerInfo.PBE);
-        cboRegion.addItem(ServerInfo.TW);
-        cboRegion.addItem(ServerInfo.SG);
-        cboRegion.addItem(ServerInfo.PH);
-        cboRegion.addItem(ServerInfo.TH);
-        cboRegion.addItem(ServerInfo.VN);
 
         Container pane = getContentPane();
         pane.setLayout(null);

@@ -78,7 +78,7 @@ public class RunePage implements Comparable<RunePage> {
 
     public Map<Integer, Rune> getPageContents() {
         if (pageContents == null) {
-            pageContents = new HashMap<Integer, Rune>();
+            pageContents = new HashMap<>();
             Object[] entries = page.getArray("slotEntries");
             for (Object o : entries) {
                 Rune r = new Rune((TypedObject)o);

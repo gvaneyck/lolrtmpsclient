@@ -13,8 +13,8 @@ import java.util.List;
  * @author Gvaneyck
  */
 public class GameListModel implements ListModel {
-    List<ListDataListener> listeners = new ArrayList<ListDataListener>();
-    List<GameInfo> data = new ArrayList<GameInfo>();
+    List<ListDataListener> listeners = new ArrayList<>();
+    List<GameInfo> data = new ArrayList<>();
 
     public GameListModel() {
         Thread t = new Thread() {

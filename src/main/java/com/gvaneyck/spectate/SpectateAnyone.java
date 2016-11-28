@@ -92,19 +92,19 @@ public class SpectateAnyone {
     }
 
     public static void initRegionMap() {
-        regionMap = new HashMap<String, ServerInfo>();
-        regionMap.put("NORTH AMERICA", ServerInfo.NA);
-        regionMap.put("EUROPE WEST", ServerInfo.EUW);
-        regionMap.put("EUROPE NORDIC & EAST", ServerInfo.EUNE);
-        regionMap.put("KOREA", ServerInfo.KR);
-        regionMap.put("BRAZIL", ServerInfo.BR);
-        regionMap.put("TURKEY", ServerInfo.TR);
-        regionMap.put("PUBLIC BETA ENVIRONMENT", ServerInfo.PBE);
-        regionMap.put("SINGAPORE/MALAYSIA", ServerInfo.SG);
-        regionMap.put("TAIWAN", ServerInfo.TW);
-        regionMap.put("THAILAND", ServerInfo.TH);
-        regionMap.put("PHILLIPINES", ServerInfo.PH);
-        regionMap.put("VIETNAM", ServerInfo.VN);
+        regionMap = new HashMap<>();
+        regionMap.put(ServerInfo.NA.name.toUpperCase(), ServerInfo.NA);
+        regionMap.put(ServerInfo.EUW.name.toUpperCase(), ServerInfo.EUW);
+        regionMap.put(ServerInfo.EUNE.name.toUpperCase(), ServerInfo.EUNE);
+        regionMap.put(ServerInfo.KR.name.toUpperCase(), ServerInfo.KR);
+        regionMap.put(ServerInfo.BR.name.toUpperCase(), ServerInfo.BR);
+        regionMap.put(ServerInfo.TR.name.toUpperCase(), ServerInfo.TR);
+        regionMap.put(ServerInfo.RU.name.toUpperCase(), ServerInfo.RU);
+        regionMap.put(ServerInfo.LAN.name.toUpperCase(), ServerInfo.LAN);
+        regionMap.put(ServerInfo.LAS.name.toUpperCase(), ServerInfo.LAS);
+        regionMap.put(ServerInfo.OCE.name.toUpperCase(), ServerInfo.OCE);
+        regionMap.put(ServerInfo.JP.name.toUpperCase(), ServerInfo.JP);
+        regionMap.put(ServerInfo.PBE.name.toUpperCase(), ServerInfo.PBE);
     }
 
     public static void setupFrame() {
@@ -284,7 +284,7 @@ public class SpectateAnyone {
     public static void setupClient() {
         // Read in the config
         File conf = new File("config.txt");
-        params = new HashMap<String, String>();
+        params = new HashMap<>();
 
         // Parse if exists
         if (conf.exists()) {
@@ -334,18 +334,19 @@ public class SpectateAnyone {
                     JOptionPane.QUESTION_MESSAGE,
                     null,
                     new Object[] {
-                            "North America",
-                            "Europe West",
-                            "Europe Nordic & East",
-                            "Korea",
-                            "Brazil",
-                            "Turkey",
-                            "Public Beta Environment",
-                            "Singapore/Malaysia",
-                            "Taiwan",
-                            "Thailand",
-                            "Phillipines",
-                            "Vietnam" },
+                            ServerInfo.NA.name,
+                            ServerInfo.EUW.name,
+                            ServerInfo.EUNE.name,
+                            ServerInfo.KR.name,
+                            ServerInfo.BR.name,
+                            ServerInfo.TR.name,
+                            ServerInfo.RU.name,
+                            ServerInfo.LAN.name,
+                            ServerInfo.LAS.name,
+                            ServerInfo.OCE.name,
+                            ServerInfo.JP.name,
+                            ServerInfo.PBE.name
+                    },
                     "North America");
 
             params.put("region", res);
@@ -355,7 +356,7 @@ public class SpectateAnyone {
         if (!params.containsKey("locale")) {
             // Let the user select their language
             Set<String> langCodes = findValidLangs(new File(params.get("lollocation")));
-            List<String> langs = new ArrayList<String>();
+            List<String> langs = new ArrayList<>();
             for (String lang : langCodes) {
                 String[] parts = lang.split("_");
                 Locale l = new Locale(parts[0], parts[1]);
